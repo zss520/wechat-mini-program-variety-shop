@@ -1,0 +1,4 @@
+<input class="card" placeholder="联系人" data-k="contactName" value="{{contactName}}" bindinput="onInput" />
+<input class="card" placeholder="手机号" data-k="phone" value="{{phone}}" bindinput="onInput" />
+<input class="card" placeholder="详细地址" data-k="detail" value="{{detail}}" bindinput="onInput" />
+<button class="btn-primary" bindtap="save">保存</button>

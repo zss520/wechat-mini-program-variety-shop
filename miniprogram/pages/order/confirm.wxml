@@ -1,0 +1,12 @@
+<view class="seg">
+  <text class="{{fulfillType=='PICKUP'?'on':''}}" data-t="PICKUP" bindtap="setType">到店自提</text>
+  <text wx:if="{{settings.delivery_enabled}}" class="{{fulfillType=='DELIVERY'?'on':''}}" data-t="DELIVERY" bindtap="setType">配送到家</text>
+</view>
+<view class="card" wx:if="{{fulfillType=='PICKUP'}}">自提：{{settings.pickup_address}}（{{settings.business_hours}}）</view>
+<view class="card" wx:else bindtap="goAddr">收货地址：{{preview.address.contact_name}} {{preview.address.detail}}</view>
+<view class="card" wx:for="{{preview.items}}" wx:key="goodsId">
+  {{item.name}} x{{item.qty}}  ¥{{item.amountCent / 100}}
+</view>
+<view class="card">运费 ¥{{preview.freightCent / 100}}  应付 ¥{{preview.payAmountCent / 100}}</view>
+<input class="card" placeholder="备注" bindinput="remark" />
+<button class="btn-primary" bindtap="submit">提交并支付</button>

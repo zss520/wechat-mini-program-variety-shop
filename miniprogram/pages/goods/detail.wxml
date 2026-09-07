@@ -1,0 +1,21 @@
+<swiper class="sw" wx:if="{{item.images.length || item.coverUrl}}" indicator-dots>
+  <swiper-item wx:for="{{item.images.length ? item.images : [item.coverUrl]}}" wx:key="*this">
+    <image src="{{item}}" mode="aspectFill" class="img" />
+  </swiper-item>
+</swiper>
+<view class="box">
+  <view class="price">¥{{item.priceCent / 100}} <text class="origin" wx:if="{{item.originPriceCent}}">¥{{item.originPriceCent / 100}}</text></view>
+  <view class="name">{{item.name}}</view>
+  <view class="sub">{{item.subtitle}}</view>
+  <view class="stock">{{item.soldOut ? '售罄' : (item.stock < 10 ? '仅剩' + item.stock + '件' : '有货')}}</view>
+  <view class="qty">
+    <text bindtap="sub">-</text>
+    <text>{{qty}}</text>
+    <text bindtap="add">+</text>
+  </view>
+  <view class="detail">{{item.detail}}</view>
+</view>
+<view class="bar">
+  <button class="ghost" bindtap="addCart" disabled="{{item.soldOut}}">加入购物车</button>
+  <button class="pri" bindtap="buy" disabled="{{item.soldOut}}">立即购买</button>
+</view>

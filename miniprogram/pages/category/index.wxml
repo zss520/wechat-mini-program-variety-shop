@@ -1,0 +1,19 @@
+<view class="wrap">
+  <scroll-view class="left" scroll-y>
+    <view class="c {{catId==0?'on':''}}" data-id="0" bindtap="pickCat">全部</view>
+    <view class="c {{catId==item.id?'on':''}}" wx:for="{{cats}}" wx:key="id" data-id="{{item.id}}" bindtap="pickCat">{{item.name}}</view>
+  </scroll-view>
+  <view class="right">
+    <view class="sorts">
+      <text class="{{sort=='composite'?'on':''}}" data-sort="composite" bindtap="pickSort">综合</text>
+      <text class="{{sort=='sales'?'on':''}}" data-sort="sales" bindtap="pickSort">销量</text>
+      <text class="{{sort=='price_asc'?'on':''}}" data-sort="price_asc" bindtap="pickSort">价格</text>
+      <text class="{{sort=='new'?'on':''}}" data-sort="new" bindtap="pickSort">上新</text>
+    </view>
+    <view class="grid">
+      <view class="gitem" wx:for="{{list}}" wx:key="id">
+        <goods-card item="{{item}}" slot-id="category_list" position="{{index+1}}" />
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,2 @@
+.head { background:#c2410c; color:#fff; padding:80rpx 32rpx; font-size:36rpx; }
+.card { background:#fff; margin:16rpx; padding:32rpx; }

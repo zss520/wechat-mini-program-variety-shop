@@ -1,0 +1,5 @@
+<view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="edit">
+  {{item.contact_name}} {{item.phone}}
+  <view>{{item.detail}}</view>
+</view>
+<button class="btn-primary" bindtap="add">新增地址</button>

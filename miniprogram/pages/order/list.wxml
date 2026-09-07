@@ -1,0 +1,12 @@
+<view class="tabs">
+  <text data-s="" bindtap="tab">全部</text>
+  <text data-s="PENDING_PAY" bindtap="tab">待付款</text>
+  <text data-s="PENDING_PACK" bindtap="tab">备货中</text>
+  <text data-s="WAIT_PICKUP" bindtap="tab">待取货</text>
+  <text data-s="COMPLETED" bindtap="tab">已完成</text>
+</view>
+<view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+  <view>{{item.order_no}}</view>
+  <view>{{item.statusText}}  ¥{{item.pay_amount_cent / 100}}</view>
+</view>
+<view wx:if="{{!list.length}}" class="empty">暂无订单</view>

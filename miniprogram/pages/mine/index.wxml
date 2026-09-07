@@ -1,0 +1,5 @@
+<view class="head" bindtap="login">{{user.nickname || '点击登录'}}</view>
+<view class="card" bindtap="orders">我的订单</view>
+<view class="card" bindtap="addr">收货地址</view>
+<view class="card" bindtap="call">联系店主 {{settings.phone}}</view>
+<view class="card" bindtap="privacy">隐私政策</view>
