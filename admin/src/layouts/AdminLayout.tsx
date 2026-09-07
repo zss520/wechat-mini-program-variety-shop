@@ -41,7 +41,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
       <Drawer variant="permanent" sx={{ width: WIDTH, [`& .MuiDrawer-paper`]: { width: WIDTH, top: 64, height: "calc(100% - 64px)" } }}>
         <List>
           {menus.map((m) => (
-            <ListItemButton key={m.to} selected={loc.pathname === m.to} onClick={() => nav(m.to)}>
+            <ListItemButton
+              key={m.to}
+              selected={m.to === "/" ? loc.pathname === "/" : loc.pathname === m.to || loc.pathname.startsWith(`${m.to}/`)}
+              onClick={() => nav(m.to)}
+            >
               {m.to === "/orders" ? (
                 <Badge color="error" badgeContent={badge} max={99}>
                   <ListItemText primary={m.label} />

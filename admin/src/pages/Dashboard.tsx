@@ -21,7 +21,7 @@ export default function Dashboard() {
       </Typography>
       <Grid container spacing={2}>
         {cards.map((c) => (
-          <Grid item xs={12} sm={6} md={2.4} key={c.t}>
+          <Grid item xs={12} sm={6} md={4} lg={2} key={c.t}>
             <Card>
               <CardContent>
                 <Typography color="text.secondary">{c.t}</Typography>
