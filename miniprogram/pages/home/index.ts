@@ -1,4 +1,5 @@
 import { request } from "../../utils/request";
+import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
 Page({
@@ -16,6 +17,7 @@ Page({
     nav: { type: "dots-bar" },
   },
   onShow() {
+    syncTabBar(this, "home");
     track("page_view");
     this.load();
   },

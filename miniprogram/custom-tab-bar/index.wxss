@@ -1,0 +1,10 @@
+:host {
+  --td-tab-bar-color: #7a6a5a;
+  --td-tab-bar-active-color: #c2410c;
+  --td-tab-bar-bg-color: #ffffff;
+}
+
+.t-tab-bar-item {
+  margin: 4rpx 0;
+}
+

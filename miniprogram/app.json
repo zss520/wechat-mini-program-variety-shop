@@ -25,6 +25,7 @@
     "backgroundColor": "#F8F4F0"
   },
   "tabBar": {
+    "custom": true,
     "color": "#7A6A5A",
     "selectedColor": "#C2410C",
     "backgroundColor": "#FFFFFF",
@@ -58,6 +59,8 @@
     "t-swiper": "tdesign-miniprogram/swiper/swiper",
     "t-switch": "tdesign-miniprogram/switch/switch",
     "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
+    "t-tab-bar": "tdesign-miniprogram/tab-bar/tab-bar",
+    "t-tab-bar-item": "tdesign-miniprogram/tab-bar-item/tab-bar-item",
     "t-tabs": "tdesign-miniprogram/tabs/tabs",
     "t-tag": "tdesign-miniprogram/tag/tag",
     "t-textarea": "tdesign-miniprogram/textarea/textarea"

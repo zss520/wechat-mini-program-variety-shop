@@ -1,9 +1,11 @@
 import { request, ensureLogin } from "../../utils/request";
+import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
 Page({
   data: { list: [] as any[], checked: [] as number[], total: 0, upsell: null as any, allChecked: false },
   onShow() {
+    syncTabBar(this, "cart");
     this.load();
   },
   async load() {

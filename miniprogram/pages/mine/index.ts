@@ -1,9 +1,11 @@
 import { ensureLogin, request } from "../../utils/request";
+import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
 Page({
   data: { user: {} as any, settings: {} as any, subscribed: false },
   onShow() {
+    syncTabBar(this, "mine");
     track("page_view");
     this.setData({ user: wx.getStorageSync("user") || {}, settings: wx.getStorageSync("settings") || {} });
   },

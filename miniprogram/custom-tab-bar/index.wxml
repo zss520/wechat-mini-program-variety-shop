@@ -1,0 +1,14 @@
+<t-tab-bar
+  value="{{value}}"
+  bind:change="onChange"
+  theme="normal"
+  bordered
+  split="{{false}}"
+  fixed="{{false}}"
+  safe-area-inset-bottom
+>
+  <t-tab-bar-item icon="home" value="home">首页</t-tab-bar-item>
+  <t-tab-bar-item icon="view-module" value="category">分类</t-tab-bar-item>
+  <t-tab-bar-item icon="cart" value="cart">购物车</t-tab-bar-item>
+  <t-tab-bar-item icon="user" value="mine">我的</t-tab-bar-item>
+</t-tab-bar>

@@ -1,4 +1,5 @@
 import { request } from "../../utils/request";
+import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
 Page({
@@ -15,6 +16,7 @@ Page({
     ],
   },
   onShow() {
+    syncTabBar(this, "category");
     track("page_view");
     this.init();
   },
