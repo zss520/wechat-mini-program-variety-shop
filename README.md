@@ -69,13 +69,13 @@ cd server && npm run migrate && npm run seed
 
 - API：http://127.0.0.1:3000（健康检查 `/api/health`）
 - 管理后台：http://127.0.0.1:5173 ，默认账号 `admin` / `admin123`
-- 小程序：用微信开发者工具导入 `miniprogram/` 目录，AppID 为 `wx13d03716266b55da`。真机预览请把 `miniprogram/utils/config.ts` 的 `API_BASE` 改成电脑局域网 IP。
+- 小程序：用微信开发者工具导入 `miniprogram/` 目录，AppID 为 `wx6434c5c04d4b6c6e`。真机预览请把 `miniprogram/utils/config.ts` 的 `API_BASE` 改成电脑局域网 IP。
 
 ### 预览 / 体验版二维码
 
 云端不能代你向微信申请码，需在本机微信开发者工具操作：
 
-1. 导入 `miniprogram/`，确认 AppID 为 `wx13d03716266b55da`（已写入 `project.config.json`）。
+1. 导入 `miniprogram/`，确认 AppID 为 `wx6434c5c04d4b6c6e`（已写入 `project.config.json`）。
 2. 详情 → 本地设置：勾选 **不校验合法域名、web-view、TLS、HTTPS 证书**。
 3. 点顶部 **预览**，用微信扫码（预览码）。
 4. 要点 **上传** 后，到 [公众平台](https://mp.weixin.qq.com/) → 管理 → 版本管理 → 选为体验版，即可下载体验版二维码；测试微信号须先加为体验者。
