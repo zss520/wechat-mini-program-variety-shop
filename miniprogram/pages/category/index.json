@@ -1,4 +1,6 @@
 {
   "usingComponents": { "goods-card": "/components/goods-card/index" },
-  "navigationBarTitleText": "分类"
+  "navigationBarTitleText": "分类",
+  "disableScroll": true,
+  "backgroundColor": "#f5f5f5"
 }

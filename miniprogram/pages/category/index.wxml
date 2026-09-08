@@ -1,26 +1,18 @@
-<view class="wrap tab-page">
-  <scroll-view scroll-y class="side" enhanced show-scrollbar="{{false}}">
-    <view
-      class="side-item {{catId === item.id ? 'on' : ''}}"
-      wx:for="{{cats}}"
-      wx:key="id"
-      data-id="{{item.id}}"
-      bindtap="pickCat"
-    >
-      {{item.name}}
-    </view>
-  </scroll-view>
-  <view class="right">
+<view class="side-bar-wrapper">
+  <t-side-bar value="{{sideBarValue}}" bind:change="onSideBarChange" style="height: 100%">
+    <t-side-bar-item wx:for="{{cats}}" wx:key="value" value="{{item.value}}" label="{{item.label}}" />
+  </t-side-bar>
+  <view class="content">
     <view class="sorts">
       <t-segmented value="{{sort}}" options="{{sortOptions}}" bind:change="onSort" />
     </view>
-    <scroll-view scroll-y class="list">
-      <view class="goods-grid">
+    <scroll-view scroll-y class="goods" enhanced show-scrollbar="{{false}}">
+      <view class="goods-grid" wx:if="{{list.length}}">
         <view class="goods-grid-item" wx:for="{{list}}" wx:key="id">
           <goods-card item="{{item}}" slot-id="category_list" position="{{index+1}}" />
         </view>
       </view>
-      <t-empty wx:if="{{!list.length}}" icon="search" description="该分类暂无商品" />
+      <t-empty wx:if="{{!list.length && !loading}}" icon="search" description="该分类暂无商品" />
     </scroll-view>
   </view>
 </view>
