@@ -1,0 +1,6 @@
+.bar { display:flex; background:#fff; padding:16rpx 24rpx; align-items:center; }
+.inp { flex:1; background:#f3f3f3; border-radius:999rpx; padding:12rpx 24rpx; }
+.h { padding:24rpx; }
+.tags text { display:inline-block; background:#eee; margin:8rpx; padding:8rpx 16rpx; border-radius:8rpx; }
+.grid { display:flex; flex-wrap:wrap; justify-content:space-between; padding:16rpx; }
+.gitem { width:48%; margin-bottom:16rpx; }

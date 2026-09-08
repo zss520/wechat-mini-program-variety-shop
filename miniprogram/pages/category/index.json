@@ -1,0 +1,4 @@
+{
+  "usingComponents": { "goods-card": "/components/goods-card/index" },
+  "navigationBarTitleText": "分类"
+}

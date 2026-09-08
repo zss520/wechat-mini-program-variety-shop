@@ -1,0 +1,18 @@
+---
+description: 杂货铺小程序会话记忆与技术约束
+alwaysApply: true
+---
+
+# 杂货铺项目记忆
+
+本仓库是社区杂货铺私域系统。继续开发时遵守：
+
+- 顾客端只用微信原生小程序，禁止 uni-app/Taro。
+- 管理端锁定 Vite 4.5.x + React 18.2 + TS 5.3.3 + MUI v5.15，禁止 Vite 5+/MUI v6。
+- Node 必须 16.17.0。金额存分。库存条件更新预占。购买率以支付成功为准。
+- 本机 MySQL：127.0.0.1:3306，root/root，库 variety_shop。
+- 开发 MOCK_WX/MOCK_PAY 可用；一期不做拼团/秒杀/多门店/个性化模型。
+- P0 埋点已随交易上线。推荐=置顶+热度补齐。
+- 完整对话记忆见 `docs/09-会话记忆与本地同步.md`。
+- 本机同步脚本：`scripts/sync-local-windows.cmd`（写入 D:\project-code\project-code\my-cursor-project\wechat-mini-program-variety-shop）。
+- 实现分支：`cursor/implement-r1-r2-2abd`。对用户使用简体中文。

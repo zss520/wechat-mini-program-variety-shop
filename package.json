@@ -1,0 +1,20 @@
+{
+  "name": "wechat-mini-program-variety-shop",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": "16.17.0",
+    "npm": ">=8.15.0"
+  },
+  "scripts": {
+    "dev:server": "npm run dev --prefix server",
+    "dev:admin": "npm run dev --prefix admin",
+    "db:setup": "bash scripts/setup-dev-db.sh",
+    "db:reset": "bash scripts/setup-dev-db.sh --reset",
+    "migrate": "npm run migrate --prefix server",
+    "seed": "npm run seed --prefix server",
+    "build:admin": "npm run build --prefix admin",
+    "build:server": "npm run build --prefix server",
+    "test:server": "npm run migrate:test --prefix server && npm run seed:test --prefix server && npm test --prefix server"
+  }
+}

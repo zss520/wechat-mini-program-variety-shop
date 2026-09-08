@@ -1,0 +1,19 @@
+<view wx:if="{{!list.length}}" class="empty">购物车是空的</view>
+<view class="row" wx:for="{{list}}" wx:key="id">
+  <view class="ck {{checked.indexOf(item.id)>-1?'on':''}}" wx:if="{{!item.invalid}}" data-id="{{item.id}}" bindtap="toggle"></view>
+  <image src="{{item.coverUrl}}" class="img" />
+  <view class="info">
+    <view>{{item.name}} <text wx:if="{{item.invalid}}" class="bad">已失效</text></view>
+    <view class="price">¥{{item.priceCent / 100}}</view>
+    <view>
+      <text data-id="{{item.id}}" data-goodsid="{{item.goodsId}}" data-d="-1" bindtap="changeQty">-</text>
+      {{item.qty}}
+      <text data-id="{{item.id}}" data-goodsid="{{item.goodsId}}" data-d="1" bindtap="changeQty">+</text>
+      <text data-id="{{item.id}}" bindtap="del">删除</text>
+    </view>
+  </view>
+</view>
+<view class="bar">
+  <view>合计 <text class="price">¥{{total / 100}}</text></view>
+  <button class="pri" bindtap="settle">去结算</button>
+</view>

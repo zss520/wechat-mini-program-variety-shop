@@ -1,0 +1,25 @@
+<view class="search" bindtap="goSearch">搜索商品</view>
+<view class="pause" wx:if="{{settings.pause_order}}">店主休息中，暂不接单</view>
+<swiper wx:if="{{banners.length}}" class="banner" indicator-dots autoplay>
+  <swiper-item wx:for="{{banners}}" wx:key="id">
+    <image src="{{item.image_url}}" mode="aspectFill" class="banner-img" data-item="{{item}}" bindtap="onBanner" />
+  </swiper-item>
+</swiper>
+<view class="hint">{{settings.pickup_address}} · {{settings.business_hours}}</view>
+<view class="sec" wx:if="{{deals.length}}">
+  <view class="h">特价专区</view>
+  <scroll-view scroll-x class="hscroll">
+    <view class="hitem" wx:for="{{deals}}" wx:key="id">
+      <goods-card item="{{item}}" slot-id="home_deal" position="{{index+1}}" />
+    </view>
+  </scroll-view>
+</view>
+<view class="sec" wx:if="{{recommend.length}}">
+  <view class="h">{{recommendTitle}}</view>
+  <view class="grid">
+    <view class="gitem" wx:for="{{recommend}}" wx:key="id">
+      <goods-card item="{{item}}" slot-id="home_recommend" position="{{item.position || index+1}}" />
+    </view>
+  </view>
+</view>
+<view wx:if="{{!recommend.length && !deals.length}}" class="empty">店主正在上架</view>

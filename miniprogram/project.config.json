@@ -1,0 +1,26 @@
+{
+  "description": "社区杂货铺微信原生小程序",
+  "packOptions": { "ignore": [] },
+  "setting": {
+    "bundle": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "coverView": true,
+    "ignoreUploadUnusedFiles": true,
+    "showShadowRootInWxmlPanel": true,
+    "useCompilerPlugins": ["typescript"]
+  },
+  "compileType": "miniprogram",
+  "libVersion": "2.32.0",
+  "appid": "touristappid",
+  "projectname": "variety-shop",
+  "condition": {},
+  "editorSetting": { "tabIndent": "insertSpaces", "tabSize": 2 }
+}

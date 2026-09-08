@@ -1,0 +1,2 @@
+.tabs { display:flex; background:#fff; justify-content:space-around; padding:20rpx 0; }
+.card { background:#fff; margin:16rpx; padding:24rpx; }

@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "noImplicitAny": false,
+    "module": "CommonJS",
+    "target": "ES2017",
+    "lib": ["ES2017"],
+    "typeRoots": ["./typings"],
+    "skipLibCheck": true
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules"]
+}

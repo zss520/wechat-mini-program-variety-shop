@@ -1,0 +1,2 @@
+<view class="empty">{{ok ? '支付成功' : '支付未完成'}}</view>
+<button class="btn-primary" bindtap="go">查看订单</button>

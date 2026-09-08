@@ -1,0 +1,9 @@
+.row { display:flex; background:#fff; margin:16rpx; padding:16rpx; }
+.img { width:140rpx; height:140rpx; background:#eee; }
+.info { flex:1; margin-left:16rpx; }
+.ck { width:36rpx; height:36rpx; border:2rpx solid #ccc; border-radius:50%; margin-right:12rpx; }
+.ck.on { background:#c2410c; border-color:#c2410c; }
+.bad { color:#c2410c; }
+.bar { position:fixed; left:0; right:0; bottom:0; background:#fff; display:flex; justify-content:space-between; align-items:center; padding:16rpx 24rpx; }
+.pri { background:#c2410c; color:#fff; }
+page { padding-bottom:140rpx; }

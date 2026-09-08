@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.DS_Store
+.env
+*.log
+server/uploads/
+admin/dist/
+coverage/
+.vscode/
+.idea/
+miniprogram/miniprogram_npm/

@@ -1,0 +1,15 @@
+<view class="bar">
+  <input class="inp" placeholder="搜索商品" value="{{keyword}}" bindinput="onInput" confirm-type="search" bindconfirm="search" />
+  <text bindtap="search">搜索</text>
+</view>
+<view wx:if="{{!list.length}}">
+  <view class="h">历史 <text bindtap="clear">清空</text></view>
+  <view class="tags">
+    <text wx:for="{{history}}" wx:key="*this" data-k="{{item}}" bindtap="tapHist">{{item}}</text>
+  </view>
+</view>
+<view class="grid">
+  <view class="gitem" wx:for="{{list}}" wx:key="id">
+    <goods-card item="{{item}}" slot-id="search_result" position="{{index+1}}" />
+  </view>
+</view>

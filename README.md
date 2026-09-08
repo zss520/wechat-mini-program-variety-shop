@@ -1,28 +1,89 @@
 # 微信小程序杂货铺
 
-面向社区杂货铺的私域数字化经营系统：顾客使用 **微信原生小程序** 浏览与下单，店主使用 **Vite + TypeScript + React + Material UI** 管理后台（开发与构建环境适配 **Node.js 16.17.0**）。
+面向社区杂货铺的私域数字化经营系统：顾客使用 **微信原生小程序** 浏览与下单，店主使用 **Vite + TypeScript + React + Material UI v5** 管理后台。运行与构建环境锁定 **Node.js 16.17.0**。
 
 ## 文档
 
-全部项目文档位于 [`docs/`](./docs/README.md)。
+全部项目文档位于 [`docs/`](./docs/README.md)。开发顺序以 [项目开发计划](./docs/08-项目开发计划.md) 为准：R1 交易上线（M1–M6），R2 运营包（M7）。P0 埋点随交易域一起上线。
 
-建议阅读顺序：
+## 仓库结构
 
-1. [市场调研](./docs/01-市场调研.md)
-2. [产品需求文档](./docs/02-产品需求文档.md)
-3. [功能规格说明书](./docs/03-功能规格说明书.md)
-4. [技术架构与技术方案](./docs/04-技术架构与技术方案.md)
-5. [数据模型与接口设计](./docs/05-数据模型与接口设计.md)
-6. [非功能需求与实施计划](./docs/06-非功能需求与实施计划.md)
-7. [埋点与商品运营分析](./docs/07-埋点与商品运营分析.md)
-8. [项目开发计划](./docs/08-项目开发计划.md)
+```
+miniprogram/   微信原生小程序（TypeScript）
+admin/         Vite 4.5.x + React 18.2 + MUI v5.15
+server/        Express 4 + TypeScript + knex + mysql2
+docs/          需求与技术方案
+```
 
 ## 技术栈（约束）
 
 | 端 | 技术 |
 |----|------|
-| 顾客端 | 微信小程序原生（WXML / WXSS / JS 或 TS） |
-| 管理端 | Vite 4.x + TypeScript + React 18 + Material UI v5 |
-| 运行时 | Node.js 16.17.0（不可默认使用 Vite 5+） |
+| 顾客端 | 微信小程序原生（禁止 uni-app / Taro） |
+| 管理端 | Vite 4.5.x + TypeScript 5.3.3 + React 18.2 + Material UI v5.15 |
+| 服务端 | Node.js 16.17.0 + Express 4 + knex + **MySQL 8** |
+| 金额 | 整数分；订单预占库存；购买率以支付回调为准 |
 
-代码实现按 [项目开发计划](./docs/08-项目开发计划.md) 的 M1–M7 推进：R1 交易上线，R2 运营包。当前仓库以需求与方案文档为先。文档版本 **V1.1** 已包含埋点、商品运营指标与开发计划。
+## 同步到本机 Windows 目录
+
+云端不能直接写你的 `D:\`。本机请签出分支 `cursor/implement-r1-r2-2abd`，或双击 `scripts/sync-local-windows.cmd`（目标路径 `D:\project-code\project-code\my-cursor-project\wechat-mini-program-variety-shop`）。会话记忆见 [docs/09-会话记忆与本地同步.md](./docs/09-会话记忆与本地同步.md)。
+
+## 在你自己电脑上建库表（必做）
+
+云端开发机里的 MySQL **不会**同步到你的电脑。要在本机看到 `variety_shop` 和表，请在你自己的 MySQL 8 上导入：
+
+```bash
+# 本机命令行（主机 127.0.0.1 端口 3306 用户 root 密码 root）
+mysql -h127.0.0.1 -P3306 -uroot -proot --default-character-set=utf8mb4 < scripts/variety_shop.sql
+```
+
+Windows 也可在仓库里双击 `scripts/import-local.cmd`。  
+或用 Navicat / Workbench / DBeaver 连接本机后，打开并执行 `scripts/variety_shop.sql`。
+
+导入成功后应看到库 **variety_shop**，共 18 张表（`goods` `orders` `admin_users` 等），并带示例商品。管理端账号 `admin` / `admin123`。
+
+## 本地启动
+
+需要 **Node.js 16.17.0** 与本机 **MySQL 8**（utf8mb4）。默认连接 `127.0.0.1:3306`，账号 `root` / `root`。开发库 `variety_shop`，测试库 `variety_shop_test`。
+
+```bash
+nvm use 16.17.0   # 或安装后使用仓库根目录 .nvmrc
+cp .env.example .env   # 已是 127.0.0.1 / root / root
+
+# 用 root 建库并迁移种子（可选跑单测）
+bash scripts/setup-dev-db.sh
+# 需要清空重建时：
+# bash scripts/setup-dev-db.sh --reset
+
+cd server && npm install && npm run dev
+# 另开终端
+cd admin && npm install && npm run dev
+```
+
+也可手工：
+
+```bash
+mysql -h127.0.0.1 -P3306 -uroot -proot --protocol=TCP < scripts/setup-dev-db.sql
+cd server && npm run migrate && npm run seed
+```
+
+- API：http://127.0.0.1:3000（健康检查 `/api/health`）
+- 管理后台：http://127.0.0.1:5173 ，默认账号 `admin` / `admin123`
+- 小程序：用微信开发者工具导入 `miniprogram/` 目录。真机预览请把 `miniprogram/utils/config.ts` 的 `API_BASE` 改成电脑局域网 IP。
+
+开发开关（仅本地）：`.env` 中 `MOCK_WX=true`、`MOCK_PAY=true`，可走模拟登录与模拟支付。正式上线必须关闭，并配置微信支付商户号与回调 `POST /api/pay/wechat/notify`。
+
+```bash
+# 库存并发单测（走测试库 variety_shop_test，1 件库存两单仅一单成功）
+npm run test:server
+# 管理端生产构建（须在 Node 16.17.0）
+cd admin && npm run build
+```
+
+## 已实现范围
+
+- 管理端：登录、工作台、分类/商品、订单履约（备货/核销/配送）、轮播、推荐位、热度/漏斗报表、店铺设置、改密
+- 小程序：首页推荐、分类综合排序、搜索、详情、购物车、下单、模拟支付、提货码、地址、P0 埋点
+- 服务端：库存条件更新、待付款超时关单、支付成功计销售、事件落库、热度日批、推荐位 PIN_THEN_HEAT
+
+尚未包含（需店主资质或列入 R2 后置）：正式微信支付证书、微信审核与合法域名、订阅消息、优惠券/积分。

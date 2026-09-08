@@ -1,0 +1,9 @@
+<view class="card {{item.soldOut ? 'soldout' : ''}}" bindtap="onTap">
+  <image class="cover" src="{{item.coverUrl || '/assets/tab-home.png'}}" mode="aspectFill" />
+  <view class="name">{{item.name}}</view>
+  <view class="row">
+    <text class="price">¥{{item.priceCent / 100}}</text>
+    <text class="unit">/{{item.unit}}</text>
+  </view>
+  <view wx:if="{{item.soldOut}}" class="tag">售罄</view>
+</view>
