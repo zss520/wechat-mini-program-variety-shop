@@ -23,6 +23,10 @@ import { markPaid } from "./orderService";
 import { funnelReport, goodsReport, recomputeHeat, signals } from "./analytics";
 import { fillRecommend } from "./recommend";
 import { config } from "./config";
+import { campaignBody } from "./campaigns";
+import { changePoints, couponPayload } from "./marketing";
+import { listNotifyLogs } from "./notify";
+import { toSqlDateTime } from "./pricing";
 
 const uploadDir = config.uploadDir;
 fs.mkdirSync(uploadDir, { recursive: true });
@@ -85,15 +89,16 @@ adminRouter.get("/dashboard/summary", async (_req, res, next) => {
       .where("paid_at", ">=", `${today} 00:00:00`)
       .select(db.raw("COUNT(*) as c"), db.raw("IFNULL(SUM(pay_amount_cent),0) as amount"));
     const settings = await getSettings();
-    const lowStock = await db("goods")
+    const lowQ = db("goods")
       .whereNull("deleted_at")
       .where({ on_sale: 1 })
-      .where("stock", "<=", settings.low_stock_threshold)
-      .count({ c: "*" })
-      .first();
+      .where("stock", "<=", settings.low_stock_threshold);
+    const lowStock = await lowQ.clone().count({ c: "*" }).first();
+    const grouping = await db("orders").where({ status: ST.GROUPING }).count({ c: "*" }).first();
     ok(res, {
       pendingPack: Number(pendingPack?.c || 0),
       waitPickup: Number(waitPickup?.c || 0),
+      grouping: Number(grouping?.c || 0),
       todayOrders: Number(todayPaid[0]?.c || 0),
       todayAmountCent: Number(todayPaid[0]?.amount || 0),
       lowStock: Number(lowStock?.c || 0),
@@ -193,6 +198,9 @@ function goodsBody(body: unknown, partial = false) {
     onSale: z.boolean().optional(),
     sort: z.number().optional(),
     manualWeight: z.number().int().min(-50).max(50).optional(),
+    specialPriceYuan: z.number().positive().optional().nullable(),
+    specialStart: z.string().optional().nullable(),
+    specialEnd: z.string().optional().nullable(),
   });
   return partial ? base.partial().parse(body) : base.parse(body);
 }
@@ -214,6 +222,9 @@ adminRouter.post("/goods", async (req, res, next) => {
       on_sale: body.onSale === false ? 0 : 1,
       sort: body.sort ?? 0,
       manual_weight: body.manualWeight ?? 0,
+      special_price_cent: body.specialPriceYuan ? yuanToCent(Number(body.specialPriceYuan)) : null,
+      special_start: toSqlDateTime(body.specialStart ? String(body.specialStart) : null),
+      special_end: toSqlDateTime(body.specialEnd ? String(body.specialEnd) : null),
     });
     ok(res, await db("goods").where({ id }).first());
   } catch (e) {
@@ -241,6 +252,11 @@ adminRouter.put("/goods/:id", async (req, res, next) => {
     if (body.onSale != null) patch.on_sale = body.onSale ? 1 : 0;
     if (body.sort != null) patch.sort = body.sort;
     if (body.manualWeight != null) patch.manual_weight = body.manualWeight;
+    if (body.specialPriceYuan !== undefined) {
+      patch.special_price_cent = body.specialPriceYuan ? yuanToCent(Number(body.specialPriceYuan)) : null;
+    }
+    if (body.specialStart !== undefined) patch.special_start = toSqlDateTime(body.specialStart ? String(body.specialStart) : null);
+    if (body.specialEnd !== undefined) patch.special_end = toSqlDateTime(body.specialEnd ? String(body.specialEnd) : null);
     await db("goods").where({ id }).update(patch);
     ok(res, await db("goods").where({ id }).first());
   } catch (e) {
@@ -603,6 +619,198 @@ adminRouter.put("/recommend-slots/:slotId", async (req, res, next) => {
 adminRouter.get("/recommend-slots/:slotId/preview", async (req, res, next) => {
   try {
     ok(res, await fillRecommend(String(req.params.slotId)));
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/dashboard/low-stock", async (_req, res, next) => {
+  try {
+    const settings = await getSettings();
+    const list = await db("goods")
+      .whereNull("deleted_at")
+      .where({ on_sale: 1 })
+      .where("stock", "<=", settings.low_stock_threshold)
+      .orderBy("stock", "asc")
+      .limit(50);
+    ok(res, { threshold: settings.low_stock_threshold, list });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/members", async (req, res, next) => {
+  try {
+    const { page, pageSize, offset } = parsePage(req.query as Record<string, unknown>);
+    const q = db("users").modify((b) => {
+      if (req.query.keyword) {
+        const k = `%${String(req.query.keyword)}%`;
+        b.where((w) => w.where("nickname", "like", k).orWhere("phone", "like", k));
+      }
+    });
+    const total = await q.clone().count({ c: "*" }).first();
+    const list = await q.orderBy("id", "desc").offset(offset).limit(pageSize);
+    const ids = list.map((u: { id: number }) => u.id);
+    const stats = ids.length
+      ? await db("orders")
+          .whereIn("user_id", ids)
+          .whereNotNull("paid_at")
+          .whereNot("status", ST.CANCELLED)
+          .select("user_id")
+          .count({ order_count: "*" })
+          .sum({ pay_amount: "pay_amount_cent" })
+          .groupBy("user_id")
+      : [];
+    const map: Record<number, { order_count: number; pay_amount: number }> = {};
+    for (const s of stats as any[]) map[s.user_id] = { order_count: Number(s.order_count || 0), pay_amount: Number(s.pay_amount || 0) };
+    ok(res, {
+      list: list.map((u: any) => ({
+        ...u,
+        phone: maskPhone(u.phone),
+        orderCount: map[u.id]?.order_count || 0,
+        payAmountCent: map[u.id]?.pay_amount || 0,
+      })),
+      page,
+      pageSize,
+      total: Number(total?.c || 0),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.post("/members/:id/points", async (req, res, next) => {
+  try {
+    const body = z.object({ delta: z.number().int(), note: z.string().max(80).optional() }).parse(req.body);
+    if (!body.delta) throw new HttpError(400, "调整数量不能为 0");
+    const balance = await db.transaction((trx) => changePoints(trx, Number(req.params.id), body.delta, "ADMIN_ADJUST", null, body.note || "店主调整"));
+    ok(res, { balance });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/coupons", async (req, res, next) => {
+  try {
+    const { page, pageSize, offset } = parsePage(req.query as Record<string, unknown>);
+    const q = db("coupons").whereNull("deleted_at");
+    const total = await q.clone().count({ c: "*" }).first();
+    const list = await q.orderBy("id", "desc").offset(offset).limit(pageSize);
+    ok(res, { list, page, pageSize, total: Number(total?.c || 0) });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.post("/coupons", async (req, res, next) => {
+  try {
+    const payload = couponPayload(req.body || {});
+    if (!payload.name || !payload.start_at || !payload.end_at) throw new HttpError(400, "请填写名称与有效期");
+    const [id] = await db("coupons").insert(payload);
+    ok(res, await db("coupons").where({ id }).first());
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.put("/coupons/:id", async (req, res, next) => {
+  try {
+    const payload = couponPayload(req.body || {});
+    await db("coupons").where({ id: Number(req.params.id) }).update(payload);
+    ok(res, await db("coupons").where({ id: Number(req.params.id) }).first());
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.delete("/coupons/:id", async (req, res, next) => {
+  try {
+    await db("coupons").where({ id: Number(req.params.id) }).update({ deleted_at: db.fn.now(), enabled: 0 });
+    ok(res, true);
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/group-buys", async (_req, res, next) => {
+  try {
+    const list = await db("group_buy_activities").whereNull("deleted_at").orderBy("id", "desc");
+    ok(res, list);
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.post("/group-buys", async (req, res, next) => {
+  try {
+    const payload = campaignBody("GROUP", req.body || {});
+    const [id] = await db("group_buy_activities").insert(payload);
+    ok(res, await db("group_buy_activities").where({ id }).first());
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.put("/group-buys/:id", async (req, res, next) => {
+  try {
+    const payload = campaignBody("GROUP", req.body || {});
+    await db("group_buy_activities").where({ id: Number(req.params.id) }).update(payload);
+    ok(res, await db("group_buy_activities").where({ id: Number(req.params.id) }).first());
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.delete("/group-buys/:id", async (req, res, next) => {
+  try {
+    await db("group_buy_activities").where({ id: Number(req.params.id) }).update({ deleted_at: db.fn.now(), enabled: 0 });
+    ok(res, true);
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/seckills", async (_req, res, next) => {
+  try {
+    ok(res, await db("seckill_activities").whereNull("deleted_at").orderBy("id", "desc"));
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.post("/seckills", async (req, res, next) => {
+  try {
+    const payload = campaignBody("SECKILL", req.body || {});
+    const [id] = await db("seckill_activities").insert(payload);
+    ok(res, await db("seckill_activities").where({ id }).first());
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.put("/seckills/:id", async (req, res, next) => {
+  try {
+    const payload = campaignBody("SECKILL", req.body || {});
+    await db("seckill_activities").where({ id: Number(req.params.id) }).update(payload);
+    ok(res, await db("seckill_activities").where({ id: Number(req.params.id) }).first());
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.delete("/seckills/:id", async (req, res, next) => {
+  try {
+    await db("seckill_activities").where({ id: Number(req.params.id) }).update({ deleted_at: db.fn.now(), enabled: 0 });
+    ok(res, true);
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/notices", async (req, res, next) => {
+  try {
+    const { page, pageSize } = parsePage(req.query as Record<string, unknown>);
+    ok(res, await listNotifyLogs(page, pageSize));
   } catch (e) {
     next(e);
   }

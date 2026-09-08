@@ -5,6 +5,7 @@ import { api } from "../api";
 
 const STATUS: Record<string, string> = {
   PENDING_PAY: "待付款",
+  GROUPING: "拼团中",
   PENDING_PACK: "待备货",
   WAIT_PICKUP: "待自提",
   WAIT_DELIVER: "待配送",

@@ -4,6 +4,7 @@
   <view class="row">
     <text class="price">¥{{item.priceCent / 100}}</text>
     <text class="unit">/{{item.unit}}</text>
+    <text wx:if="{{item.originPriceCent}}" class="origin">¥{{item.originPriceCent / 100}}</text>
   </view>
   <view wx:if="{{item.soldOut}}" class="tag">售罄</view>
 </view>

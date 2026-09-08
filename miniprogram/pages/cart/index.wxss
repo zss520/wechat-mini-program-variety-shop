@@ -7,3 +7,8 @@
 .bar { position:fixed; left:0; right:0; bottom:0; background:#fff; display:flex; justify-content:space-between; align-items:center; padding:16rpx 24rpx; }
 .pri { background:#c2410c; color:#fff; }
 page { padding-bottom:140rpx; }
+.upsell { background:#fff; margin:16rpx; padding:16rpx; }
+.uh { font-weight:700; margin-bottom:12rpx; }
+.hscroll { white-space:nowrap; }
+.hitem { display:inline-block; width:200rpx; margin-right:16rpx; vertical-align:top; font-size:24rpx; }
+.uimg { width:200rpx; height:140rpx; background:#eee; }

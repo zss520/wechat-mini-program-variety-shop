@@ -15,6 +15,9 @@ export type ShopSettings = {
   pause_order: boolean;
   low_stock_threshold: number;
   primary_color: string;
+  points_enabled: boolean;
+  points_earn_per_yuan: number;
+  points_redeem_rate: number;
 };
 
 const defaults: ShopSettings = {
@@ -32,6 +35,9 @@ const defaults: ShopSettings = {
   pause_order: false,
   low_stock_threshold: 5,
   primary_color: "#C2410C",
+  points_enabled: true,
+  points_earn_per_yuan: 1,
+  points_redeem_rate: 100,
 };
 
 function parseValue(key: keyof ShopSettings, raw: string | null): unknown {

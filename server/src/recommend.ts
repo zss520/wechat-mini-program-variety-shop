@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { publicUrl } from "./config";
+import { salePriceOf } from "./pricing";
 
 export async function fillRecommend(slotId = "home_recommend") {
   const slot = await db("recommend_slots").where({ slot_id: slotId }).first();
@@ -79,13 +80,16 @@ export function publicGoods(g: any) {
     images = [];
   }
   const cover = publicUrl(g.cover_url) || publicUrl("/static/placeholders/empty.png");
+  const sale = salePriceOf(g);
   return {
     id: g.id,
     categoryId: g.category_id,
     name: g.name,
     subtitle: g.subtitle,
-    priceCent: g.price_cent,
-    originPriceCent: g.origin_price_cent,
+    priceCent: sale.priceCent,
+    originPriceCent: sale.originCent,
+    listPriceCent: Number(g.price_cent),
+    specialActive: sale.isSpecial,
     unit: g.unit,
     stock: g.stock,
     soldCount: g.sold_count,

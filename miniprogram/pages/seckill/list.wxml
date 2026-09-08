@@ -1,0 +1,8 @@
+<view class="card" wx:for="{{list}}" wx:key="id" data-item="{{item}}" bindtap="buy">
+  <image src="{{item.goods.coverUrl}}" class="img" mode="aspectFill" />
+  <view class="info">
+    <view>{{item.title}}</view>
+    <view class="price">¥{{item.seckill_price_cent / 100}} 剩{{item.seckill_stock}}</view>
+  </view>
+</view>
+<view wx:if="{{!list.length}}" class="empty">暂无秒杀</view>

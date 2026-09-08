@@ -1,0 +1,5 @@
+.tabs { display:flex; background:#fff; }
+.tabs text { flex:1; text-align:center; padding:24rpx; }
+.on { color:#c2410c; font-weight:700; }
+.card { background:#fff; margin:16rpx; padding:24rpx; }
+.sub,.st { color:#888; font-size:24rpx; }

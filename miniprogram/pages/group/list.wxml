@@ -1,0 +1,8 @@
+<view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+  <image src="{{item.goods.coverUrl}}" class="img" mode="aspectFill" />
+  <view class="info">
+    <view>{{item.title}}</view>
+    <view class="price">¥{{item.group_price_cent / 100}} · {{item.required_count}}人成团</view>
+  </view>
+</view>
+<view wx:if="{{!list.length}}" class="empty">暂无拼团</view>

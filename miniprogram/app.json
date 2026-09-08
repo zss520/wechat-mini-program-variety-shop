@@ -11,7 +11,12 @@
     "pages/order/result",
     "pages/address/list",
     "pages/address/edit",
-    "pages/mine/index"
+    "pages/mine/index",
+    "pages/coupon/list",
+    "pages/points/index",
+    "pages/group/list",
+    "pages/group/detail",
+    "pages/seckill/list"
   ],
   "window": {
     "navigationBarBackgroundColor": "#C2410C",

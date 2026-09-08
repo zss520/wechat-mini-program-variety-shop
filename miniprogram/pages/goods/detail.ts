@@ -2,7 +2,7 @@ import { request, ensureLogin } from "../../utils/request";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { item: {} as any, qty: 1, slot: "", id: 0 },
+  data: { item: {} as any, related: [] as any[], qty: 1, slot: "", id: 0 },
   onLoad(q: any) {
     this.setData({ id: Number(q.id), slot: q.slot || "" });
     this.load();
@@ -10,7 +10,7 @@ Page({
   async load() {
     try {
       const item = await request(`/goods/${this.data.id}`);
-      this.setData({ item });
+      this.setData({ item, related: item.related || [] });
       track("goods_detail_view", { goods_id: item.id, extra: { from_slot: this.data.slot } });
     } catch (e: any) {
       wx.showToast({ title: e.message, icon: "none" });
@@ -28,6 +28,9 @@ Page({
     await request("/cart", "POST", { goodsId: this.data.item.id, qty: this.data.qty });
     track("add_to_cart", { goods_id: this.data.item.id, extra: { qty: this.data.qty } });
     wx.showToast({ title: "已加入购物车" });
+  },
+  goRel(e: any) {
+    wx.redirectTo({ url: `/pages/goods/detail?id=${e.currentTarget.dataset.id}&slot=detail_related` });
   },
   async buy() {
     if (this.data.item.soldOut) return;

@@ -3,6 +3,7 @@ import { track } from "../../utils/tracker";
 
 const MAP: Record<string, string> = {
   PENDING_PAY: "待付款",
+  GROUPING: "拼团中，待成团",
   PENDING_PACK: "商家备货中",
   WAIT_PICKUP: "待取货",
   WAIT_DELIVER: "待配送",

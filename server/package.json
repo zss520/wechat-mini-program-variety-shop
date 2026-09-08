@@ -15,7 +15,7 @@
     "seed": "knex seed:run --knexfile knexfile.js --env development",
     "migrate:test": "knex migrate:latest --knexfile knexfile.js --env test",
     "seed:test": "knex seed:run --knexfile knexfile.js --env test",
-    "test": "NODE_ENV=test ts-node --transpile-only src/tests/inventory.test.ts"
+    "test": "NODE_ENV=test ts-node --transpile-only src/tests/inventory.test.ts && NODE_ENV=test ts-node --transpile-only src/tests/marketing.test.ts"
   },
   "dependencies": {
     "axios": "1.6.8",

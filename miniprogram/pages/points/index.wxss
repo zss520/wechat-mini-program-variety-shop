@@ -1,0 +1,3 @@
+.head { background:#c2410c; color:#fff; padding:60rpx 32rpx; font-size:40rpx; }
+.card { background:#fff; margin:16rpx; padding:24rpx; }
+.sub { color:#888; font-size:24rpx; }
