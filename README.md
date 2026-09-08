@@ -24,6 +24,10 @@ docs/          需求与技术方案
 | 服务端 | Node.js 16.17.0 + Express 4 + knex + **MySQL 8** |
 | 金额 | 整数分；订单预占库存；购买率以支付回调为准 |
 
+## 同步到本机 Windows 目录
+
+云端不能直接写你的 `D:\`。本机请签出分支 `cursor/implement-r1-r2-2abd`，或双击 `scripts/sync-local-windows.cmd`（目标路径 `D:\project-code\project-code\my-cursor-project\wechat-mini-program-variety-shop`）。会话记忆见 [docs/09-会话记忆与本地同步.md](./docs/09-会话记忆与本地同步.md)。
+
 ## 在你自己电脑上建库表（必做）
 
 云端开发机里的 MySQL **不会**同步到你的电脑。要在本机看到 `variety_shop` 和表，请在你自己的 MySQL 8 上导入：
