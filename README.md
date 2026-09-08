@@ -21,21 +21,32 @@ docs/          需求与技术方案
 |----|------|
 | 顾客端 | 微信小程序原生（禁止 uni-app / Taro） |
 | 管理端 | Vite 4.5.x + TypeScript 5.3.3 + React 18.2 + Material UI v5.15 |
-| 服务端 | Node.js 16.17.0 + Express 4 + knex + MariaDB/MySQL |
+| 服务端 | Node.js 16.17.0 + Express 4 + knex + **MySQL 8** |
 | 金额 | 整数分；订单预占库存；购买率以支付回调为准 |
 
 ## 本地启动
 
-需要 **Node.js 16.17.0** 与 **MySQL/MariaDB**。
+需要 **Node.js 16.17.0** 与本机 **MySQL 8**（utf8mb4）。开发库 `variety_shop`，测试库 `variety_shop_test`。
 
 ```bash
 nvm use 16.17.0   # 或安装后使用仓库根目录 .nvmrc
 cp .env.example .env
-# 按 .env 创建库 variety_shop 与用户
 
-cd server && npm install && npm run migrate && npm run seed && npm run dev
+# 用 MySQL root / sudo mysql 建库建账号，并迁移种子（可选跑单测）
+bash scripts/setup-dev-db.sh
+# 需要清空重建时：
+# bash scripts/setup-dev-db.sh --reset
+
+cd server && npm install && npm run dev
 # 另开终端
 cd admin && npm install && npm run dev
+```
+
+若已有 MySQL 管理员权限，也可手工执行：
+
+```bash
+mysql -uroot -p < scripts/setup-dev-db.sql
+cd server && npm run migrate && npm run seed
 ```
 
 - API：http://127.0.0.1:3000（健康检查 `/api/health`）
@@ -45,8 +56,8 @@ cd admin && npm install && npm run dev
 开发开关（仅本地）：`.env` 中 `MOCK_WX=true`、`MOCK_PAY=true`，可走模拟登录与模拟支付。正式上线必须关闭，并配置微信支付商户号与回调 `POST /api/pay/wechat/notify`。
 
 ```bash
-# 库存并发单测（1 件库存两单仅一单成功）
-cd server && npm test
+# 库存并发单测（走测试库 variety_shop_test，1 件库存两单仅一单成功）
+npm run test:server
 # 管理端生产构建（须在 Node 16.17.0）
 cd admin && npm run build
 ```
