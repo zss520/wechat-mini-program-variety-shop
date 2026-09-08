@@ -1,6 +1,8 @@
-import { Button, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 type Goods = { id: number; name: string };
 
@@ -33,8 +35,8 @@ export default function Campaigns() {
     load();
   };
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
+    <PageContainer title="拼团秒杀">
+      <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
         拼团
       </Typography>
       <form onSubmit={addGroup}>
@@ -56,7 +58,7 @@ export default function Campaigns() {
           </Button>
         </Stack>
       </form>
-      <Table size="small" sx={{ mb: 4 }}>
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>标题</TableCell>
@@ -76,16 +78,17 @@ export default function Campaigns() {
                 {String(x.start_at).slice(0, 16)} ~ {String(x.end_at).slice(0, 16)}
               </TableCell>
               <TableCell>
-                <Button size="small" onClick={() => api.delete(`/group-buys/${x.id}`).then(load)}>
+                <Button size="small" color="error" onClick={() => api.delete(`/group-buys/${x.id}`).then(load)}>
                   下线
                 </Button>
               </TableCell>
             </TableRow>
           ))}
+          {!groups.length && <EmptyRow cols={4} />}
         </TableBody>
-      </Table>
+      </DataTable>
 
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="subtitle1" sx={{ mt: 4, mb: 1.5 }}>
         秒杀
       </Typography>
       <form onSubmit={addSeckill}>
@@ -107,7 +110,7 @@ export default function Campaigns() {
           </Button>
         </Stack>
       </form>
-      <Table size="small">
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>标题</TableCell>
@@ -127,14 +130,15 @@ export default function Campaigns() {
                 {String(x.start_at).slice(0, 16)} ~ {String(x.end_at).slice(0, 16)}
               </TableCell>
               <TableCell>
-                <Button size="small" onClick={() => api.delete(`/seckills/${x.id}`).then(load)}>
+                <Button size="small" color="error" onClick={() => api.delete(`/seckills/${x.id}`).then(load)}>
                   下线
                 </Button>
               </TableCell>
             </TableRow>
           ))}
+          {!seckills.length && <EmptyRow cols={4} />}
         </TableBody>
-      </Table>
-    </>
+      </DataTable>
+    </PageContainer>
   );
 }

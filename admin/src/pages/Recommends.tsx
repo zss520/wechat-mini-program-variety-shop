@@ -1,6 +1,8 @@
-import { Button, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 export default function Recommends() {
   const [slot, setSlot] = useState<any>(null);
@@ -31,11 +33,8 @@ export default function Recommends() {
   };
   if (!slot) return null;
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        首页推荐位
-      </Typography>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+    <PageContainer title="首页推荐位">
+      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
         <TextField size="small" label="标题" value={slot.title} onChange={(e) => setSlot({ ...slot, title: e.target.value })} />
         <TextField size="small" type="number" label="容量" value={slot.capacity} onChange={(e) => setSlot({ ...slot, capacity: Number(e.target.value) })} />
         <TextField select size="small" label="策略" value={slot.strategy} onChange={(e) => setSlot({ ...slot, strategy: e.target.value })} sx={{ minWidth: 200 }}>
@@ -48,7 +47,7 @@ export default function Recommends() {
           保存配置
         </Button>
       </Stack>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
         <TextField select size="small" label="添加置顶" value={pick} onChange={(e) => setPick(Number(e.target.value))} sx={{ minWidth: 240 }}>
           <MenuItem value={0}>选择商品</MenuItem>
           {goods.map((g) => (
@@ -58,6 +57,7 @@ export default function Recommends() {
           ))}
         </TextField>
         <Button
+          variant="outlined"
           onClick={() => {
             if (!pick) return;
             const g = goods.find((x) => x.id === pick);
@@ -68,8 +68,10 @@ export default function Recommends() {
           加入置顶
         </Button>
       </Stack>
-      <Typography variant="subtitle1">置顶</Typography>
-      <Table size="small" sx={{ mb: 3 }}>
+      <Typography variant="subtitle1" sx={{ mb: 1 }}>
+        置顶
+      </Typography>
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>商品</TableCell>
@@ -85,27 +87,33 @@ export default function Recommends() {
               <TableCell>{it.stock}</TableCell>
               <TableCell>{it.heat_score}</TableCell>
               <TableCell>
-                <Button disabled={idx === 0} onClick={() => {
-                  const n = [...items];
-                  [n[idx - 1], n[idx]] = [n[idx], n[idx - 1]];
-                  save(n);
-                }}>
+                <Button
+                  disabled={idx === 0}
+                  onClick={() => {
+                    const n = [...items];
+                    [n[idx - 1], n[idx]] = [n[idx], n[idx - 1]];
+                    save(n);
+                  }}
+                >
                   上移
                 </Button>
                 <Button onClick={() => save(items.filter((_, i) => i !== idx))}>移除</Button>
               </TableCell>
             </TableRow>
           ))}
+          {!items.length && <EmptyRow cols={4} text="暂无置顶商品" />}
         </TableBody>
-      </Table>
-      <Typography variant="subtitle1">预览（小程序将展示）</Typography>
-      <ol>
+      </DataTable>
+      <Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>
+        预览（小程序将展示）
+      </Typography>
+      <ol style={{ margin: 0, paddingLeft: 20, color: "rgba(0,0,0,0.88)" }}>
         {preview.map((g) => (
-          <li key={g.id}>
+          <li key={g.id} style={{ marginBottom: 6 }}>
             {g.name} {g.pin ? "（置顶）" : ""} 库存 {g.stock}
           </li>
         ))}
       </ol>
-    </>
+    </PageContainer>
   );
 }

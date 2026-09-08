@@ -1,6 +1,8 @@
-import { Button, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Button, Stack, Switch, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 export default function Banners() {
   const [list, setList] = useState<any[]>([]);
@@ -17,12 +19,9 @@ export default function Banners() {
     setImageUrl(r.url);
   };
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        轮播图（最多启用 5 张）
-      </Typography>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField size="small" label="图片 URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} sx={{ flex: 1 }} />
+    <PageContainer title="轮播图" description="最多同时启用 5 张">
+      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
+        <TextField size="small" label="图片 URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} sx={{ flex: 1, minWidth: 220 }} />
         <Button component="label" variant="outlined">
           上传
           <input hidden type="file" accept="image/*" onChange={(e) => e.target.files && upload(e.target.files[0])} />
@@ -32,7 +31,7 @@ export default function Banners() {
           新增
         </Button>
       </Stack>
-      <Table size="small">
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>预览</TableCell>
@@ -44,7 +43,7 @@ export default function Banners() {
         <TableBody>
           {list.map((b) => (
             <TableRow key={b.id}>
-              <TableCell>{b.image_url && <img src={b.image_url} alt="" width={80} />}</TableCell>
+              <TableCell>{b.image_url && <img src={b.image_url} alt="" width={80} style={{ borderRadius: 6 }} />}</TableCell>
               <TableCell>{b.title}</TableCell>
               <TableCell>
                 <Switch checked={!!b.enabled} onChange={(e) => api.put(`/banners/${b.id}`, { enabled: e.target.checked }).then(load)} />
@@ -56,8 +55,9 @@ export default function Banners() {
               </TableCell>
             </TableRow>
           ))}
+          {!list.length && <EmptyRow cols={4} />}
         </TableBody>
-      </Table>
-    </>
+      </DataTable>
+    </PageContainer>
   );
 }

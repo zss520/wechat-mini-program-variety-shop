@@ -1,7 +1,9 @@
-import { Alert, Button, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 const STATUS: Record<string, string> = {
   PENDING_PAY: "待付款",
@@ -15,6 +17,7 @@ const STATUS: Record<string, string> = {
 
 export default function OrderDetail() {
   const { id } = useParams();
+  const nav = useNavigate();
   const [o, setO] = useState<Record<string, any> | null>(null);
   const [code, setCode] = useState("");
   const [err, setErr] = useState("");
@@ -36,16 +39,49 @@ export default function OrderDetail() {
     }
   };
   if (!o) return null;
+  const meta = [
+    { k: "履约", v: o.fulfill_type === "PICKUP" ? "自提" : "配送" },
+    { k: "实付", v: `¥${(o.pay_amount_cent / 100).toFixed(2)}` },
+    { k: "提货码", v: o.pickup_code || "-" },
+    { k: "状态", v: STATUS[o.status] || o.status },
+  ];
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        订单 {o.order_no} · {STATUS[o.status]}
+    <PageContainer
+      title={`订单 ${o.order_no}`}
+      extra={
+        <Button variant="outlined" onClick={() => nav("/orders")}>
+          返回列表
+        </Button>
+      }
+    >
+      {err && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {err}
+        </Alert>
+      )}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gap: 2,
+          mb: 2.5,
+          pb: 2.5,
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
+        {meta.map((m) => (
+          <Box key={m.k}>
+            <Typography color="text.secondary" sx={{ fontSize: 13, mb: 0.5 }}>
+              {m.k}
+            </Typography>
+            <Typography sx={{ fontWeight: 600 }}>{m.v}</Typography>
+          </Box>
+        ))}
+      </Box>
+      <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+        商品明细
       </Typography>
-      {err && <Alert severity="error">{err}</Alert>}
-      <Typography sx={{ mb: 1 }}>
-        履约：{o.fulfill_type === "PICKUP" ? "自提" : "配送"} ｜ 实付 ¥{(o.pay_amount_cent / 100).toFixed(2)} ｜ 提货码 {o.pickup_code || "-"}
-      </Typography>
-      <Table size="small" sx={{ mb: 2 }}>
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>商品</TableCell>
@@ -63,9 +99,10 @@ export default function OrderDetail() {
               <TableCell>¥{(it.amount_cent / 100).toFixed(2)}</TableCell>
             </TableRow>
           ))}
+          {!(o.items || []).length && <EmptyRow cols={4} />}
         </TableBody>
-      </Table>
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      </DataTable>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 2.5 }}>
         {o.status === "PENDING_PAY" && (
           <Button variant="outlined" onClick={() => act("/mock-pay")}>
             模拟支付（开发）
@@ -95,11 +132,11 @@ export default function OrderDetail() {
           </Button>
         )}
         {(o.status === "PENDING_PAY" || o.status === "PENDING_PACK") && (
-          <Button color="error" onClick={() => act("/cancel", { reason: "店主取消" })}>
+          <Button color="error" variant="outlined" onClick={() => act("/cancel", { reason: "店主取消" })}>
             取消订单
           </Button>
         )}
       </Stack>
-    </>
+    </PageContainer>
   );
 }

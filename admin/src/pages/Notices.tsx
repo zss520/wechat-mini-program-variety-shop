@@ -1,6 +1,7 @@
-import { Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 export default function Notices() {
   const [list, setList] = useState<any[]>([]);
@@ -8,14 +9,8 @@ export default function Notices() {
     api.get("/notices", { params: { pageSize: 50 } }).then((d: { list: any[] }) => setList(d.list));
   }, []);
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        订阅通知记录
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        开发环境写入本地记录，不调用微信模板。顾客同意「备货完成」后，店主核销前备货会记一条 SENT。
-      </Typography>
-      <Table size="small">
+    <PageContainer title="订阅通知记录" description="开发环境写入本地记录，不调用微信模板。顾客同意「备货完成」后，店主核销前备货会记一条 SENT。">
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>用户</TableCell>
@@ -37,8 +32,9 @@ export default function Notices() {
               <TableCell>{String(n.created_at).slice(0, 19)}</TableCell>
             </TableRow>
           ))}
+          {!list.length && <EmptyRow cols={5} />}
         </TableBody>
-      </Table>
-    </>
+      </DataTable>
+    </PageContainer>
   );
 }

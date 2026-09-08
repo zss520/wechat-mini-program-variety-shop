@@ -1,6 +1,7 @@
-import { Alert, Button, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, Stack, TextField } from "@mui/material";
 import { FormEvent, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
 
 export default function Password() {
   const [oldPassword, setOld] = useState("");
@@ -19,12 +20,17 @@ export default function Password() {
     }
   };
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        修改密码
-      </Typography>
-      {msg && <Alert severity="success">{msg}</Alert>}
-      {err && <Alert severity="error">{err}</Alert>}
+    <PageContainer title="修改密码">
+      {msg && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {msg}
+        </Alert>
+      )}
+      {err && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {err}
+        </Alert>
+      )}
       <form onSubmit={submit}>
         <Stack spacing={2} sx={{ maxWidth: 360 }}>
           <TextField type="password" label="原密码" value={oldPassword} onChange={(e) => setOld(e.target.value)} />
@@ -34,6 +40,6 @@ export default function Password() {
           </Button>
         </Stack>
       </form>
-    </>
+    </PageContainer>
   );
 }

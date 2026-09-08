@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Card, CardContent, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, TextField, Typography } from "@mui/material";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, setToken } from "../api";
@@ -24,25 +24,46 @@ export default function Login() {
     }
   };
   return (
-    <Box sx={{ minHeight: "100vh", display: "grid", placeItems: "center", bgcolor: "#F8F4F0" }}>
-      <Card sx={{ width: 380 }}>
-        <CardContent>
-          <Typography variant="h5" gutterBottom>
-            店主登录
+    <Box sx={{ minHeight: "100vh", display: "flex" }}>
+      <Box
+        sx={{
+          display: { xs: "none", md: "flex" },
+          width: "42%",
+          background: "linear-gradient(160deg, #9A3412 0%, #C2410C 48%, #EA580C 100%)",
+          color: "#fff",
+          flexDirection: "column",
+          justifyContent: "center",
+          px: 8,
+        }}
+      >
+        <Box sx={{ width: 48, height: 48, borderRadius: 1.5, bgcolor: "rgba(255,255,255,0.2)", display: "grid", placeItems: "center", fontWeight: 700, fontSize: 22, mb: 3 }}>
+          铺
+        </Box>
+        <Typography sx={{ fontSize: 28, fontWeight: 600, mb: 1.5 }}>社区杂货铺</Typography>
+        <Typography sx={{ opacity: 0.85, maxWidth: 360, lineHeight: 1.7 }}>
+          店主工作台：管商品、接订单、看数据。布局与操作参考 Ant Design 后台习惯，品牌色保持杂货铺橙。
+        </Typography>
+      </Box>
+      <Box sx={{ flex: 1, display: "grid", placeItems: "center", bgcolor: "#f5f5f5", p: 3 }}>
+        <Box sx={{ width: "100%", maxWidth: 368 }}>
+          <Typography sx={{ fontSize: 24, fontWeight: 600, mb: 0.5 }}>店主登录</Typography>
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
+            使用管理账号进入后台
           </Typography>
-          <Typography color="text.secondary" sx={{ mb: 2 }}>
-            社区杂货铺管理后台
-          </Typography>
-          {err && <Alert severity="error" sx={{ mb: 2 }}>{err}</Alert>}
+          {err && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {err}
+            </Alert>
+          )}
           <form onSubmit={onSubmit}>
-            <TextField fullWidth label="账号" value={username} onChange={(e) => setUsername(e.target.value)} sx={{ mb: 2 }} />
-            <TextField fullWidth type="password" label="密码" value={password} onChange={(e) => setPassword(e.target.value)} sx={{ mb: 2 }} />
-            <Button type="submit" fullWidth variant="contained" disabled={loading}>
-              登录
+            <TextField fullWidth label="账号" value={username} onChange={(e) => setUsername(e.target.value)} sx={{ mb: 2 }} autoComplete="username" />
+            <TextField fullWidth type="password" label="密码" value={password} onChange={(e) => setPassword(e.target.value)} sx={{ mb: 3 }} autoComplete="current-password" />
+            <Button type="submit" fullWidth variant="contained" disabled={loading} sx={{ height: 40 }}>
+              {loading ? "登录中…" : "登录"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </Box>
+      </Box>
     </Box>
   );
 }

@@ -1,0 +1,19 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: #c2410c;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #ea580c;
+}

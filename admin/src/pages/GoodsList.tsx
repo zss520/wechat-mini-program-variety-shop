@@ -1,22 +1,9 @@
-import {
-  Button,
-  Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Button, Chip, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 type Goods = {
   id: number;
@@ -48,15 +35,17 @@ export default function GoodsList() {
     load();
   }, []);
   return (
-    <>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="h5">商品（{total}）</Typography>
+    <PageContainer
+      title="商品"
+      description={`共 ${total} 件`}
+      extra={
         <Button variant="contained" onClick={() => nav("/goods/new")}>
           新建商品
         </Button>
-      </Stack>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField size="small" label="名称" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
+      }
+    >
+      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
+        <TextField size="small" label="名称" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>上架</InputLabel>
           <Select label="上架" value={onSale} onChange={(e) => setOnSale(String(e.target.value))}>
@@ -65,9 +54,11 @@ export default function GoodsList() {
             <MenuItem value="0">下架</MenuItem>
           </Select>
         </FormControl>
-        <Button onClick={load}>筛选</Button>
+        <Button variant="outlined" onClick={load}>
+          查询
+        </Button>
       </Stack>
-      <Table size="small">
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>商品</TableCell>
@@ -93,7 +84,7 @@ export default function GoodsList() {
                   size="small"
                   type="number"
                   defaultValue={g.manual_weight}
-                  sx={{ width: 80 }}
+                  sx={{ width: 88 }}
                   onBlur={(e) => {
                     const v = Number(e.target.value);
                     if (v === g.manual_weight) return;
@@ -108,17 +99,15 @@ export default function GoodsList() {
                 <Button size="small" onClick={() => nav(`/goods/${g.id}`)}>
                   编辑
                 </Button>
-                <Button
-                  size="small"
-                  onClick={() => api.patch(`/goods/${g.id}/on-sale`, { onSale: !g.on_sale }).then(load)}
-                >
+                <Button size="small" onClick={() => api.patch(`/goods/${g.id}/on-sale`, { onSale: !g.on_sale }).then(load)}>
                   {g.on_sale ? "下架" : "上架"}
                 </Button>
               </TableCell>
             </TableRow>
           ))}
+          {!list.length && <EmptyRow cols={8} />}
         </TableBody>
-      </Table>
-    </>
+      </DataTable>
+    </PageContainer>
   );
 }

@@ -1,6 +1,8 @@
-import { Button, MenuItem, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, FormControlLabel } from "@mui/material";
+import { Button, FormControlLabel, MenuItem, Stack, Switch, TextField } from "@mui/material";
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 const empty = {
   name: "",
@@ -30,10 +32,7 @@ export default function Coupons() {
     load();
   };
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        优惠券
-      </Typography>
+    <PageContainer title="优惠券">
       <form onSubmit={submit}>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
           <TextField required size="small" label="名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -58,7 +57,7 @@ export default function Coupons() {
           </Button>
         </Stack>
       </form>
-      <Table size="small">
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>名称</TableCell>
@@ -83,14 +82,15 @@ export default function Coupons() {
                 {String(c.start_at).slice(0, 16)} ~ {String(c.end_at).slice(0, 16)}
               </TableCell>
               <TableCell>
-                <Button size="small" onClick={() => api.delete(`/coupons/${c.id}`).then(load)}>
+                <Button size="small" color="error" onClick={() => api.delete(`/coupons/${c.id}`).then(load)}>
                   作废
                 </Button>
               </TableCell>
             </TableRow>
           ))}
+          {!list.length && <EmptyRow cols={6} />}
         </TableBody>
-      </Table>
-    </>
+      </DataTable>
+    </PageContainer>
   );
 }

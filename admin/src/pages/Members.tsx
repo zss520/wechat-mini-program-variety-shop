@@ -1,6 +1,8 @@
-import { Button, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Button, Stack, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 type Row = { id: number; nickname: string; phone: string; points_balance: number; orderCount: number; payAmountCent: number };
 
@@ -21,15 +23,14 @@ export default function Members() {
     load();
   };
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        会员
-      </Typography>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField size="small" label="昵称/手机" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
-        <Button onClick={load}>筛选</Button>
+    <PageContainer title="会员">
+      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+        <TextField size="small" label="昵称/手机" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
+        <Button variant="outlined" onClick={load}>
+          查询
+        </Button>
       </Stack>
-      <Table size="small">
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>昵称</TableCell>
@@ -55,8 +56,9 @@ export default function Members() {
               </TableCell>
             </TableRow>
           ))}
+          {!list.length && <EmptyRow cols={6} />}
         </TableBody>
-      </Table>
-    </>
+      </DataTable>
+    </PageContainer>
   );
 }

@@ -1,6 +1,7 @@
-import { Alert, Button, Stack, Switch, TextField, Typography, FormControlLabel } from "@mui/material";
+import { Alert, Button, FormControlLabel, Stack, Switch, TextField } from "@mui/material";
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
 
 export default function Settings() {
   const [form, setForm] = useState<any>(null);
@@ -17,11 +18,12 @@ export default function Settings() {
     setMsg("已保存");
   };
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        店铺设置
-      </Typography>
-      {msg && <Alert severity="success">{msg}</Alert>}
+    <PageContainer title="店铺设置">
+      {msg && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {msg}
+        </Alert>
+      )}
       <form onSubmit={submit}>
         <Stack spacing={2} sx={{ maxWidth: 560 }}>
           <TextField label="店铺名称" value={form.shop_name} onChange={(e) => set("shop_name", e.target.value)} />
@@ -44,6 +46,6 @@ export default function Settings() {
           </Button>
         </Stack>
       </form>
-    </>
+    </PageContainer>
   );
 }

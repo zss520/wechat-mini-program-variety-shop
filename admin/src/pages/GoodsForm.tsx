@@ -1,7 +1,8 @@
-import { Alert, Button, MenuItem, Stack, Switch, TextField, Typography, FormControlLabel } from "@mui/material";
+import { Alert, Button, FormControlLabel, MenuItem, Stack, Switch, TextField } from "@mui/material";
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
 
 type Cat = { id: number; name: string };
 
@@ -82,11 +83,19 @@ export default function GoodsForm() {
   };
 
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        {id ? "编辑商品" : "新建商品"}
-      </Typography>
-      {err && <Alert severity="error">{err}</Alert>}
+    <PageContainer
+      title={id ? "编辑商品" : "新建商品"}
+      extra={
+        <Button variant="outlined" onClick={() => nav("/goods")}>
+          返回列表
+        </Button>
+      }
+    >
+      {err && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {err}
+        </Alert>
+      )}
       <form onSubmit={submit}>
         <Stack spacing={2} sx={{ maxWidth: 640 }}>
           <TextField required label="名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -107,18 +116,23 @@ export default function GoodsForm() {
             上传主图
             <input hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => e.target.files && upload(e.target.files[0])} />
           </Button>
-          {form.coverUrl && <img src={form.coverUrl} alt="" style={{ width: 120 }} />}
+          {form.coverUrl && <img src={form.coverUrl} alt="" style={{ width: 120, borderRadius: 6 }} />}
           <TextField multiline minRows={3} label="详情" value={form.detail} onChange={(e) => setForm({ ...form, detail: e.target.value })} />
           <TextField type="number" label="排序加权(-50~50)" value={form.manualWeight} onChange={(e) => setForm({ ...form, manualWeight: Number(e.target.value) })} />
           <TextField type="number" label="限时特价(元，0为关闭)" value={form.specialPriceYuan} onChange={(e) => setForm({ ...form, specialPriceYuan: Number(e.target.value) })} />
           <TextField type="datetime-local" label="特价开始" InputLabelProps={{ shrink: true }} value={form.specialStart} onChange={(e) => setForm({ ...form, specialStart: e.target.value })} />
           <TextField type="datetime-local" label="特价结束" InputLabelProps={{ shrink: true }} value={form.specialEnd} onChange={(e) => setForm({ ...form, specialEnd: e.target.value })} />
           <FormControlLabel control={<Switch checked={form.onSale} onChange={(e) => setForm({ ...form, onSale: e.target.checked })} />} label="上架" />
-          <Button type="submit" variant="contained">
-            保存
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button type="submit" variant="contained">
+              保存
+            </Button>
+            <Button variant="outlined" onClick={() => nav("/goods")}>
+              取消
+            </Button>
+          </Stack>
         </Stack>
       </form>
-    </>
+    </PageContainer>
   );
 }

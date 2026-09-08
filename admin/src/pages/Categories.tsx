@@ -1,6 +1,8 @@
-import { Button, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Button, Stack, Switch, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 type Cat = { id: number; name: string; sort: number; enabled: number };
 
@@ -12,12 +14,9 @@ export default function Categories() {
     load();
   }, []);
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        分类
-      </Typography>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-        <TextField size="small" label="名称" value={name} onChange={(e) => setName(e.target.value)} />
+    <PageContainer title="分类">
+      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+        <TextField size="small" label="名称" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && name && api.post("/categories", { name }).then(() => { setName(""); load(); })} />
         <Button
           variant="contained"
           onClick={() => {
@@ -31,7 +30,7 @@ export default function Categories() {
           新增
         </Button>
       </Stack>
-      <Table size="small">
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>名称</TableCell>
@@ -55,8 +54,9 @@ export default function Categories() {
               </TableCell>
             </TableRow>
           ))}
+          {!list.length && <EmptyRow cols={4} />}
         </TableBody>
-      </Table>
-    </>
+      </DataTable>
+    </PageContainer>
   );
 }

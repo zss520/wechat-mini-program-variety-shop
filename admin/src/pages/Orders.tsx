@@ -1,7 +1,9 @@
-import { Button, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from "@mui/material";
+import { Button, MenuItem, Stack, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import PageContainer from "../components/PageContainer";
+import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 const STATUS: Record<string, string> = {
   PENDING_PAY: "待付款",
@@ -25,11 +27,8 @@ export default function Orders() {
     load();
   }, []);
   return (
-    <>
-      <Typography variant="h5" gutterBottom>
-        订单
-      </Typography>
-      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+    <PageContainer title="订单" description="履约与售后从详情页操作">
+      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
         <TextField select size="small" label="状态" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
           <MenuItem value="">全部</MenuItem>
           {Object.entries(STATUS).map(([k, v]) => (
@@ -38,9 +37,11 @@ export default function Orders() {
             </MenuItem>
           ))}
         </TextField>
-        <Button onClick={load}>筛选</Button>
+        <Button variant="outlined" onClick={load}>
+          查询
+        </Button>
       </Stack>
-      <Table size="small">
+      <DataTable>
         <TableHead>
           <TableRow>
             <TableCell>单号</TableCell>
@@ -53,7 +54,7 @@ export default function Orders() {
         </TableHead>
         <TableBody>
           {list.map((o) => (
-            <TableRow key={o.id}>
+            <TableRow key={o.id} hover sx={{ cursor: "pointer" }} onClick={() => nav(`/orders/${o.id}`)}>
               <TableCell>{o.order_no}</TableCell>
               <TableCell>
                 {o.nickname} {o.phone}
@@ -62,14 +63,21 @@ export default function Orders() {
               <TableCell>{o.fulfill_type === "PICKUP" ? "自提" : "配送"}</TableCell>
               <TableCell>{STATUS[o.status] || o.status}</TableCell>
               <TableCell>
-                <Button size="small" onClick={() => nav(`/orders/${o.id}`)}>
+                <Button
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nav(`/orders/${o.id}`);
+                  }}
+                >
                   详情
                 </Button>
               </TableCell>
             </TableRow>
           ))}
+          {!list.length && <EmptyRow cols={6} />}
         </TableBody>
-      </Table>
-    </>
+      </DataTable>
+    </PageContainer>
   );
 }
