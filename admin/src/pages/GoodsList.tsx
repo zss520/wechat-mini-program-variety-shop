@@ -1,8 +1,9 @@
-import { Button, Chip, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from "@mui/material";
+import { Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 type Goods = {
@@ -44,7 +45,7 @@ export default function GoodsList() {
         </Button>
       }
     >
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
+      <InlineForm>
         <TextField size="small" label="名称" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>上架</InputLabel>
@@ -57,7 +58,7 @@ export default function GoodsList() {
         <Button variant="outlined" onClick={load}>
           查询
         </Button>
-      </Stack>
+      </InlineForm>
       <DataTable>
         <TableHead>
           <TableRow>

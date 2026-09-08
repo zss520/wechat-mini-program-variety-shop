@@ -1,8 +1,9 @@
-import { Alert, Box, Button, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateTime } from "../utils/datetime";
 
@@ -104,7 +105,7 @@ export default function OrderDetail() {
           {!(o.items || []).length && <EmptyRow cols={4} />}
         </TableBody>
       </DataTable>
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 2.5 }}>
+      <InlineForm sx={{ mt: 2.5, mb: 0 }}>
         {o.status === "PENDING_PAY" && (
           <Button variant="outlined" onClick={() => act("/mock-pay")}>
             模拟支付（开发）
@@ -138,7 +139,7 @@ export default function OrderDetail() {
             取消订单
           </Button>
         )}
-      </Stack>
+      </InlineForm>
     </PageContainer>
   );
 }

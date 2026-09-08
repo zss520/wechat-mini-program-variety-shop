@@ -1,7 +1,8 @@
-import { Button, Stack, TextField } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 type Row = { id: number; nickname: string; phone: string; points_balance: number; orderCount: number; payAmountCent: number };
@@ -24,12 +25,12 @@ export default function Members() {
   };
   return (
     <PageContainer title="会员">
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+      <InlineForm>
         <TextField size="small" label="昵称/手机" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
         <Button variant="outlined" onClick={load}>
           查询
         </Button>
-      </Stack>
+      </InlineForm>
       <DataTable>
         <TableHead>
           <TableRow>

@@ -1,7 +1,8 @@
-import { Button, FormControlLabel, MenuItem, Stack, Switch, TextField } from "@mui/material";
+import { Button, FormControlLabel, MenuItem, Switch, TextField } from "@mui/material";
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateRange } from "../utils/datetime";
 
@@ -35,7 +36,7 @@ export default function Coupons() {
   return (
     <PageContainer title="优惠券">
       <form onSubmit={submit}>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+        <InlineForm>
           <TextField required size="small" label="名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <TextField select size="small" label="类型" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} sx={{ minWidth: 120 }}>
             <MenuItem value="FULL_REDUCE">满减</MenuItem>
@@ -56,7 +57,7 @@ export default function Coupons() {
           <Button type="submit" variant="contained">
             新建
           </Button>
-        </Stack>
+        </InlineForm>
       </form>
       <DataTable>
         <TableHead>

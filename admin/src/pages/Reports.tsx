@@ -1,8 +1,9 @@
-import { Button, Card, CardContent, Grid, Stack, TextField, Typography } from "@mui/material";
+import { Button, Card, CardContent, Grid, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import dayjs from "dayjs";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 export default function Reports() {
@@ -23,7 +24,7 @@ export default function Reports() {
     <PageContainer
       title="数据分析"
       extra={
-        <Stack direction="row" spacing={1.5}>
+        <InlineForm sx={{ mb: 0 }}>
           <TextField type="date" size="small" label="从" InputLabelProps={{ shrink: true }} value={from} onChange={(e) => setFrom(e.target.value)} />
           <TextField type="date" size="small" label="到" InputLabelProps={{ shrink: true }} value={to} onChange={(e) => setTo(e.target.value)} />
           <Button variant="outlined" onClick={load}>
@@ -32,7 +33,7 @@ export default function Reports() {
           <Button variant="contained" onClick={() => api.post("/jobs/recompute-heat").then(load)}>
             重算热度
           </Button>
-        </Stack>
+        </InlineForm>
       }
     >
       <Typography variant="subtitle1" sx={{ mb: 1.5 }}>

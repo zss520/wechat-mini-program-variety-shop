@@ -1,7 +1,8 @@
-import { Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import { Button, MenuItem, TextField, Typography } from "@mui/material";
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateRange } from "../utils/datetime";
 
@@ -41,7 +42,7 @@ export default function Campaigns() {
         拼团
       </Typography>
       <form onSubmit={addGroup}>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+        <InlineForm>
           <TextField required size="small" label="标题" value={g.title} onChange={(e) => setG({ ...g, title: e.target.value })} />
           <TextField select size="small" label="商品" value={g.goodsId} onChange={(e) => setG({ ...g, goodsId: Number(e.target.value) })} sx={{ minWidth: 180 }}>
             {goods.map((x) => (
@@ -57,7 +58,7 @@ export default function Campaigns() {
           <Button type="submit" variant="contained">
             新建拼团
           </Button>
-        </Stack>
+        </InlineForm>
       </form>
       <DataTable>
         <TableHead>
@@ -93,7 +94,7 @@ export default function Campaigns() {
         秒杀
       </Typography>
       <form onSubmit={addSeckill}>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+        <InlineForm>
           <TextField required size="small" label="标题" value={s.title} onChange={(e) => setS({ ...s, title: e.target.value })} />
           <TextField select size="small" label="商品" value={s.goodsId} onChange={(e) => setS({ ...s, goodsId: Number(e.target.value) })} sx={{ minWidth: 180 }}>
             {goods.map((x) => (
@@ -109,7 +110,7 @@ export default function Campaigns() {
           <Button type="submit" variant="contained">
             新建秒杀
           </Button>
-        </Stack>
+        </InlineForm>
       </form>
       <DataTable>
         <TableHead>

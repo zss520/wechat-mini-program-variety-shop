@@ -1,8 +1,9 @@
-import { Button, MenuItem, Stack, TextField } from "@mui/material";
+import { Button, MenuItem, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateTime } from "../utils/datetime";
 
@@ -29,7 +30,7 @@ export default function Orders() {
   }, []);
   return (
     <PageContainer title="订单" description="履约与售后从详情页操作">
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+      <InlineForm>
         <TextField select size="small" label="状态" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
           <MenuItem value="">全部</MenuItem>
           {Object.entries(STATUS).map(([k, v]) => (
@@ -41,7 +42,7 @@ export default function Orders() {
         <Button variant="outlined" onClick={load}>
           查询
         </Button>
-      </Stack>
+      </InlineForm>
       <DataTable>
         <TableHead>
           <TableRow>

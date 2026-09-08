@@ -1,7 +1,8 @@
-import { Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import { Button, MenuItem, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 export default function Recommends() {
@@ -34,7 +35,7 @@ export default function Recommends() {
   if (!slot) return null;
   return (
     <PageContainer title="首页推荐位">
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
+      <InlineForm>
         <TextField size="small" label="标题" value={slot.title} onChange={(e) => setSlot({ ...slot, title: e.target.value })} />
         <TextField size="small" type="number" label="容量" value={slot.capacity} onChange={(e) => setSlot({ ...slot, capacity: Number(e.target.value) })} />
         <TextField select size="small" label="策略" value={slot.strategy} onChange={(e) => setSlot({ ...slot, strategy: e.target.value })} sx={{ minWidth: 200 }}>
@@ -46,8 +47,8 @@ export default function Recommends() {
         <Button variant="contained" onClick={() => save()}>
           保存配置
         </Button>
-      </Stack>
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+      </InlineForm>
+      <InlineForm>
         <TextField select size="small" label="添加置顶" value={pick} onChange={(e) => setPick(Number(e.target.value))} sx={{ minWidth: 240 }}>
           <MenuItem value={0}>选择商品</MenuItem>
           {goods.map((g) => (
@@ -67,7 +68,7 @@ export default function Recommends() {
         >
           加入置顶
         </Button>
-      </Stack>
+      </InlineForm>
       <Typography variant="subtitle1" sx={{ mb: 1 }}>
         置顶
       </Typography>

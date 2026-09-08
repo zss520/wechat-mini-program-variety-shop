@@ -1,7 +1,8 @@
-import { Button, Stack, Switch, TextField } from "@mui/material";
+import { Button, Switch, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 export default function Banners() {
@@ -20,7 +21,7 @@ export default function Banners() {
   };
   return (
     <PageContainer title="轮播图" description="最多同时启用 5 张">
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }} flexWrap="wrap" useFlexGap>
+      <InlineForm>
         <TextField size="small" label="图片 URL" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} sx={{ flex: 1, minWidth: 220 }} />
         <Button component="label" variant="outlined">
           上传
@@ -30,7 +31,7 @@ export default function Banners() {
         <Button variant="contained" onClick={() => api.post("/banners", { imageUrl, title }).then(() => { setTitle(""); load(); })}>
           新增
         </Button>
-      </Stack>
+      </InlineForm>
       <DataTable>
         <TableHead>
           <TableRow>

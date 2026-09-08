@@ -1,7 +1,8 @@
-import { Button, Stack, Switch, TextField } from "@mui/material";
+import { Button, Switch, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 
 type Cat = { id: number; name: string; sort: number; enabled: number };
@@ -15,7 +16,7 @@ export default function Categories() {
   }, []);
   return (
     <PageContainer title="分类">
-      <Stack direction="row" spacing={1.5} sx={{ mb: 2 }}>
+      <InlineForm>
         <TextField size="small" label="名称" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && name && api.post("/categories", { name }).then(() => { setName(""); load(); })} />
         <Button
           variant="contained"
@@ -29,7 +30,7 @@ export default function Categories() {
         >
           新增
         </Button>
-      </Stack>
+      </InlineForm>
       <DataTable>
         <TableHead>
           <TableRow>
