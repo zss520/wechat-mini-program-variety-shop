@@ -9,3 +9,5 @@
 .hitem { display:inline-block; width:280rpx; margin-right:16rpx; vertical-align:top; }
 .grid { display:flex; flex-wrap:wrap; justify-content:space-between; }
 .gitem { width:48%; margin-bottom:16rpx; }
+.mini { width:280rpx; height:180rpx; border-radius:12rpx; background:#eee; }
+.t { font-size:24rpx; margin-top:8rpx; }

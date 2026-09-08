@@ -13,6 +13,16 @@
     </view>
   </view>
 </view>
+<view class="upsell" wx:if="{{upsell.suggestions.length}}">
+  <view class="uh">凑单：{{upsell.target.reason}} 还差 ¥{{upsell.target.remainCent / 100}}</view>
+  <scroll-view scroll-x class="hscroll">
+    <view class="hitem" wx:for="{{upsell.suggestions}}" wx:key="id" data-id="{{item.id}}" bindtap="addUpsell">
+      <image src="{{item.coverUrl}}" class="uimg" mode="aspectFill" />
+      <view>{{item.name}}</view>
+      <view class="price">¥{{item.priceCent / 100}}</view>
+    </view>
+  </scroll-view>
+</view>
 <view class="bar">
   <view>合计 <text class="price">¥{{total / 100}}</text></view>
   <button class="pri" bindtap="settle">去结算</button>

@@ -13,6 +13,10 @@ import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
 import Recommends from "./pages/Recommends";
 import Password from "./pages/Password";
+import Members from "./pages/Members";
+import Coupons from "./pages/Coupons";
+import Campaigns from "./pages/Campaigns";
+import Notices from "./pages/Notices";
 
 function Guard() {
   if (!getToken()) return <Navigate to="/login" replace />;
@@ -39,6 +43,10 @@ export default function App() {
         <Route path="/contents/recommends" element={<Recommends />} />
         <Route path="/shop/settings" element={<Settings />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/members" element={<Members />} />
+        <Route path="/marketing/coupons" element={<Coupons />} />
+        <Route path="/marketing/campaigns" element={<Campaigns />} />
+        <Route path="/marketing/notices" element={<Notices />} />
         <Route path="/account/password" element={<Password />} />
       </Route>
     </Routes>

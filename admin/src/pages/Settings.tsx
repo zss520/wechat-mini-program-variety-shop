@@ -34,6 +34,9 @@ export default function Settings() {
           <TextField type="number" label="满额免运费(分)" value={form.free_freight_over_cent} onChange={(e) => set("free_freight_over_cent", Number(e.target.value))} />
           <TextField type="number" label="待付款超时(分钟)" value={form.pay_timeout_minutes} onChange={(e) => set("pay_timeout_minutes", Number(e.target.value))} />
           <TextField type="number" label="低库存阈值" value={form.low_stock_threshold} onChange={(e) => set("low_stock_threshold", Number(e.target.value))} />
+          <FormControlLabel control={<Switch checked={!!form.points_enabled} onChange={(e) => set("points_enabled", e.target.checked)} />} label="开启积分" />
+          <TextField type="number" label="每实付1元赠积分" value={form.points_earn_per_yuan || 1} onChange={(e) => set("points_earn_per_yuan", Number(e.target.value))} />
+          <TextField type="number" label="多少积分抵1元" value={form.points_redeem_rate || 100} onChange={(e) => set("points_redeem_rate", Number(e.target.value))} />
           <FormControlLabel control={<Switch checked={!!form.delivery_enabled} onChange={(e) => set("delivery_enabled", e.target.checked)} />} label="开启配送" />
           <FormControlLabel control={<Switch checked={!!form.pause_order} onChange={(e) => set("pause_order", e.target.checked)} />} label="暂停接单" />
           <Button type="submit" variant="contained">

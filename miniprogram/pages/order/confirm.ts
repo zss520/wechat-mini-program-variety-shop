@@ -11,18 +11,43 @@ Page({
     addresses: [] as any[],
     addressId: 0 as number,
     settings: {} as any,
+    coupons: [] as any[],
+    userCouponId: 0,
+    usePoints: false,
+    activityType: "NORMAL",
+    activityId: 0,
+    teamId: 0,
   },
   async onLoad(q: any) {
     await ensurePhone();
     const settings = wx.getStorageSync("settings") || {};
     let items: any[] = [];
-    if (q.from === "BUY_NOW") items = [{ goodsId: Number(q.goodsId), qty: Number(q.qty || 1) }];
+    if (q.from === "BUY_NOW" || q.from === "SECKILL") items = [{ goodsId: Number(q.goodsId), qty: Number(q.qty || 1) }];
     else items = wx.getStorageSync("checkout_items") || [];
-    this.setData({ items, settings, from: q.from || "CART", fulfillType: "PICKUP" });
+    const coupons = await request("/me/coupons?status=UNUSED").catch(() => []);
+    this.setData({
+      items,
+      settings,
+      from: q.from || "CART",
+      fulfillType: "PICKUP",
+      coupons,
+      activityType: q.from === "SECKILL" ? "SECKILL" : "NORMAL",
+      activityId: Number(q.activityId || 0),
+      teamId: Number(q.teamId || 0),
+    });
     const addresses = await request("/addresses");
     const def = addresses.find((a: any) => a.is_default) || addresses[0];
     this.setData({ addresses, addressId: def ? def.id : 0 });
     this.refresh();
+  },
+  extra() {
+    return {
+      userCouponId: this.data.userCouponId || null,
+      usePoints: this.data.usePoints,
+      activityType: this.data.activityType,
+      activityId: this.data.activityId || null,
+      teamId: this.data.teamId || null,
+    };
   },
   async refresh() {
     try {
@@ -30,6 +55,7 @@ Page({
         fulfillType: this.data.fulfillType,
         addressId: this.data.fulfillType === "DELIVERY" ? this.data.addressId : null,
         items: this.data.items,
+        ...this.extra(),
       });
       this.setData({ preview });
     } catch (e: any) {
@@ -38,6 +64,16 @@ Page({
   },
   setType(e: any) {
     this.setData({ fulfillType: e.currentTarget.dataset.t });
+    this.refresh();
+  },
+  pickCoupon(e: any) {
+    const idx = Number(e.detail.value);
+    const c = this.data.coupons[idx];
+    this.setData({ userCouponId: c ? c.id : 0 });
+    this.refresh();
+  },
+  togglePoints() {
+    this.setData({ usePoints: !this.data.usePoints });
     this.refresh();
   },
   remark(e: any) {
@@ -54,6 +90,7 @@ Page({
         items: this.data.items,
         remark: this.data.remark,
         from: this.data.from || "CART",
+        ...this.extra(),
       });
       track("order_submit", { order_no: order.order_no });
       const pay = await request(`/orders/${order.id}/pay`, "POST");

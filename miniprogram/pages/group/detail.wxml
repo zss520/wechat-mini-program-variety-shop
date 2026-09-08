@@ -1,0 +1,8 @@
+<view class="box" wx:if="{{act}}">
+  <image src="{{act.goods.coverUrl}}" class="img" mode="aspectFill" />
+  <view class="name">{{act.title}}</view>
+  <view class="price">团价 ¥{{act.group_price_cent / 100}} · {{act.required_count}}人成团</view>
+  <view class="sub" wx:if="{{team}}">已有 {{team.paidCount}} 人，还差 {{team.remain}} 人</view>
+  <button class="btn-primary" bindtap="open">发起拼团</button>
+  <button wx:if="{{teamId}}" class="ghost" bindtap="join">参加该团</button>
+</view>

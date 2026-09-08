@@ -15,6 +15,14 @@
   </view>
   <view class="detail">{{item.detail}}</view>
 </view>
+<view class="rel" wx:if="{{related.length}}">
+  <view class="rh">买过的人还看</view>
+  <view class="row" wx:for="{{related}}" wx:key="id" bindtap="goRel" data-id="{{item.id}}">
+    <image src="{{item.coverUrl}}" class="rimg" />
+    <view>{{item.name}}</view>
+    <view class="price">¥{{item.priceCent / 100}}</view>
+  </view>
+</view>
 <view class="bar">
   <button class="ghost" bindtap="addCart" disabled="{{item.soldOut}}">加入购物车</button>
   <button class="pri" bindtap="buy" disabled="{{item.soldOut}}">立即购买</button>

@@ -7,6 +7,13 @@
 <view class="card" wx:for="{{preview.items}}" wx:key="goodsId">
   {{item.name}} x{{item.qty}}  ¥{{item.amountCent / 100}}
 </view>
-<view class="card">运费 ¥{{preview.freightCent / 100}}  应付 ¥{{preview.payAmountCent / 100}}</view>
+<picker range="{{coupons}}" range-key="name" bindchange="pickCoupon">
+  <view class="card">优惠券：{{preview.couponName || '未选'}} {{preview.couponDiscountCent ? ('-¥' + preview.couponDiscountCent/100) : ''}}</view>
+</picker>
+<view class="card" bindtap="togglePoints">
+  积分抵扣 {{usePoints ? '已开' : '未开'}} 可用{{preview.pointsBalance || 0}}
+  <text wx:if="{{preview.pointsDiscountCent}}"> -¥{{preview.pointsDiscountCent / 100}}</text>
+</view>
+<view class="card">运费 ¥{{preview.freightCent / 100}}  优惠 ¥{{preview.discountCent / 100 || 0}}  应付 ¥{{preview.payAmountCent / 100}}</view>
 <input class="card" placeholder="备注" bindinput="remark" />
 <button class="btn-primary" bindtap="submit">提交并支付</button>

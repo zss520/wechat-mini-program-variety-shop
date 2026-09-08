@@ -2,7 +2,7 @@ import { request } from "../../utils/request";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { banners: [] as any[], deals: [] as any[], recommend: [] as any[], recommendTitle: "本店推荐", settings: {} as any },
+  data: { banners: [] as any[], deals: [] as any[], recommend: [] as any[], forYou: [] as any[], seckills: [] as any[], groups: [] as any[], recommendTitle: "本店推荐", settings: {} as any },
   onShow() {
     track("page_view");
     this.load();
@@ -15,6 +15,9 @@ Page({
         banners: home.banners || [],
         deals: home.deals || [],
         recommend: home.recommend || [],
+        forYou: home.forYou || [],
+        seckills: home.seckills || [],
+        groups: home.groups || [],
         recommendTitle: home.recommendTitle,
         settings: boot.settings || {},
       });
@@ -31,6 +34,21 @@ Page({
   },
   goCat() {
     wx.switchTab({ url: "/pages/category/index" });
+  },
+  goGroups() {
+    wx.navigateTo({ url: "/pages/group/list" });
+  },
+  goSeckill() {
+    wx.navigateTo({ url: "/pages/seckill/list" });
+  },
+  openGroup(e: any) {
+    wx.navigateTo({ url: `/pages/group/detail?activityId=${e.currentTarget.dataset.id}` });
+  },
+  openSeckill(e: any) {
+    const item = e.currentTarget.dataset.item;
+    wx.navigateTo({
+      url: `/pages/order/confirm?from=SECKILL&activityId=${item.id}&goodsId=${item.goods_id}&qty=1`,
+    });
   },
   onBanner(e: any) {
     const item = e.currentTarget.dataset.item || {};

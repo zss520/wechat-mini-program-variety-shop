@@ -29,6 +29,9 @@ export const EVENT_NAMES = new Set([
   "share_click",
   "contact_shop",
   "pickup_code_view",
+  "cart_upsell",
+  "group_click",
+  "seckill_click",
 ]);
 
 const SENSITIVE = /phone|openid|mobile|address|token|password/i;

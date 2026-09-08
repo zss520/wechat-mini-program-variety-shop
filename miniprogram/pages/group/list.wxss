@@ -1,0 +1,3 @@
+.card { display:flex; background:#fff; margin:16rpx; padding:16rpx; }
+.img { width:160rpx; height:160rpx; background:#eee; }
+.info { margin-left:16rpx; }

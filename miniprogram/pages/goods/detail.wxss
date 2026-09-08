@@ -9,3 +9,7 @@
 .bar button { flex:1; margin:0 8rpx; }
 .pri { background:#c2410c; color:#fff; }
 .ghost { background:#fff7ed; color:#c2410c; }
+.rel { background:#fff; margin-top:16rpx; padding:24rpx 24rpx 160rpx; }
+.rh { font-weight:700; margin-bottom:12rpx; }
+.row { display:flex; align-items:center; padding:12rpx 0; }
+.rimg { width:100rpx; height:100rpx; margin-right:16rpx; background:#eee; }

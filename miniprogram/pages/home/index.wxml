@@ -6,6 +6,26 @@
   </swiper-item>
 </swiper>
 <view class="hint">{{settings.pickup_address}} · {{settings.business_hours}}</view>
+<view class="sec" wx:if="{{seckills.length}}">
+  <view class="h" bindtap="goSeckill">限时秒杀</view>
+  <scroll-view scroll-x class="hscroll">
+    <view class="hitem" wx:for="{{seckills}}" wx:key="id" data-item="{{item}}" bindtap="openSeckill">
+      <image src="{{item.goods.coverUrl}}" class="mini" mode="aspectFill" />
+      <view class="t">{{item.title}}</view>
+      <view class="price">¥{{item.seckill_price_cent / 100}}</view>
+    </view>
+  </scroll-view>
+</view>
+<view class="sec" wx:if="{{groups.length}}">
+  <view class="h" bindtap="goGroups">拼团</view>
+  <scroll-view scroll-x class="hscroll">
+    <view class="hitem" wx:for="{{groups}}" wx:key="id" data-id="{{item.id}}" bindtap="openGroup">
+      <image src="{{item.goods.coverUrl}}" class="mini" mode="aspectFill" />
+      <view class="t">{{item.title}}</view>
+      <view class="price">¥{{item.group_price_cent / 100}} / {{item.required_count}}人</view>
+    </view>
+  </scroll-view>
+</view>
 <view class="sec" wx:if="{{deals.length}}">
   <view class="h">特价专区</view>
   <scroll-view scroll-x class="hscroll">
@@ -13,6 +33,14 @@
       <goods-card item="{{item}}" slot-id="home_deal" position="{{index+1}}" />
     </view>
   </scroll-view>
+</view>
+<view class="sec" wx:if="{{forYou.length}}">
+  <view class="h">为你推荐</view>
+  <view class="grid">
+    <view class="gitem" wx:for="{{forYou}}" wx:key="id">
+      <goods-card item="{{item}}" slot-id="for_you" position="{{item.position || index+1}}" />
+    </view>
+  </view>
 </view>
 <view class="sec" wx:if="{{recommend.length}}">
   <view class="h">{{recommendTitle}}</view>

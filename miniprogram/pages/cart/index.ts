@@ -2,7 +2,7 @@ import { request, ensureLogin } from "../../utils/request";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { list: [] as any[], checked: [] as number[], total: 0 },
+  data: { list: [] as any[], checked: [] as number[], total: 0, upsell: null as any },
   onShow() {
     this.load();
   },
@@ -13,6 +13,9 @@ Page({
       const checked = list.filter((x: any) => !x.invalid).map((x: any) => x.id);
       this.setData({ list, checked });
       this.calc(list, checked);
+      const upsell = await request("/cart/upsell");
+      this.setData({ upsell });
+      if (upsell?.suggestions?.length) track("cart_upsell", { extra: { remain: upsell.target?.remainCent } });
     } catch (e: any) {
       wx.showToast({ title: e.message, icon: "none" });
     }
@@ -40,6 +43,10 @@ Page({
   async del(e: any) {
     await request(`/cart/${e.currentTarget.dataset.id}`, "DELETE");
     this.load();
+  },
+  addUpsell(e: any) {
+    const id = e.currentTarget.dataset.id;
+    request("/cart", "POST", { goodsId: id, qty: 1 }).then(() => this.load());
   },
   settle() {
     const items = this.data.list.filter((x: any) => this.data.checked.includes(x.id) && !x.invalid);

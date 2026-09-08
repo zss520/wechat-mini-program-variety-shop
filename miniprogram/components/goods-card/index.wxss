@@ -3,4 +3,5 @@
 .name { margin-top:12rpx; height:72rpx; line-height:36rpx; overflow:hidden; }
 .row { margin-top:8rpx; }
 .unit { color:#999; font-size:24rpx; margin-left:8rpx; }
+.origin { color:#bbb; text-decoration:line-through; font-size:22rpx; margin-left:8rpx; }
 .tag { position:absolute; top:16rpx; left:16rpx; background:#666; color:#fff; font-size:22rpx; padding:4rpx 10rpx; border-radius:8rpx; }

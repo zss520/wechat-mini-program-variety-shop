@@ -23,6 +23,9 @@ export default function GoodsForm() {
     onSale: true,
     sort: 0,
     manualWeight: 0,
+    specialPriceYuan: 0,
+    specialStart: "",
+    specialEnd: "",
   });
   useEffect(() => {
     api.get("/categories").then((list: Cat[]) => {
@@ -44,6 +47,9 @@ export default function GoodsForm() {
           onSale: Boolean(g.on_sale),
           sort: Number(g.sort || 0),
           manualWeight: Number(g.manual_weight || 0),
+          specialPriceYuan: g.special_price_cent ? Number(g.special_price_cent) / 100 : 0,
+          specialStart: g.special_start ? String(g.special_start).slice(0, 16).replace(" ", "T") : "",
+          specialEnd: g.special_end ? String(g.special_end).slice(0, 16).replace(" ", "T") : "",
         });
       });
     }
@@ -60,7 +66,13 @@ export default function GoodsForm() {
     e.preventDefault();
     setErr("");
     try {
-      const payload = { ...form, originPriceYuan: form.originPriceYuan || null };
+      const payload = {
+        ...form,
+        originPriceYuan: form.originPriceYuan || null,
+        specialPriceYuan: form.specialPriceYuan || null,
+        specialStart: form.specialStart || null,
+        specialEnd: form.specialEnd || null,
+      };
       if (id) await api.put(`/goods/${id}`, payload);
       else await api.post("/goods", payload);
       nav("/goods");
@@ -98,6 +110,9 @@ export default function GoodsForm() {
           {form.coverUrl && <img src={form.coverUrl} alt="" style={{ width: 120 }} />}
           <TextField multiline minRows={3} label="详情" value={form.detail} onChange={(e) => setForm({ ...form, detail: e.target.value })} />
           <TextField type="number" label="排序加权(-50~50)" value={form.manualWeight} onChange={(e) => setForm({ ...form, manualWeight: Number(e.target.value) })} />
+          <TextField type="number" label="限时特价(元，0为关闭)" value={form.specialPriceYuan} onChange={(e) => setForm({ ...form, specialPriceYuan: Number(e.target.value) })} />
+          <TextField type="datetime-local" label="特价开始" InputLabelProps={{ shrink: true }} value={form.specialStart} onChange={(e) => setForm({ ...form, specialStart: e.target.value })} />
+          <TextField type="datetime-local" label="特价结束" InputLabelProps={{ shrink: true }} value={form.specialEnd} onChange={(e) => setForm({ ...form, specialEnd: e.target.value })} />
           <FormControlLabel control={<Switch checked={form.onSale} onChange={(e) => setForm({ ...form, onSale: e.target.checked })} />} label="上架" />
           <Button type="submit" variant="contained">
             保存

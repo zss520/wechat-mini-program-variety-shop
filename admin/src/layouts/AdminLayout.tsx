@@ -12,6 +12,10 @@ const menus = [
   { to: "/contents/banners", label: "轮播" },
   { to: "/contents/recommends", label: "推荐位" },
   { to: "/reports", label: "数据分析" },
+  { to: "/members", label: "会员" },
+  { to: "/marketing/coupons", label: "优惠券" },
+  { to: "/marketing/campaigns", label: "拼团秒杀" },
+  { to: "/marketing/notices", label: "订阅通知" },
   { to: "/shop/settings", label: "店铺设置" },
   { to: "/account/password", label: "修改密码" },
 ];
