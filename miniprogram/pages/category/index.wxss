@@ -4,12 +4,46 @@ page {
 .wrap {
   display: flex;
   height: 100%;
+  overflow: hidden;
+}
+.side {
+  width: 176rpx;
+  flex-shrink: 0;
+  height: 100%;
+  background: #f5f5f5;
+  box-sizing: border-box;
+}
+.side-item {
+  position: relative;
+  padding: 28rpx 12rpx;
+  text-align: center;
+  font-size: 26rpx;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.65);
+  box-sizing: border-box;
+}
+.side-item.on {
+  background: #fff;
+  color: #c2410c;
+  font-weight: 600;
+}
+.side-item.on::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  margin-top: -14rpx;
+  width: 6rpx;
+  height: 28rpx;
+  background: #c2410c;
+  border-radius: 8rpx;
 }
 .right {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: #f8f4f0;
 }
 .sorts {
   padding: 16rpx 16rpx 8rpx;

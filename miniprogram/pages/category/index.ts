@@ -4,7 +4,7 @@ import { track } from "../../utils/tracker";
 
 Page({
   data: {
-    cats: [] as any[],
+    cats: [{ id: 0, name: "全部" }] as { id: number; name: string }[],
     list: [] as any[],
     catId: 0,
     sort: "composite",
@@ -21,8 +21,8 @@ Page({
     this.init();
   },
   async init() {
-    const cats = await request("/categories");
-    this.setData({ cats });
+    const cats = (await request("/categories")) || [];
+    this.setData({ cats: [{ id: 0, name: "全部" }, ...cats] });
     this.load();
   },
   async load() {
@@ -32,12 +32,10 @@ Page({
   },
   pickCat(e: any) {
     const id = Number(e.currentTarget.dataset.id || 0);
+    if (id === this.data.catId) return;
     track("category_click", { extra: { category_id: id } });
     this.setData({ catId: id });
     this.load();
-  },
-  onCat(e: any) {
-    this.pickCat({ currentTarget: { dataset: { id: e.detail.value } } });
   },
   pickSort(e: any) {
     this.setData({ sort: e.currentTarget.dataset.sort });

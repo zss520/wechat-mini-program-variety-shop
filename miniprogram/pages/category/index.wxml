@@ -1,8 +1,15 @@
 <view class="wrap tab-page">
-  <t-side-bar value="{{catId}}" bind:change="onCat">
-    <t-side-bar-item label="全部" value="{{0}}" />
-    <t-side-bar-item wx:for="{{cats}}" wx:key="id" label="{{item.name}}" value="{{item.id}}" />
-  </t-side-bar>
+  <scroll-view scroll-y class="side" enhanced show-scrollbar="{{false}}">
+    <view
+      class="side-item {{catId === item.id ? 'on' : ''}}"
+      wx:for="{{cats}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="pickCat"
+    >
+      {{item.name}}
+    </view>
+  </scroll-view>
   <view class="right">
     <view class="sorts">
       <t-segmented value="{{sort}}" options="{{sortOptions}}" bind:change="onSort" />
