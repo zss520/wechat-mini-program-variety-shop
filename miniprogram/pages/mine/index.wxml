@@ -1,3 +1,4 @@
+<view class="tab-page">
 <view class="head" bindtap="login">
   <t-avatar icon="user" size="large" />
   <view class="who">
@@ -26,3 +27,4 @@
   <t-cell title="联系店主" left-icon="service" note="{{settings.phone || ''}}" arrow hover bind:click="call" />
   <t-cell title="隐私政策" left-icon="info-circle" arrow hover bind:click="privacy" />
 </t-cell-group>
+</view>

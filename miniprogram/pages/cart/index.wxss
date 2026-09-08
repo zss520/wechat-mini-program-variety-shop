@@ -29,12 +29,12 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--tab-bar-space);
   background: #fff;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  padding: 16rpx 24rpx;
   box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.04);
   gap: 16rpx;
 }
@@ -43,7 +43,7 @@
   text-align: right;
 }
 page {
-  padding-bottom: 180rpx;
+  padding-bottom: calc(var(--tab-bar-space) + 128rpx);
 }
 .upsell {
   background: #fff;

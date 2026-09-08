@@ -1,3 +1,4 @@
+<view class="tab-page">
 <view class="search-wrap" bindtap="goSearch">
   <t-search placeholder="搜索商品" disabled shape="round" />
 </view>
@@ -92,3 +93,4 @@
 </view>
 
 <t-empty wx:if="{{!recommend.length && !deals.length && !forYou.length}}" icon="shop" description="店主正在上架" />
+</view>

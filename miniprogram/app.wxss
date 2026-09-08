@@ -21,6 +21,10 @@ page {
   color: #3f2e22;
   font-size: 28rpx;
   box-sizing: border-box;
+  /* 自定义 tabBar 覆盖在页面上：TDesign item 80rpx + 上下 margin 32rpx + 少量空隙，再加安全区 */
+  --tab-bar-space: 180rpx;
+  --tab-bar-space: calc(128rpx + constant(safe-area-inset-bottom));
+  --tab-bar-space: calc(128rpx + env(safe-area-inset-bottom));
 }
 
 .price {
@@ -81,6 +85,7 @@ page {
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }
 
-.page-pad {
-  padding-bottom: 180rpx;
+.tab-page {
+  box-sizing: border-box;
+  padding-bottom: var(--tab-bar-space);
 }

@@ -1,4 +1,4 @@
-<view class="wrap">
+<view class="wrap tab-page">
   <t-side-bar value="{{catId}}" bind:change="onCat">
     <t-side-bar-item label="全部" value="{{0}}" />
     <t-side-bar-item wx:for="{{cats}}" wx:key="id" label="{{item.name}}" value="{{item.id}}" />
