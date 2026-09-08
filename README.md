@@ -26,13 +26,13 @@ docs/          需求与技术方案
 
 ## 本地启动
 
-需要 **Node.js 16.17.0** 与本机 **MySQL 8**（utf8mb4）。开发库 `variety_shop`，测试库 `variety_shop_test`。
+需要 **Node.js 16.17.0** 与本机 **MySQL 8**（utf8mb4）。默认连接 `127.0.0.1:3306`，账号 `root` / `root`。开发库 `variety_shop`，测试库 `variety_shop_test`。
 
 ```bash
 nvm use 16.17.0   # 或安装后使用仓库根目录 .nvmrc
-cp .env.example .env
+cp .env.example .env   # 已是 127.0.0.1 / root / root
 
-# 用 MySQL root / sudo mysql 建库建账号，并迁移种子（可选跑单测）
+# 用 root 建库并迁移种子（可选跑单测）
 bash scripts/setup-dev-db.sh
 # 需要清空重建时：
 # bash scripts/setup-dev-db.sh --reset
@@ -42,10 +42,10 @@ cd server && npm install && npm run dev
 cd admin && npm install && npm run dev
 ```
 
-若已有 MySQL 管理员权限，也可手工执行：
+也可手工：
 
 ```bash
-mysql -uroot -p < scripts/setup-dev-db.sql
+mysql -h127.0.0.1 -P3306 -uroot -proot --protocol=TCP < scripts/setup-dev-db.sql
 cd server && npm run migrate && npm run seed
 ```
 

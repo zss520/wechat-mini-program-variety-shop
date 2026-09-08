@@ -7,8 +7,8 @@ function make(database) {
     connection: {
       host: process.env.DB_HOST || "127.0.0.1",
       port: Number(process.env.DB_PORT || 3306),
-      user: process.env.DB_USER || "shop",
-      password: process.env.DB_PASSWORD || "shop123",
+      user: process.env.DB_USER || "root",
+      password: process.env.DB_PASSWORD || "root",
       database,
       charset: "utf8mb4",
       timezone: "+08:00",

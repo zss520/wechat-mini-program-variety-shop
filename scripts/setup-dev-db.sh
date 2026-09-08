@@ -29,11 +29,14 @@ fi
 
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
-DB_USER="${DB_USER:-shop}"
-DB_PASSWORD="${DB_PASSWORD:-shop123}"
+DB_USER="${DB_USER:-root}"
+DB_PASSWORD="${DB_PASSWORD:-root}"
 DB_NAME="${DB_NAME:-variety_shop}"
 DB_TEST_NAME="${DB_TEST_NAME:-variety_shop_test}"
 DB_ADMIN_USER="${DB_ADMIN_USER:-root}"
+if [ -z "${DB_ADMIN_PASSWORD:-}" ]; then
+  DB_ADMIN_PASSWORD="$DB_PASSWORD"
+fi
 
 mysql_admin() {
   if [ -n "${DB_ADMIN_PASSWORD:-}" ]; then
@@ -64,7 +67,7 @@ if [ "$RESET" = "1" ]; then
   mysql_admin -e "DROP DATABASE IF EXISTS $(sql_ident "$DB_NAME"); DROP DATABASE IF EXISTS $(sql_ident "$DB_TEST_NAME");"
 fi
 
-echo "== 创建库与账号 =="
+echo "== 创建库 =="
 mysql_admin <<SQL
 CREATE DATABASE IF NOT EXISTS $(sql_ident "$DB_NAME")
   CHARACTER SET utf8mb4
@@ -72,18 +75,22 @@ CREATE DATABASE IF NOT EXISTS $(sql_ident "$DB_NAME")
 CREATE DATABASE IF NOT EXISTS $(sql_ident "$DB_TEST_NAME")
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
+SQL
 
+if [ "$DB_USER" != "root" ]; then
+  echo "== 授权业务账号 ${DB_USER} =="
+  mysql_admin <<SQL
 CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
 CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';
 ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
 ALTER USER '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASSWORD}';
-
 GRANT ALL PRIVILEGES ON $(sql_ident "$DB_NAME").* TO '${DB_USER}'@'localhost';
 GRANT ALL PRIVILEGES ON $(sql_ident "$DB_NAME").* TO '${DB_USER}'@'127.0.0.1';
 GRANT ALL PRIVILEGES ON $(sql_ident "$DB_TEST_NAME").* TO '${DB_USER}'@'localhost';
 GRANT ALL PRIVILEGES ON $(sql_ident "$DB_TEST_NAME").* TO '${DB_USER}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 SQL
+fi
 
 echo "== 校验 ${DB_USER} 可连开发库 =="
 mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASSWORD" --protocol=TCP \
