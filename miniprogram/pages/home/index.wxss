@@ -13,8 +13,20 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.hitem.deal {
-  width: 320rpx;
-  padding: 0;
-  background: transparent;
+.deal-sec {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 72%);
+  border: 1rpx solid #ffedd5;
+  border-radius: 20rpx;
+  padding: 20rpx 20rpx 8rpx;
+  margin: 24rpx;
+}
+.deal-sec .sec-head {
+  margin-bottom: 16rpx;
+}
+.deal-item {
+  display: block;
+  margin-bottom: 16rpx;
+}
+.deal-item:last-child {
+  margin-bottom: 8rpx;
 }

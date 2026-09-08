@@ -59,15 +59,14 @@
   </scroll-view>
 </view>
 
-<view class="sec" wx:if="{{deals.length}}">
+<view class="sec deal-sec" wx:if="{{deals.length}}">
   <view class="sec-head">
     <view class="sec-title">特价专区</view>
+    <t-tag theme="danger" variant="light" size="small">限时</t-tag>
   </view>
-  <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
-    <view class="hitem deal" wx:for="{{deals}}" wx:key="id">
-      <goods-card item="{{item}}" slot-id="home_deal" position="{{index+1}}" />
-    </view>
-  </scroll-view>
+  <view class="deal-item" wx:for="{{deals}}" wx:key="id">
+    <goods-card item="{{item}}" layout="row" slot-id="home_deal" position="{{index+1}}" />
+  </view>
 </view>
 
 <view class="sec" wx:if="{{forYou.length}}">

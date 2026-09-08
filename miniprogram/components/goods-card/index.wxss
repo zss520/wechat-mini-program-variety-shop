@@ -3,7 +3,12 @@
   border-radius: 16rpx;
   padding: 16rpx;
   position: relative;
+  box-sizing: border-box;
+  width: 100%;
   box-shadow: 0 8rpx 24rpx rgba(63, 46, 34, 0.04);
+}
+.cover-box {
+  position: relative;
 }
 .cover {
   display: block;
@@ -17,6 +22,9 @@
 }
 .row {
   margin-top: 8rpx;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
 }
 .unit {
   color: #999;
@@ -29,9 +37,57 @@
   font-size: 22rpx;
   margin-left: 8rpx;
 }
+.save {
+  margin-left: 8rpx;
+  color: #c2410c;
+  background: #fff7ed;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  padding: 0 8rpx;
+  border-radius: 6rpx;
+}
 .tag {
   position: absolute;
-  top: 24rpx;
-  left: 24rpx;
+  top: 8rpx;
+  left: 8rpx;
   z-index: 1;
+}
+.soldout {
+  opacity: 0.72;
+}
+
+.card.is-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx;
+}
+.card.is-row .cover-box {
+  width: 176rpx;
+  height: 176rpx;
+  flex-shrink: 0;
+}
+.card.is-row .meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 176rpx;
+  padding: 4rpx 0;
+}
+.card.is-row .name {
+  margin-top: 0;
+  height: auto;
+  max-height: 80rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 40rpx;
+}
+.card.is-row .row {
+  margin-top: 12rpx;
+}
+.card.is-row .price {
+  font-size: 36rpx;
 }

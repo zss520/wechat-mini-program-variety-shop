@@ -1,18 +1,24 @@
-<view class="card {{item.soldOut ? 'soldout' : ''}}" bindtap="onTap">
-  <t-image
-    class="cover"
-    src="{{item.coverUrl || '/assets/tab-home.png'}}"
-    mode="aspectFill"
-    width="100%"
-    height="220rpx"
-    shape="round"
-    lazy
-  />
-  <t-tag wx:if="{{item.soldOut}}" class="tag" theme="default" size="small" variant="dark">售罄</t-tag>
-  <view class="name">{{item.name}}</view>
-  <view class="row">
-    <text class="price">¥{{item.priceCent / 100}}</text>
-    <text class="unit">/{{item.unit}}</text>
-    <text wx:if="{{item.originPriceCent}}" class="origin">¥{{item.originPriceCent / 100}}</text>
+<view class="card {{layout === 'row' ? 'is-row' : 'is-grid'}} {{item.soldOut ? 'soldout' : ''}}" bindtap="onTap">
+  <view class="cover-box">
+    <t-image
+      class="cover"
+      src="{{item.coverUrl || '/assets/tab-home.png'}}"
+      mode="aspectFill"
+      width="{{coverW}}"
+      height="{{coverH}}"
+      shape="round"
+      lazy
+    />
+    <t-tag wx:if="{{item.soldOut}}" class="tag" theme="default" size="small" variant="dark">售罄</t-tag>
+    <t-tag wx:elif="{{layout === 'row' && item.specialActive}}" class="tag" theme="danger" size="small">特价</t-tag>
+  </view>
+  <view class="meta">
+    <view class="name">{{item.name}}</view>
+    <view class="row">
+      <text class="price">¥{{item.priceCent / 100}}</text>
+      <text class="unit">/{{item.unit}}</text>
+      <text wx:if="{{item.originPriceCent}}" class="origin">¥{{item.originPriceCent / 100}}</text>
+      <text wx:if="{{saveText}}" class="save">{{saveText}}</text>
+    </view>
   </view>
 </view>

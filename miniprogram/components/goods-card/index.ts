@@ -3,6 +3,32 @@ Component({
     item: { type: Object, value: {} },
     slotId: { type: String, value: "" },
     position: { type: Number, value: 0 },
+    /** grid：两列封面卡；row：特价专区横排 */
+    layout: { type: String, value: "grid" },
+  },
+  data: {
+    coverW: "100%",
+    coverH: "220rpx",
+    saveText: "",
+  },
+  observers: {
+    layout(layout: string) {
+      const row = layout === "row";
+      this.setData({
+        coverW: row ? "176rpx" : "100%",
+        coverH: row ? "176rpx" : "220rpx",
+      });
+    },
+    "item.originPriceCent, item.priceCent, item.specialActive"(origin: number, price: number, special: boolean) {
+      const o = Number(origin || 0);
+      const p = Number(price || 0);
+      let saveText = "";
+      if (special && o > p && p > 0) {
+        const n = (o - p) / 100;
+        saveText = `省¥${Number.isInteger(n) ? n : n.toFixed(1)}`;
+      }
+      this.setData({ saveText });
+    },
   },
   lifetimes: {
     ready() {
