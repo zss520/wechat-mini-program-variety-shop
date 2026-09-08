@@ -15,4 +15,6 @@ alwaysApply: true
 - P0 埋点已随交易上线。推荐=置顶+热度补齐。
 - 完整对话记忆见 `docs/09-会话记忆与本地同步.md`。
 - 本机同步脚本：`scripts/sync-local-windows.cmd`（写入 D:\project-code\project-code\my-cursor-project\wechat-mini-program-variety-shop）。
-- 实现分支：`cursor/implement-r1-r2-2abd`。对用户使用简体中文。
+- 日常工作分支：`user/zss`。新功能从它开出 `cursor/<name>-2abd`，PR 合入 `user/zss`。
+- PR 完成（推送并验证结束）后：快进同步到 `user/zss` 并切回 PR 分支。详见 `sync-user-zss.mdc`。
+- 实现分支：`cursor/implement-r1-r2-2abd`（历史）。对用户使用简体中文。

@@ -1,0 +1,34 @@
+---
+description: PR 完成后快进同步到 user/zss，再切回 PR 分支
+alwaysApply: true
+---
+
+# 同步到 user/zss
+
+`origin/user/zss` 是店主日常工作分支。功能从 `user/zss` 开出 `cursor/<name>-2abd`，PR 的 `base_branch` 用 `user/zss`。
+
+## 何时同步
+
+完成一项可交付改动后**自动执行**，不要等用户再说「同步到 user/zss」：
+
+- 已提交并推送 PR 分支，且该次功能/修复的实现与验证已结束
+- 用户明确说「同步到 user/zss」
+
+不要在半截实现、测试失败还要继续改、或用户只要草稿未完成时同步。
+
+## 怎么做（必须快进）
+
+```bash
+git fetch origin user/zss <pr-branch>
+git checkout user/zss
+git pull origin user/zss
+git merge --ff-only <pr-branch>
+git push origin user/zss
+git checkout <pr-branch>
+```
+
+- 只用 `--ff-only`。不能快进就停下来说明，不要做 merge commit。
+- 同步后 **必须切回当前 PR 分支**，不要停在 `user/zss`。
+- 同步的是当前这条 PR 分支相对 `user/zss` 多出来的提交。
+
+用户说「完成后切回 pr 分支」即上述最后一步。
