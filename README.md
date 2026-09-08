@@ -69,7 +69,7 @@ cd server && npm run migrate && npm run seed
 
 - API：http://127.0.0.1:3000（健康检查 `/api/health`）
 - 管理后台：http://127.0.0.1:5173 ，默认账号 `admin` / `admin123`
-- 小程序：用微信开发者工具导入 `miniprogram/` 目录，AppID 为 `wx6434c5c04d4b6c6e`。真机预览请把 `miniprogram/utils/config.ts` 的 `API_BASE` 改成电脑局域网 IP。
+- 小程序：用微信开发者工具导入 `miniprogram/` 目录，AppID 为 `wx6434c5c04d4b6c6e`。界面使用 [TDesign 小程序](https://tdesign.tencent.com/miniprogram/overview)。仓库已预置 `miniprogram/miniprogram_npm`；若重新 `npm install`，在开发者工具执行 **工具 → 构建 npm**。真机预览请把 `miniprogram/utils/config.ts` 的 `API_BASE` 改成电脑局域网 IP。
 
 ### 预览 / 体验版二维码
 

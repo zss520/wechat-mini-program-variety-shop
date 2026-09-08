@@ -1,3 +1,17 @@
-.card { display:flex; background:#fff; margin:16rpx; padding:16rpx; }
-.img { width:160rpx; height:160rpx; background:#eee; }
-.info { margin-left:16rpx; }
+.card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  margin: 16rpx 24rpx;
+  padding: 16rpx;
+  border-radius: 16rpx;
+  gap: 16rpx;
+}
+.info {
+  flex: 1;
+  min-width: 0;
+}
+.name {
+  font-weight: 700;
+  margin-bottom: 8rpx;
+}

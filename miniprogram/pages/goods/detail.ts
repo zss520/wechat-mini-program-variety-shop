@@ -2,7 +2,7 @@ import { request, ensureLogin } from "../../utils/request";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { item: {} as any, related: [] as any[], qty: 1, slot: "", id: 0 },
+  data: { item: {} as any, related: [] as any[], qty: 1, slot: "", id: 0, detailImages: [] as string[], nav: { type: "dots-bar" } },
   onLoad(q: any) {
     this.setData({ id: Number(q.id), slot: q.slot || "" });
     this.load();
@@ -10,7 +10,8 @@ Page({
   async load() {
     try {
       const item = await request(`/goods/${this.data.id}`);
-      this.setData({ item, related: item.related || [] });
+      const images = item.images && item.images.length ? item.images : item.coverUrl ? [item.coverUrl] : [];
+      this.setData({ item, related: item.related || [], detailImages: images });
       track("goods_detail_view", { goods_id: item.id, extra: { from_slot: this.data.slot } });
     } catch (e: any) {
       wx.showToast({ title: e.message, icon: "none" });
@@ -22,6 +23,10 @@ Page({
   },
   sub() {
     this.setData({ qty: Math.max(1, this.data.qty - 1) });
+  },
+  onQty(e: any) {
+    const max = this.data.item.stock || 1;
+    this.setData({ qty: Math.min(max, Math.max(1, Number(e.detail.value))) });
   },
   async addCart() {
     await ensureLogin();

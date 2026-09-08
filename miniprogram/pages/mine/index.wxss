@@ -1,2 +1,24 @@
-.head { background:#c2410c; color:#fff; padding:80rpx 32rpx; font-size:36rpx; }
-.card { background:#fff; margin:16rpx; padding:32rpx; }
+.head {
+  background: linear-gradient(180deg, #c2410c 0%, #ea580c 100%);
+  color: #fff;
+  padding: 48rpx 32rpx 56rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+.who {
+  flex: 1;
+}
+.nick {
+  font-size: 36rpx;
+  font-weight: 700;
+}
+.sub {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  opacity: 0.85;
+}
+t-cell-group {
+  display: block;
+  margin-top: 16rpx;
+}

@@ -1,15 +1,34 @@
-<view class="bar">
-  <input class="inp" placeholder="搜索商品" value="{{keyword}}" bindinput="onInput" confirm-type="search" bindconfirm="search" />
-  <text bindtap="search">搜索</text>
-</view>
-<view wx:if="{{!list.length}}">
-  <view class="h">历史 <text bindtap="clear">清空</text></view>
-  <view class="tags">
-    <text wx:for="{{history}}" wx:key="*this" data-k="{{item}}" bindtap="tapHist">{{item}}</text>
+<t-search
+  value="{{keyword}}"
+  placeholder="搜索商品"
+  shape="round"
+  action="搜索"
+  bind:change="onInput"
+  bind:submit="onSubmit"
+  bind:action-click="search"
+/>
+
+<view wx:if="{{!list.length}}" class="hist">
+  <view class="sec-head">
+    <view class="sec-title">历史搜索</view>
+    <view class="sec-more" bindtap="clear">清空</view>
   </view>
+  <view class="tags">
+    <t-tag
+      wx:for="{{history}}"
+      wx:key="*this"
+      data-k="{{item}}"
+      bind:click="tapHist"
+      variant="light"
+      size="large"
+    >{{item}}</t-tag>
+  </view>
+  <t-empty wx:if="{{!history.length}}" icon="search" description="输入关键词开始搜索" />
 </view>
-<view class="grid">
-  <view class="gitem" wx:for="{{list}}" wx:key="id">
+
+<view class="goods-grid wrap">
+  <view class="goods-grid-item" wx:for="{{list}}" wx:key="id">
     <goods-card item="{{item}}" slot-id="search_result" position="{{index+1}}" />
   </view>
 </view>
+<t-empty wx:if="{{searched && !list.length}}" icon="search" description="没有找到相关商品" />

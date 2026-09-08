@@ -1,4 +1,11 @@
-<input class="card" placeholder="联系人" data-k="contactName" value="{{contactName}}" bindinput="onInput" />
-<input class="card" placeholder="手机号" data-k="phone" value="{{phone}}" bindinput="onInput" />
-<input class="card" placeholder="详细地址" data-k="detail" value="{{detail}}" bindinput="onInput" />
-<button class="btn-primary" bindtap="save">保存</button>
+<t-cell-group theme="card">
+  <t-input label="联系人" placeholder="请输入联系人" value="{{contactName}}" data-k="contactName" bind:change="onInput" />
+  <t-input label="手机号" type="number" placeholder="请输入手机号" value="{{phone}}" data-k="phone" bind:change="onInput" />
+  <t-input label="详细地址" placeholder="小区 / 门牌号" value="{{detail}}" data-k="detail" bind:change="onInput" />
+  <t-cell title="设为默认地址">
+    <t-switch slot="note" value="{{isDefault}}" bind:change="onDefault" />
+  </t-cell>
+</t-cell-group>
+<view class="safe-bottom">
+  <t-button theme="primary" size="large" shape="round" block bind:tap="save">保存</t-button>
+</view>

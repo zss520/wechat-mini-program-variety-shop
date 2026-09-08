@@ -8,11 +8,16 @@ Page({
   async load() {
     await ensureLogin();
     const shop = await request("/coupons");
-    const mine = await request("/me/coupons");
+    const ST: Record<string, string> = { UNUSED: "未使用", USED: "已使用", EXPIRED: "已过期" };
+    const rawMine = await request("/me/coupons");
+    const mine = (Array.isArray(rawMine) ? rawMine : []).map((x: any) => ({ ...x, statusText: ST[x.status] || x.status }));
     this.setData({ shop, mine });
   },
   setTab(e: any) {
     this.setData({ tab: e.currentTarget.dataset.t });
+  },
+  onTab(e: any) {
+    this.setData({ tab: e.detail.value });
   },
   async claim(e: any) {
     try {

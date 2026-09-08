@@ -2,7 +2,19 @@ import { request } from "../../utils/request";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { banners: [] as any[], deals: [] as any[], recommend: [] as any[], forYou: [] as any[], seckills: [] as any[], groups: [] as any[], recommendTitle: "本店推荐", settings: {} as any },
+  data: {
+    banners: [] as any[],
+    bannerImages: [] as string[],
+    deals: [] as any[],
+    recommend: [] as any[],
+    forYou: [] as any[],
+    seckills: [] as any[],
+    groups: [] as any[],
+    recommendTitle: "本店推荐",
+    settings: {} as any,
+    shopHint: "",
+    nav: { type: "dots-bar" },
+  },
   onShow() {
     track("page_view");
     this.load();
@@ -11,15 +23,23 @@ Page({
     try {
       const home = await request("/home");
       const boot = await request("/shop/bootstrap");
+      const banners = home.banners || [];
+      const settings = boot.settings || {};
+      const seckills = (home.seckills || []).map((x: any) => ({
+        ...x,
+        remainMs: x.end_at ? Math.max(0, new Date(x.end_at).getTime() - Date.now()) : 0,
+      }));
       this.setData({
-        banners: home.banners || [],
+        banners,
+        bannerImages: banners.map((b: any) => b.image_url).filter(Boolean),
         deals: home.deals || [],
         recommend: home.recommend || [],
         forYou: home.forYou || [],
-        seckills: home.seckills || [],
+        seckills,
         groups: home.groups || [],
         recommendTitle: home.recommendTitle,
-        settings: boot.settings || {},
+        settings,
+        shopHint: [settings.pickup_address, settings.business_hours].filter(Boolean).join(" · "),
       });
       if (boot.settings?.shop_name) wx.setNavigationBarTitle({ title: boot.settings.shop_name });
     } catch (e: any) {
@@ -51,7 +71,8 @@ Page({
     });
   },
   onBanner(e: any) {
-    const item = e.currentTarget.dataset.item || {};
+    const idx = Number(e.detail?.index ?? e.detail?.current ?? 0);
+    const item = this.data.banners[idx] || e.currentTarget.dataset.item || {};
     track("banner_click", { extra: { banner_id: item.id, link_type: item.link_type } });
     if (item.link_type === "GOODS" && item.link_value) {
       wx.navigateTo({ url: `/pages/goods/detail?id=${item.link_value}&slot=banner&pos=1` });

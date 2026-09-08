@@ -1,29 +1,42 @@
-<swiper class="sw" wx:if="{{item.images.length || item.coverUrl}}" indicator-dots>
-  <swiper-item wx:for="{{item.images.length ? item.images : [item.coverUrl]}}" wx:key="*this">
-    <image src="{{item}}" mode="aspectFill" class="img" />
-  </swiper-item>
-</swiper>
+<t-swiper
+  wx:if="{{detailImages.length}}"
+  list="{{detailImages}}"
+  height="560rpx"
+  navigation="{{nav}}"
+/>
+
 <view class="box">
-  <view class="price">¥{{item.priceCent / 100}} <text class="origin" wx:if="{{item.originPriceCent}}">¥{{item.originPriceCent / 100}}</text></view>
+  <view class="price-row">
+    <text class="price big">¥{{item.priceCent / 100}}</text>
+    <text class="origin" wx:if="{{item.originPriceCent}}">¥{{item.originPriceCent / 100}}</text>
+    <t-tag wx:if="{{item.soldOut}}" theme="default" variant="dark" size="small">售罄</t-tag>
+    <t-tag wx:elif="{{item.stock < 10}}" theme="warning" variant="light" size="small">仅剩{{item.stock}}件</t-tag>
+    <t-tag wx:else theme="success" variant="light" size="small">有货</t-tag>
+  </view>
   <view class="name">{{item.name}}</view>
   <view class="sub">{{item.subtitle}}</view>
-  <view class="stock">{{item.soldOut ? '售罄' : (item.stock < 10 ? '仅剩' + item.stock + '件' : '有货')}}</view>
-  <view class="qty">
-    <text bindtap="sub">-</text>
-    <text>{{qty}}</text>
-    <text bindtap="add">+</text>
-  </view>
+  <t-cell title="购买数量" bordered="{{false}}">
+    <t-stepper slot="note" value="{{qty}}" min="{{1}}" max="{{item.stock || 1}}" theme="filled" bind:change="onQty" />
+  </t-cell>
+  <t-divider />
   <view class="detail">{{item.detail}}</view>
 </view>
+
 <view class="rel" wx:if="{{related.length}}">
-  <view class="rh">买过的人还看</view>
-  <view class="row" wx:for="{{related}}" wx:key="id" bindtap="goRel" data-id="{{item.id}}">
-    <image src="{{item.coverUrl}}" class="rimg" />
-    <view>{{item.name}}</view>
-    <view class="price">¥{{item.priceCent / 100}}</view>
-  </view>
+  <view class="sec-title">买过的人还看</view>
+  <t-cell
+    wx:for="{{related}}"
+    wx:key="id"
+    title="{{item.name}}"
+    note="¥{{item.priceCent / 100}}"
+    image="{{item.coverUrl}}"
+    hover
+    data-id="{{item.id}}"
+    bind:click="goRel"
+  />
 </view>
+
 <view class="bar">
-  <button class="ghost" bindtap="addCart" disabled="{{item.soldOut}}">加入购物车</button>
-  <button class="pri" bindtap="buy" disabled="{{item.soldOut}}">立即购买</button>
+  <t-button theme="light" size="large" shape="round" block disabled="{{item.soldOut}}" bind:tap="addCart">加入购物车</t-button>
+  <t-button theme="primary" size="large" shape="round" block disabled="{{item.soldOut}}" bind:tap="buy">立即购买</t-button>
 </view>

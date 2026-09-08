@@ -15,7 +15,14 @@
     "coverView": true,
     "ignoreUploadUnusedFiles": true,
     "showShadowRootInWxmlPanel": true,
-    "useCompilerPlugins": ["typescript"]
+    "useCompilerPlugins": ["typescript"],
+    "packNpmManually": true,
+    "packNpmRelationList": [
+      {
+        "packageJsonPath": "./package.json",
+        "miniprogramNpmDistDir": "./"
+      }
+    ]
   },
   "compileType": "miniprogram",
   "libVersion": "2.32.0",

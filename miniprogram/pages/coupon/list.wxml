@@ -1,15 +1,33 @@
-<view class="tabs">
-  <text class="{{tab=='shop'?'on':''}}" data-t="shop" bindtap="setTab">领券</text>
-  <text class="{{tab=='mine'?'on':''}}" data-t="mine" bindtap="setTab">我的</text>
+<t-tabs value="{{tab}}" bind:change="onTab" theme="line">
+  <t-tab-panel label="领券" value="shop" />
+  <t-tab-panel label="我的" value="mine" />
+</t-tabs>
+
+<view wx:if="{{tab=='shop'}}">
+  <view class="coupon" wx:for="{{shop}}" wx:key="id">
+    <view class="left">
+      <view class="name">{{item.name}}</view>
+      <view class="sub">{{item.type=='DISCOUNT' ? '折扣券' : '满减券'}} · 满{{item.min_amount_cent/100}}可用</view>
+    </view>
+    <t-button
+      theme="primary"
+      size="small"
+      shape="round"
+      disabled="{{item.remain<=0}}"
+      data-id="{{item.id}}"
+      bind:tap="claim"
+    >{{item.remain>0?'领取':'已领'}}</t-button>
+  </view>
+  <t-empty wx:if="{{!shop.length}}" icon="coupon" description="暂无可领优惠券" />
 </view>
-<view class="card" wx:for="{{shop}}" wx:key="id" wx:if="{{tab=='shop'}}">
-  <view class="name">{{item.name}}</view>
-  <view class="sub">{{item.type=='DISCOUNT' ? '折扣券' : '满减券'}} · 满{{item.min_amount_cent/100}}可用</view>
-  <button size="mini" disabled="{{item.remain<=0}}" data-id="{{item.id}}" bindtap="claim">{{item.remain>0?'领取':'已领'}}</button>
+
+<view wx:if="{{tab=='mine'}}">
+  <view class="coupon" wx:for="{{mine}}" wx:key="id">
+    <view class="left">
+      <view class="name">{{item.name}}</view>
+      <view class="sub">截止 {{item.end_at}}</view>
+    </view>
+    <t-tag theme="{{item.status=='UNUSED' ? 'primary' : 'default'}}" variant="light">{{item.statusText}}</t-tag>
+  </view>
+  <t-empty wx:if="{{!mine.length}}" icon="coupon" description="暂无优惠券" />
 </view>
-<view class="card" wx:for="{{mine}}" wx:key="id" wx:if="{{tab=='mine'}}">
-  <view class="name">{{item.name}} <text class="st">{{item.status}}</text></view>
-  <view class="sub">截止 {{item.end_at}}</view>
-</view>
-<view wx:if="{{tab=='shop' && !shop.length}}" class="empty">暂无可领优惠券</view>
-<view wx:if="{{tab=='mine' && !mine.length}}" class="empty">暂无优惠券</view>

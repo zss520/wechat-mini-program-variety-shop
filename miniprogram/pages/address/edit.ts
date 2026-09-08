@@ -21,6 +21,9 @@ Page({
   onInput(e: any) {
     this.setData({ [e.currentTarget.dataset.k]: e.detail.value });
   },
+  onDefault(e: any) {
+    this.setData({ isDefault: !!e.detail.value });
+  },
   async save() {
     const body = {
       contactName: this.data.contactName,

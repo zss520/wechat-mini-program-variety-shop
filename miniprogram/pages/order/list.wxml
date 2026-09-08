@@ -1,12 +1,22 @@
-<view class="tabs">
-  <text data-s="" bindtap="tab">全部</text>
-  <text data-s="PENDING_PAY" bindtap="tab">待付款</text>
-  <text data-s="PENDING_PACK" bindtap="tab">备货中</text>
-  <text data-s="WAIT_PICKUP" bindtap="tab">待取货</text>
-  <text data-s="COMPLETED" bindtap="tab">已完成</text>
-</view>
-<view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
-  <view>{{item.order_no}}</view>
-  <view>{{item.statusText}}  ¥{{item.pay_amount_cent / 100}}</view>
-</view>
-<view wx:if="{{!list.length}}" class="empty">暂无订单</view>
+<t-tabs value="{{tab}}" bind:change="onTab" theme="line" space-evenly>
+  <t-tab-panel label="全部" value="ALL" />
+  <t-tab-panel label="待付款" value="PENDING_PAY" />
+  <t-tab-panel label="备货中" value="PENDING_PACK" />
+  <t-tab-panel label="待取货" value="WAIT_PICKUP" />
+  <t-tab-panel label="已完成" value="COMPLETED" />
+</t-tabs>
+
+<t-cell-group theme="card">
+  <t-cell
+    wx:for="{{list}}"
+    wx:key="id"
+    title="{{item.order_no}}"
+    description="{{item.statusText}}"
+    note="¥{{item.pay_amount_cent / 100}}"
+    hover
+    arrow
+    data-id="{{item.id}}"
+    bind:click="open"
+  />
+</t-cell-group>
+<t-empty wx:if="{{!list.length}}" icon="file" description="暂无订单" />

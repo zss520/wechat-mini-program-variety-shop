@@ -1,8 +1,11 @@
 <view class="card" wx:for="{{list}}" wx:key="id" data-item="{{item}}" bindtap="buy">
-  <image src="{{item.goods.coverUrl}}" class="img" mode="aspectFill" />
+  <t-image src="{{item.goods.coverUrl}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
   <view class="info">
-    <view>{{item.title}}</view>
-    <view class="price">¥{{item.seckill_price_cent / 100}} 剩{{item.seckill_stock}}</view>
+    <view class="name">{{item.title}}</view>
+    <view class="price">¥{{item.seckill_price_cent / 100}}</view>
+    <t-tag theme="danger" variant="light" size="small">剩{{item.seckill_stock}}</t-tag>
+    <t-count-down wx:if="{{item.remainMs}}" time="{{item.remainMs}}" format="HH:mm:ss" size="small" theme="square" />
   </view>
+  <t-button theme="primary" size="small" shape="round">抢购</t-button>
 </view>
-<view wx:if="{{!list.length}}" class="empty">暂无秒杀</view>
+<t-empty wx:if="{{!list.length}}" icon="time" description="暂无秒杀" />

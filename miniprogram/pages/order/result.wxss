@@ -1,1 +1,3 @@
-.btn-primary { margin:48rpx; }
+.safe-bottom {
+  margin: 48rpx 32rpx;
+}

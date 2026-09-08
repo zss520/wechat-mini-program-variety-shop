@@ -1,5 +1,19 @@
-<view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="edit">
-  {{item.contact_name}} {{item.phone}}
-  <view>{{item.detail}}</view>
+<t-cell-group theme="card">
+  <t-cell
+    wx:for="{{list}}"
+    wx:key="id"
+    title="{{item.contact_name}} {{item.phone}}"
+    description="{{item.detail}}"
+    left-icon="location"
+    arrow
+    hover
+    data-id="{{item.id}}"
+    bind:click="edit"
+  >
+    <t-tag wx:if="{{item.is_default}}" slot="note" theme="primary" variant="light" size="small">默认</t-tag>
+  </t-cell>
+</t-cell-group>
+<t-empty wx:if="{{!list.length}}" icon="location" description="还没有收货地址" />
+<view class="safe-bottom">
+  <t-button theme="primary" size="large" shape="round" block bind:tap="add">新增地址</t-button>
 </view>
-<button class="btn-primary" bindtap="add">新增地址</button>

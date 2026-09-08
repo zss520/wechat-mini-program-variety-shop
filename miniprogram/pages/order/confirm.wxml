@@ -1,19 +1,56 @@
 <view class="seg">
-  <text class="{{fulfillType=='PICKUP'?'on':''}}" data-t="PICKUP" bindtap="setType">到店自提</text>
-  <text wx:if="{{settings.delivery_enabled}}" class="{{fulfillType=='DELIVERY'?'on':''}}" data-t="DELIVERY" bindtap="setType">配送到家</text>
+  <t-segmented value="{{fulfillType}}" options="{{fulfillOptions}}" bind:change="onType" />
 </view>
-<view class="card" wx:if="{{fulfillType=='PICKUP'}}">自提：{{settings.pickup_address}}（{{settings.business_hours}}）</view>
-<view class="card" wx:else bindtap="goAddr">收货地址：{{preview.address.contact_name}} {{preview.address.detail}}</view>
-<view class="card" wx:for="{{preview.items}}" wx:key="goodsId">
-  {{item.name}} x{{item.qty}}  ¥{{item.amountCent / 100}}
+
+<t-cell-group theme="card">
+  <t-cell
+    wx:if="{{fulfillType=='PICKUP'}}"
+    title="到店自提"
+    description="{{settings.pickup_address}}（{{settings.business_hours}}）"
+    left-icon="shop"
+  />
+  <t-cell
+    wx:else
+    title="收货地址"
+    description="{{preview.address.contact_name}} {{preview.address.detail}}"
+    left-icon="location"
+    arrow
+    hover
+    bind:click="goAddr"
+  />
+</t-cell-group>
+
+<t-cell-group theme="card" title="商品">
+  <t-cell
+    wx:for="{{preview.items}}"
+    wx:key="goodsId"
+    title="{{item.name}}"
+    note="¥{{item.amountCent / 100}}"
+    description="x{{item.qty}}"
+  />
+</t-cell-group>
+
+<t-cell-group theme="card">
+  <picker range="{{coupons}}" range-key="name" bindchange="pickCoupon">
+    <t-cell
+      title="优惠券"
+      note="{{preview.couponName || '未选'}}{{preview.couponDiscountCent ? ' -¥' + preview.couponDiscountCent/100 : ''}}"
+      left-icon="coupon"
+      arrow
+    />
+  </picker>
+  <t-cell title="积分抵扣" description="可用 {{preview.pointsBalance || 0}}" left-icon="gift">
+    <t-switch slot="note" value="{{usePoints}}" bind:change="onPoints" />
+  </t-cell>
+  <t-cell title="运费" note="¥{{preview.freightCent / 100 || 0}}" />
+  <t-cell title="优惠" note="-¥{{preview.discountCent / 100 || 0}}" />
+  <t-cell title="应付" note="¥{{preview.payAmountCent / 100 || 0}}" />
+</t-cell-group>
+
+<view class="remark">
+  <t-textarea placeholder="备注（选填）" value="{{remark}}" maxlength="80" bind:change="remark" />
 </view>
-<picker range="{{coupons}}" range-key="name" bindchange="pickCoupon">
-  <view class="card">优惠券：{{preview.couponName || '未选'}} {{preview.couponDiscountCent ? ('-¥' + preview.couponDiscountCent/100) : ''}}</view>
-</picker>
-<view class="card" bindtap="togglePoints">
-  积分抵扣 {{usePoints ? '已开' : '未开'}} 可用{{preview.pointsBalance || 0}}
-  <text wx:if="{{preview.pointsDiscountCent}}"> -¥{{preview.pointsDiscountCent / 100}}</text>
+
+<view class="safe-bottom">
+  <t-button theme="primary" size="large" shape="round" block bind:tap="submit">提交并支付</t-button>
 </view>
-<view class="card">运费 ¥{{preview.freightCent / 100}}  优惠 ¥{{preview.discountCent / 100 || 0}}  应付 ¥{{preview.payAmountCent / 100}}</view>
-<input class="card" placeholder="备注" bindinput="remark" />
-<button class="btn-primary" bindtap="submit">提交并支付</button>

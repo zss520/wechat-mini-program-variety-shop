@@ -1,6 +1,14 @@
-<view class="head">当前积分 {{balance}}</view>
-<view class="card" wx:for="{{ledger}}" wx:key="id">
-  <view>{{item.reason}} {{item.delta > 0 ? '+' : ''}}{{item.delta}}</view>
-  <view class="sub">余额 {{item.balance_after}} · {{item.note}}</view>
+<view class="head">
+  <view class="label">当前积分</view>
+  <view class="num">{{balance}}</view>
 </view>
-<view wx:if="{{!ledger.length}}" class="empty">暂无积分记录</view>
+<t-cell-group theme="card" title="积分明细">
+  <t-cell
+    wx:for="{{ledger}}"
+    wx:key="id"
+    title="{{item.reason}} {{item.delta > 0 ? '+' : ''}}{{item.delta}}"
+    description="{{item.note}}"
+    note="余额 {{item.balance_after}}"
+  />
+</t-cell-group>
+<t-empty wx:if="{{!ledger.length}}" icon="gift" description="暂无积分记录" />

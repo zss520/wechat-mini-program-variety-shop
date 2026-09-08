@@ -35,6 +35,33 @@
       { "pagePath": "pages/mine/index", "text": "我的", "iconPath": "assets/tab-mine.png", "selectedIconPath": "assets/tab-mine-on.png" }
     ]
   },
+  "usingComponents": {
+    "t-avatar": "tdesign-miniprogram/avatar/avatar",
+    "t-button": "tdesign-miniprogram/button/button",
+    "t-cell": "tdesign-miniprogram/cell/cell",
+    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
+    "t-checkbox": "tdesign-miniprogram/checkbox/checkbox",
+    "t-count-down": "tdesign-miniprogram/count-down/count-down",
+    "t-divider": "tdesign-miniprogram/divider/divider",
+    "t-empty": "tdesign-miniprogram/empty/empty",
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "t-image": "tdesign-miniprogram/image/image",
+    "t-input": "tdesign-miniprogram/input/input",
+    "t-notice-bar": "tdesign-miniprogram/notice-bar/notice-bar",
+    "t-result": "tdesign-miniprogram/result/result",
+    "t-search": "tdesign-miniprogram/search/search",
+    "t-segmented": "tdesign-miniprogram/segmented/segmented",
+    "t-side-bar": "tdesign-miniprogram/side-bar/side-bar",
+    "t-side-bar-item": "tdesign-miniprogram/side-bar-item/side-bar-item",
+    "t-stepper": "tdesign-miniprogram/stepper/stepper",
+    "t-swipe-cell": "tdesign-miniprogram/swipe-cell/swipe-cell",
+    "t-swiper": "tdesign-miniprogram/swiper/swiper",
+    "t-switch": "tdesign-miniprogram/switch/switch",
+    "t-tab-panel": "tdesign-miniprogram/tab-panel/tab-panel",
+    "t-tabs": "tdesign-miniprogram/tabs/tabs",
+    "t-tag": "tdesign-miniprogram/tag/tag",
+    "t-textarea": "tdesign-miniprogram/textarea/textarea"
+  },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

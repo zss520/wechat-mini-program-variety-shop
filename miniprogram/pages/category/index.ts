@@ -2,7 +2,18 @@ import { request } from "../../utils/request";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { cats: [] as any[], list: [] as any[], catId: 0, sort: "composite" },
+  data: {
+    cats: [] as any[],
+    list: [] as any[],
+    catId: 0,
+    sort: "composite",
+    sortOptions: [
+      { label: "综合", value: "composite" },
+      { label: "销量", value: "sales" },
+      { label: "价格", value: "price_asc" },
+      { label: "上新", value: "new" },
+    ],
+  },
   onShow() {
     track("page_view");
     this.init();
@@ -23,8 +34,14 @@ Page({
     this.setData({ catId: id });
     this.load();
   },
+  onCat(e: any) {
+    this.pickCat({ currentTarget: { dataset: { id: e.detail.value } } });
+  },
   pickSort(e: any) {
     this.setData({ sort: e.currentTarget.dataset.sort });
     this.load();
+  },
+  onSort(e: any) {
+    this.pickSort({ currentTarget: { dataset: { sort: e.detail.value } } });
   },
 });

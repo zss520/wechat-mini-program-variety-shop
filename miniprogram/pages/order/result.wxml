@@ -1,2 +1,8 @@
-<view class="empty">{{ok ? '支付成功' : '支付未完成'}}</view>
-<button class="btn-primary" bindtap="go">查看订单</button>
+<t-result
+  theme="{{ok ? 'success' : 'warning'}}"
+  title="{{ok ? '支付成功' : '支付未完成'}}"
+  description="{{ok ? '店主开始备货后会更新订单状态' : '可在订单详情继续支付'}}"
+/>
+<view class="safe-bottom">
+  <t-button theme="primary" size="large" shape="round" block bind:tap="go">查看订单</t-button>
+</view>

@@ -1,0 +1,9 @@
+{
+  "name": "variety-shop-miniprogram",
+  "private": true,
+  "description": "社区杂货铺微信原生小程序",
+  "version": "1.0.0",
+  "dependencies": {
+    "tdesign-miniprogram": "1.16.0"
+  }
+}

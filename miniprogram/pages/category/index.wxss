@@ -1,9 +1,20 @@
-.wrap { display:flex; height:100vh; }
-.left { width:180rpx; background:#fff; }
-.c { padding:28rpx 16rpx; }
-.c.on { color:#c2410c; font-weight:700; background:#fff7ed; }
-.right { flex:1; padding:16rpx; }
-.sorts { display:flex; justify-content:space-around; margin-bottom:16rpx; }
-.sorts .on { color:#c2410c; }
-.grid { display:flex; flex-wrap:wrap; justify-content:space-between; }
-.gitem { width:48%; margin-bottom:16rpx; }
+.wrap {
+  display: flex;
+  height: 100vh;
+}
+.right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sorts {
+  padding: 16rpx 16rpx 8rpx;
+  background: #fff;
+}
+.list {
+  flex: 1;
+  height: 0;
+  padding: 16rpx;
+  box-sizing: border-box;
+}

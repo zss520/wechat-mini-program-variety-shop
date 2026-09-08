@@ -12,7 +12,7 @@ const MAP: Record<string, string> = {
 };
 
 Page({
-  data: { list: [] as any[], status: "" },
+  data: { list: [] as any[], status: "", tab: "ALL" },
   onShow() {
     this.load();
   },
@@ -26,6 +26,11 @@ Page({
   },
   tab(e: any) {
     this.setData({ status: e.currentTarget.dataset.s });
+    this.load();
+  },
+  onTab(e: any) {
+    const tab = e.detail.value;
+    this.setData({ tab, status: tab === "ALL" ? "" : tab });
     this.load();
   },
   open(e: any) {

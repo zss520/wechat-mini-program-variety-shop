@@ -1,12 +1,20 @@
-<view class="card">
+<view class="hero">
   <view class="st">{{statusText}}</view>
-  <view wx:if="{{o.pickup_code && (o.status=='WAIT_PICKUP' || o.status=='PENDING_PACK')}}" class="code">提货码 {{o.pickup_code}}</view>
-  <view>单号 {{o.order_no}}</view>
-  <view>实付 ¥{{o.pay_amount_cent / 100}}</view>
+  <view wx:if="{{o.pickup_code && (o.status=='WAIT_PICKUP' || o.status=='PENDING_PACK')}}" class="code">{{o.pickup_code}}</view>
+  <view wx:if="{{o.pickup_code && (o.status=='WAIT_PICKUP' || o.status=='PENDING_PACK')}}" class="hint">到店出示提货码</view>
 </view>
-<view class="card" wx:for="{{o.items}}" wx:key="id">{{item.name_snapshot}} x{{item.qty}}</view>
+
+<t-cell-group theme="card">
+  <t-cell title="订单号" note="{{o.order_no}}" />
+  <t-cell title="实付" note="¥{{o.pay_amount_cent / 100}}" />
+</t-cell-group>
+
+<t-cell-group theme="card" title="商品">
+  <t-cell wx:for="{{o.items}}" wx:key="id" title="{{item.name_snapshot}}" note="x{{item.qty}}" />
+</t-cell-group>
+
 <view class="bar">
-  <button wx:if="{{o.status=='PENDING_PAY'}}" bindtap="pay">去支付</button>
-  <button wx:if="{{o.status=='PENDING_PAY' || o.status=='PENDING_PACK'}}" bindtap="cancel">取消订单</button>
-  <button bindtap="call">联系店主</button>
+  <t-button wx:if="{{o.status=='PENDING_PAY'}}" theme="primary" shape="round" block bind:tap="pay">去支付</t-button>
+  <t-button wx:if="{{o.status=='PENDING_PAY' || o.status=='PENDING_PACK'}}" theme="default" variant="outline" shape="round" block bind:tap="cancel">取消订单</t-button>
+  <t-button theme="light" shape="round" block bind:tap="call">联系店主</t-button>
 </view>

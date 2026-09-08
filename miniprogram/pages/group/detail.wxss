@@ -1,4 +1,18 @@
-.box { background:#fff; padding:24rpx; }
-.img { width:100%; height:360rpx; }
-.ghost { margin-top:16rpx; background:#fff7ed; color:#c2410c; }
-.sub { color:#888; margin:16rpx 0; }
+.box {
+  background: #fff;
+}
+.body {
+  padding: 24rpx;
+}
+.name {
+  font-size: 36rpx;
+  font-weight: 700;
+  margin-bottom: 12rpx;
+}
+.sub {
+  color: #888;
+  margin: 16rpx 0;
+}
+t-button {
+  margin-top: 16rpx;
+}

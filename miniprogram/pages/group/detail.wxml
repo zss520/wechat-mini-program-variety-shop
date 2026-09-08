@@ -1,8 +1,13 @@
 <view class="box" wx:if="{{act}}">
-  <image src="{{act.goods.coverUrl}}" class="img" mode="aspectFill" />
-  <view class="name">{{act.title}}</view>
-  <view class="price">团价 ¥{{act.group_price_cent / 100}} · {{act.required_count}}人成团</view>
-  <view class="sub" wx:if="{{team}}">已有 {{team.paidCount}} 人，还差 {{team.remain}} 人</view>
-  <button class="btn-primary" bindtap="open">发起拼团</button>
-  <button wx:if="{{teamId}}" class="ghost" bindtap="join">参加该团</button>
+  <t-image src="{{act.goods.coverUrl}}" width="100%" height="360rpx" mode="aspectFill" />
+  <view class="body">
+    <view class="name">{{act.title}}</view>
+    <view class="price">团价 ¥{{act.group_price_cent / 100}}</view>
+    <t-tag theme="primary" variant="light">{{act.required_count}}人成团</t-tag>
+    <view class="sub" wx:if="{{team}}">已有 {{team.paidCount}} 人，还差 {{team.remain}} 人</view>
+    <t-count-down wx:if="{{remainMs}}" time="{{remainMs}}" format="HH:mm:ss" theme="square" />
+    <t-button theme="primary" size="large" shape="round" block bind:tap="open">发起拼团</t-button>
+    <t-button wx:if="{{teamId}}" theme="light" size="large" shape="round" block bind:tap="join">参加该团</t-button>
+  </view>
 </view>
+<t-empty wx:else icon="usergroup" description="活动不存在或已结束" />

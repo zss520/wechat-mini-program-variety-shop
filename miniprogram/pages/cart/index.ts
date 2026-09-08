@@ -2,7 +2,7 @@ import { request, ensureLogin } from "../../utils/request";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { list: [] as any[], checked: [] as number[], total: 0, upsell: null as any },
+  data: { list: [] as any[], checked: [] as number[], total: 0, upsell: null as any, allChecked: false },
   onShow() {
     this.load();
   },
@@ -21,8 +21,9 @@ Page({
     }
   },
   calc(list = this.data.list, checked = this.data.checked) {
+    const valid = list.filter((x: any) => !x.invalid);
     const total = list.filter((x: any) => checked.includes(x.id) && !x.invalid).reduce((s: number, x: any) => s + x.priceCent * x.qty, 0);
-    this.setData({ total });
+    this.setData({ total, allChecked: valid.length > 0 && valid.every((x: any) => checked.includes(x.id)) });
   },
   toggle(e: any) {
     const id = e.currentTarget.dataset.id;
@@ -32,11 +33,28 @@ Page({
     this.setData({ checked });
     this.calc(this.data.list, checked);
   },
+  onToggle(e: any) {
+    this.toggle({ currentTarget: { dataset: { id: e.currentTarget.dataset.id } } });
+  },
+  toggleAll() {
+    const validIds = this.data.list.filter((x: any) => !x.invalid).map((x: any) => x.id);
+    const checked = this.data.allChecked ? [] : validIds;
+    this.setData({ checked });
+    this.calc(this.data.list, checked);
+  },
   async changeQty(e: any) {
     const { id, d } = e.currentTarget.dataset;
     const row = this.data.list.find((x: any) => x.id === id);
     if (!row) return;
     const qty = Math.max(1, row.qty + Number(d));
+    await request(`/cart/${id}`, "PUT", { qty });
+    this.load();
+  },
+  async onQtyChange(e: any) {
+    const id = e.currentTarget.dataset.id;
+    const qty = Math.max(1, Number(e.detail.value));
+    const row = this.data.list.find((x: any) => x.id === id);
+    if (!row || row.qty === qty) return;
     await request(`/cart/${id}`, "PUT", { qty });
     this.load();
   },

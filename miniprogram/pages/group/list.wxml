@@ -1,8 +1,10 @@
 <view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
-  <image src="{{item.goods.coverUrl}}" class="img" mode="aspectFill" />
+  <t-image src="{{item.goods.coverUrl}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
   <view class="info">
-    <view>{{item.title}}</view>
-    <view class="price">¥{{item.group_price_cent / 100}} · {{item.required_count}}人成团</view>
+    <view class="name">{{item.title}}</view>
+    <view class="price">¥{{item.group_price_cent / 100}}</view>
+    <t-tag theme="primary" variant="light" size="small">{{item.required_count}}人成团</t-tag>
   </view>
+  <t-icon name="chevron-right" size="40rpx" color="#c5b8aa" />
 </view>
-<view wx:if="{{!list.length}}" class="empty">暂无拼团</view>
+<t-empty wx:if="{{!list.length}}" icon="usergroup" description="暂无拼团" />

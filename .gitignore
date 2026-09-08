@@ -8,4 +8,4 @@ admin/dist/
 coverage/
 .vscode/
 .idea/
-miniprogram/miniprogram_npm/
+miniprogram/node_modules/

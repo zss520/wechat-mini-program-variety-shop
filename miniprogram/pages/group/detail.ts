@@ -1,12 +1,16 @@
 import { request, ensurePhone } from "../../utils/request";
 
 Page({
-  data: { activityId: 0, teamId: 0, act: null as any, team: null as any },
+  data: { activityId: 0, teamId: 0, act: null as any, team: null as any, remainMs: 0 },
   async onLoad(q: any) {
     this.setData({ activityId: Number(q.activityId || 0), teamId: Number(q.teamId || 0) });
     const list = await request("/group-buys");
     const act = list.find((x: any) => x.id === Number(q.activityId)) || list[0];
-    this.setData({ act, activityId: act ? act.id : Number(q.activityId) });
+    this.setData({
+      act,
+      activityId: act ? act.id : Number(q.activityId),
+      remainMs: act?.end_at ? Math.max(0, new Date(act.end_at).getTime() - Date.now()) : 0,
+    });
     if (q.teamId) {
       const team = await request(`/group-buys/teams/${q.teamId}`);
       this.setData({ team, activityId: team.activity.id });

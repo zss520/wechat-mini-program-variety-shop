@@ -1,53 +1,94 @@
-<view class="search" bindtap="goSearch">搜索商品</view>
-<view class="pause" wx:if="{{settings.pause_order}}">店主休息中，暂不接单</view>
-<swiper wx:if="{{banners.length}}" class="banner" indicator-dots autoplay>
-  <swiper-item wx:for="{{banners}}" wx:key="id">
-    <image src="{{item.image_url}}" mode="aspectFill" class="banner-img" data-item="{{item}}" bindtap="onBanner" />
-  </swiper-item>
-</swiper>
-<view class="hint">{{settings.pickup_address}} · {{settings.business_hours}}</view>
+<view class="search-wrap" bindtap="goSearch">
+  <t-search placeholder="搜索商品" disabled shape="round" />
+</view>
+
+<t-notice-bar
+  wx:if="{{settings.pause_order}}"
+  visible
+  theme="warning"
+  content="店主休息中，暂不接单"
+  prefix-icon="error-circle"
+/>
+
+<view class="banner-wrap" wx:if="{{bannerImages.length}}">
+  <t-swiper
+    list="{{bannerImages}}"
+    autoplay
+    height="300rpx"
+    navigation="{{nav}}"
+    bind:click="onBanner"
+  />
+</view>
+
+<t-notice-bar
+  wx:if="{{shopHint}}"
+  visible
+  theme="info"
+  content="{{shopHint}}"
+  prefix-icon="shop"
+/>
+
 <view class="sec" wx:if="{{seckills.length}}">
-  <view class="h" bindtap="goSeckill">限时秒杀</view>
-  <scroll-view scroll-x class="hscroll">
+  <view class="sec-head" bindtap="goSeckill">
+    <view class="sec-title">限时秒杀</view>
+    <view class="sec-more">更多<t-icon name="chevron-right" size="32rpx" /></view>
+  </view>
+  <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
     <view class="hitem" wx:for="{{seckills}}" wx:key="id" data-item="{{item}}" bindtap="openSeckill">
-      <image src="{{item.goods.coverUrl}}" class="mini" mode="aspectFill" />
+      <t-image src="{{item.goods.coverUrl}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
       <view class="t">{{item.title}}</view>
       <view class="price">¥{{item.seckill_price_cent / 100}}</view>
+      <t-count-down wx:if="{{item.remainMs}}" time="{{item.remainMs}}" format="HH:mm:ss" size="small" theme="square" />
     </view>
   </scroll-view>
 </view>
+
 <view class="sec" wx:if="{{groups.length}}">
-  <view class="h" bindtap="goGroups">拼团</view>
-  <scroll-view scroll-x class="hscroll">
+  <view class="sec-head" bindtap="goGroups">
+    <view class="sec-title">拼团</view>
+    <view class="sec-more">更多<t-icon name="chevron-right" size="32rpx" /></view>
+  </view>
+  <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
     <view class="hitem" wx:for="{{groups}}" wx:key="id" data-id="{{item.id}}" bindtap="openGroup">
-      <image src="{{item.goods.coverUrl}}" class="mini" mode="aspectFill" />
+      <t-image src="{{item.goods.coverUrl}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
       <view class="t">{{item.title}}</view>
-      <view class="price">¥{{item.group_price_cent / 100}} / {{item.required_count}}人</view>
+      <view class="price">¥{{item.group_price_cent / 100}}</view>
+      <t-tag theme="primary" variant="light" size="small">{{item.required_count}}人团</t-tag>
     </view>
   </scroll-view>
 </view>
+
 <view class="sec" wx:if="{{deals.length}}">
-  <view class="h">特价专区</view>
-  <scroll-view scroll-x class="hscroll">
-    <view class="hitem" wx:for="{{deals}}" wx:key="id">
+  <view class="sec-head">
+    <view class="sec-title">特价专区</view>
+  </view>
+  <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
+    <view class="hitem deal" wx:for="{{deals}}" wx:key="id">
       <goods-card item="{{item}}" slot-id="home_deal" position="{{index+1}}" />
     </view>
   </scroll-view>
 </view>
+
 <view class="sec" wx:if="{{forYou.length}}">
-  <view class="h">为你推荐</view>
-  <view class="grid">
-    <view class="gitem" wx:for="{{forYou}}" wx:key="id">
+  <view class="sec-head">
+    <view class="sec-title">为你推荐</view>
+  </view>
+  <view class="goods-grid">
+    <view class="goods-grid-item" wx:for="{{forYou}}" wx:key="id">
       <goods-card item="{{item}}" slot-id="for_you" position="{{item.position || index+1}}" />
     </view>
   </view>
 </view>
+
 <view class="sec" wx:if="{{recommend.length}}">
-  <view class="h">{{recommendTitle}}</view>
-  <view class="grid">
-    <view class="gitem" wx:for="{{recommend}}" wx:key="id">
+  <view class="sec-head">
+    <view class="sec-title">{{recommendTitle}}</view>
+  </view>
+  <view class="goods-grid">
+    <view class="goods-grid-item" wx:for="{{recommend}}" wx:key="id">
       <goods-card item="{{item}}" slot-id="home_recommend" position="{{item.position || index+1}}" />
     </view>
   </view>
 </view>
-<view wx:if="{{!recommend.length && !deals.length}}" class="empty">店主正在上架</view>
+
+<t-empty wx:if="{{!recommend.length && !deals.length && !forYou.length}}" icon="shop" description="店主正在上架" />

@@ -17,10 +17,20 @@ Page({
     activityType: "NORMAL",
     activityId: 0,
     teamId: 0,
+    fulfillOptions: [
+      { label: "到店自提", value: "PICKUP" },
+      { label: "配送到家", value: "DELIVERY" },
+    ],
   },
   async onLoad(q: any) {
     await ensurePhone();
     const settings = wx.getStorageSync("settings") || {};
+    const fulfillOptions = settings.delivery_enabled
+      ? [
+          { label: "到店自提", value: "PICKUP" },
+          { label: "配送到家", value: "DELIVERY" },
+        ]
+      : [{ label: "到店自提", value: "PICKUP" }];
     let items: any[] = [];
     if (q.from === "BUY_NOW" || q.from === "SECKILL") items = [{ goodsId: Number(q.goodsId), qty: Number(q.qty || 1) }];
     else items = wx.getStorageSync("checkout_items") || [];
@@ -28,6 +38,7 @@ Page({
     this.setData({
       items,
       settings,
+      fulfillOptions,
       from: q.from || "CART",
       fulfillType: "PICKUP",
       coupons,
@@ -65,6 +76,12 @@ Page({
   setType(e: any) {
     this.setData({ fulfillType: e.currentTarget.dataset.t });
     this.refresh();
+  },
+  onType(e: any) {
+    this.setType({ currentTarget: { dataset: { t: e.detail.value } } });
+  },
+  onPoints() {
+    this.togglePoints();
   },
   pickCoupon(e: any) {
     const idx = Number(e.detail.value);

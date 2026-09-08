@@ -4,7 +4,11 @@ import { track } from "../../utils/tracker";
 Page({
   data: { list: [] as any[] },
   async onShow() {
-    this.setData({ list: await request("/seckills") });
+    const list = (await request("/seckills")).map((x: any) => ({
+      ...x,
+      remainMs: x.end_at ? Math.max(0, new Date(x.end_at).getTime() - Date.now()) : 0,
+    }));
+    this.setData({ list });
   },
   buy(e: any) {
     const item = e.currentTarget.dataset.item;
