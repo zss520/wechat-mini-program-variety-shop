@@ -7,7 +7,7 @@
     wx:for="{{ledger}}"
     wx:key="id"
     title="{{item.reason}} {{item.delta > 0 ? '+' : ''}}{{item.delta}}"
-    description="{{item.note}}"
+    description="{{item.createdAtText}}{{item.note ? ' · ' + item.note : ''}}"
     note="余额 {{item.balance_after}}"
   />
 </t-cell-group>

@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { formatDateRange } from "../utils/datetime";
 
 const empty = {
   name: "",
@@ -79,7 +80,7 @@ export default function Coupons() {
               </TableCell>
               <TableCell>{c.claimed_count}</TableCell>
               <TableCell>
-                {String(c.start_at).slice(0, 16)} ~ {String(c.end_at).slice(0, 16)}
+                {formatDateRange(c.start_at, c.end_at)}
               </TableCell>
               <TableCell>
                 <Button size="small" color="error" onClick={() => api.delete(`/coupons/${c.id}`).then(load)}>

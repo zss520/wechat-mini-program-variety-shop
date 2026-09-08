@@ -1,4 +1,5 @@
 import { request, ensureLogin } from "../../utils/request";
+import { formatDateTime } from "../../utils/datetime";
 
 Page({
   data: { tab: "shop", shop: [] as any[], mine: [] as any[] },
@@ -10,7 +11,11 @@ Page({
     const shop = await request("/coupons");
     const ST: Record<string, string> = { UNUSED: "未使用", USED: "已使用", EXPIRED: "已过期" };
     const rawMine = await request("/me/coupons");
-    const mine = (Array.isArray(rawMine) ? rawMine : []).map((x: any) => ({ ...x, statusText: ST[x.status] || x.status }));
+    const mine = (Array.isArray(rawMine) ? rawMine : []).map((x: any) => ({
+      ...x,
+      statusText: ST[x.status] || x.status,
+      endAtText: formatDateTime(x.end_at),
+    }));
     this.setData({ shop, mine });
   },
   setTab(e: any) {

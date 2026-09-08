@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { formatDateRange } from "../utils/datetime";
 
 type Goods = { id: number; name: string };
 
@@ -75,7 +76,7 @@ export default function Campaigns() {
                 {x.required_count}人 / ¥{(x.group_price_cent / 100).toFixed(2)}
               </TableCell>
               <TableCell>
-                {String(x.start_at).slice(0, 16)} ~ {String(x.end_at).slice(0, 16)}
+                {formatDateRange(x.start_at, x.end_at)}
               </TableCell>
               <TableCell>
                 <Button size="small" color="error" onClick={() => api.delete(`/group-buys/${x.id}`).then(load)}>
@@ -127,7 +128,7 @@ export default function Campaigns() {
                 ¥{(x.seckill_price_cent / 100).toFixed(2)} / 剩{x.seckill_stock}
               </TableCell>
               <TableCell>
-                {String(x.start_at).slice(0, 16)} ~ {String(x.end_at).slice(0, 16)}
+                {formatDateRange(x.start_at, x.end_at)}
               </TableCell>
               <TableCell>
                 <Button size="small" color="error" onClick={() => api.delete(`/seckills/${x.id}`).then(load)}>

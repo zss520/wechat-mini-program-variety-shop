@@ -25,7 +25,7 @@
   <view class="coupon" wx:for="{{mine}}" wx:key="id">
     <view class="left">
       <view class="name">{{item.name}}</view>
-      <view class="sub">截止 {{item.end_at}}</view>
+      <view class="sub">截止 {{item.endAtText}}</view>
     </view>
     <t-tag theme="{{item.status=='UNUSED' ? 'primary' : 'default'}}" variant="light">{{item.statusText}}</t-tag>
   </view>

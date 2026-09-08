@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { formatDateTime } from "../utils/datetime";
 
 const STATUS: Record<string, string> = {
   PENDING_PAY: "待付款",
@@ -44,6 +45,7 @@ export default function OrderDetail() {
     { k: "实付", v: `¥${(o.pay_amount_cent / 100).toFixed(2)}` },
     { k: "提货码", v: o.pickup_code || "-" },
     { k: "状态", v: STATUS[o.status] || o.status },
+    { k: "下单时间", v: formatDateTime(o.created_at, true) },
   ];
   return (
     <PageContainer
@@ -62,7 +64,7 @@ export default function OrderDetail() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
           gap: 2,
           mb: 2.5,
           pb: 2.5,

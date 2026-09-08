@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { formatDateTime } from "../utils/datetime";
 
 const STATUS: Record<string, string> = {
   PENDING_PAY: "待付款",
@@ -49,6 +50,7 @@ export default function Orders() {
             <TableCell>金额</TableCell>
             <TableCell>履约</TableCell>
             <TableCell>状态</TableCell>
+            <TableCell>下单时间</TableCell>
             <TableCell>操作</TableCell>
           </TableRow>
         </TableHead>
@@ -62,6 +64,7 @@ export default function Orders() {
               <TableCell>¥{(o.pay_amount_cent / 100).toFixed(2)}</TableCell>
               <TableCell>{o.fulfill_type === "PICKUP" ? "自提" : "配送"}</TableCell>
               <TableCell>{STATUS[o.status] || o.status}</TableCell>
+              <TableCell>{formatDateTime(o.created_at)}</TableCell>
               <TableCell>
                 <Button
                   size="small"
@@ -75,7 +78,7 @@ export default function Orders() {
               </TableCell>
             </TableRow>
           ))}
-          {!list.length && <EmptyRow cols={6} />}
+          {!list.length && <EmptyRow cols={7} />}
         </TableBody>
       </DataTable>
     </PageContainer>

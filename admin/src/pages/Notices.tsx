@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { formatDateTime } from "../utils/datetime";
 
 export default function Notices() {
   const [list, setList] = useState<any[]>([]);
@@ -29,7 +30,7 @@ export default function Notices() {
                 {n.title} {n.body}
               </TableCell>
               <TableCell>{n.status === "SENT" ? "已记发送" : "未订阅跳过"}</TableCell>
-              <TableCell>{String(n.created_at).slice(0, 19)}</TableCell>
+              <TableCell>{formatDateTime(n.created_at, true)}</TableCell>
             </TableRow>
           ))}
           {!list.length && <EmptyRow cols={5} />}
