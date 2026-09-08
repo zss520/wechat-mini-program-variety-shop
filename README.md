@@ -24,6 +24,20 @@ docs/          需求与技术方案
 | 服务端 | Node.js 16.17.0 + Express 4 + knex + **MySQL 8** |
 | 金额 | 整数分；订单预占库存；购买率以支付回调为准 |
 
+## 在你自己电脑上建库表（必做）
+
+云端开发机里的 MySQL **不会**同步到你的电脑。要在本机看到 `variety_shop` 和表，请在你自己的 MySQL 8 上导入：
+
+```bash
+# 本机命令行（主机 127.0.0.1 端口 3306 用户 root 密码 root）
+mysql -h127.0.0.1 -P3306 -uroot -proot --default-character-set=utf8mb4 < scripts/variety_shop.sql
+```
+
+Windows 也可在仓库里双击 `scripts/import-local.cmd`。  
+或用 Navicat / Workbench / DBeaver 连接本机后，打开并执行 `scripts/variety_shop.sql`。
+
+导入成功后应看到库 **variety_shop**，共 18 张表（`goods` `orders` `admin_users` 等），并带示例商品。管理端账号 `admin` / `admin123`。
+
 ## 本地启动
 
 需要 **Node.js 16.17.0** 与本机 **MySQL 8**（utf8mb4）。默认连接 `127.0.0.1:3306`，账号 `root` / `root`。开发库 `variety_shop`，测试库 `variety_shop_test`。
