@@ -4,8 +4,10 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { useFeedback } from "../components/FeedbackProvider";
 import { formatDateRange } from "../utils/datetime";
 import { asArray, asRecord, displayCouponRule, displayNumber, displayText } from "../utils/display";
+import { isValidNonNegInt } from "../utils/message";
 
 const empty = {
   name: "",
@@ -22,38 +24,68 @@ const empty = {
 };
 
 export default function Coupons() {
+  const fb = useFeedback();
   const [list, setList] = useState<any[]>([]);
   const [form, setForm] = useState(empty);
-  const load = () => api.get("/coupons").then((d: { list: any[] }) => setList(asArray(asRecord(d).list)));
+  const load = () => api.get("/coupons").then((d: { list: any[] }) => setList(asArray(asRecord(d).list))).catch((e) => fb.error(e));
   useEffect(() => {
     load();
   }, []);
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    await api.post("/coupons", form);
-    setForm(empty);
-    load();
+    if (!form.name.trim()) return fb.alert("请填写优惠券名称", { title: "请完善信息", severity: "warning" });
+    if (!isValidNonNegInt(form.minAmountCent)) return fb.alert("门槛须为大于等于 0 的整数，单位是分，如 3000 表示满 ¥30", { title: "请完善信息", severity: "warning" });
+    if (form.type === "FULL_REDUCE" && (!Number.isInteger(form.reduceCent) || form.reduceCent <= 0)) {
+      return fb.alert("减免金额须为大于 0 的整数，单位是分，如 500 表示减 ¥5", { title: "请完善信息", severity: "warning" });
+    }
+    if (form.type === "DISCOUNT" && (form.discountBp < 1000 || form.discountBp > 9900)) {
+      return fb.alert("折扣 BP 范围为 1000～9900，9000 表示 9 折", { title: "请完善信息", severity: "warning" });
+    }
+    if (!form.startAt || !form.endAt) return fb.alert("请填写有效期开始和结束时间", { title: "请完善信息", severity: "warning" });
+    if (form.startAt >= form.endAt) return fb.alert("结束时间须晚于开始时间", { title: "请完善信息", severity: "warning" });
+    try {
+      await api.post("/coupons", { ...form, name: form.name.trim() });
+      setForm(empty);
+      load();
+      await fb.success("优惠券已创建");
+    } catch (err) {
+      await fb.error(err);
+    }
   };
+
+  const voidCoupon = async (c: any) => {
+    const ok = await fb.confirm(`确定作废「${c.name}」？已领取未使用的券也将失效。`, { title: "作废优惠券", danger: true, confirmText: "作废" });
+    if (!ok) return;
+    try {
+      await api.delete(`/coupons/${c.id}`);
+      load();
+      await fb.success("优惠券已作废");
+    } catch (e) {
+      await fb.error(e);
+    }
+  };
+
   return (
-    <PageContainer title="优惠券">
-      <form onSubmit={submit}>
+    <PageContainer title="优惠券" description="带 * 为必填。金额填「分」。折扣 BP：9000 = 9 折。">
+      <form onSubmit={submit} noValidate>
         <InlineForm>
-          <TextField required size="small" label="名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <TextField select size="small" label="类型" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} sx={{ minWidth: 120 }}>
+          <TextField required size="small" label="名称" placeholder="最多 40 字" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} inputProps={{ maxLength: 40 }} />
+          <TextField required select size="small" label="类型" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} sx={{ minWidth: 120 }}>
             <MenuItem value="FULL_REDUCE">满减</MenuItem>
             <MenuItem value="DISCOUNT">折扣</MenuItem>
           </TextField>
-          <TextField size="small" type="number" label="门槛(分)" value={form.minAmountCent} onChange={(e) => setForm({ ...form, minAmountCent: Number(e.target.value) })} />
+          <TextField required size="small" type="number" label="门槛(分)" placeholder="如 3000" value={form.minAmountCent} onChange={(e) => setForm({ ...form, minAmountCent: Number(e.target.value) })} inputProps={{ min: 0, step: 1 }} sx={{ width: 130 }} />
           {form.type === "FULL_REDUCE" ? (
-            <TextField size="small" type="number" label="减免(分)" value={form.reduceCent} onChange={(e) => setForm({ ...form, reduceCent: Number(e.target.value) })} />
+            <TextField required size="small" type="number" label="减免(分)" placeholder="如 500" value={form.reduceCent} onChange={(e) => setForm({ ...form, reduceCent: Number(e.target.value) })} inputProps={{ min: 1, step: 1 }} sx={{ width: 130 }} />
           ) : (
             <>
-              <TextField size="small" type="number" label="折扣BP(9000=9折)" value={form.discountBp} onChange={(e) => setForm({ ...form, discountBp: Number(e.target.value) })} />
-              <TextField size="small" type="number" label="封顶(分)" value={form.discountCapCent} onChange={(e) => setForm({ ...form, discountCapCent: Number(e.target.value) })} />
+              <TextField required size="small" type="number" label="折扣BP" placeholder="9000=9折" value={form.discountBp} onChange={(e) => setForm({ ...form, discountBp: Number(e.target.value) })} inputProps={{ min: 1000, max: 9900, step: 100 }} sx={{ width: 140 }} />
+              <TextField size="small" type="number" label="封顶(分)" placeholder="0 为不封顶" value={form.discountCapCent} onChange={(e) => setForm({ ...form, discountCapCent: Number(e.target.value) })} inputProps={{ min: 0, step: 1 }} sx={{ width: 130 }} />
             </>
           )}
-          <TextField size="small" type="datetime-local" label="开始" InputLabelProps={{ shrink: true }} value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} />
-          <TextField size="small" type="datetime-local" label="结束" InputLabelProps={{ shrink: true }} value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} />
+          <TextField required size="small" type="datetime-local" label="开始" InputLabelProps={{ shrink: true }} value={form.startAt} onChange={(e) => setForm({ ...form, startAt: e.target.value })} />
+          <TextField required size="small" type="datetime-local" label="结束" InputLabelProps={{ shrink: true }} value={form.endAt} onChange={(e) => setForm({ ...form, endAt: e.target.value })} />
           <FormControlLabel control={<Switch checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />} label="启用" />
           <Button type="submit" variant="contained">
             新建
@@ -78,11 +110,9 @@ export default function Coupons() {
               <TableCell>{c.type === "DISCOUNT" ? "折扣" : "满减"}</TableCell>
               <TableCell>{displayCouponRule(c)}</TableCell>
               <TableCell>{displayNumber(c.claimed_count)}</TableCell>
+              <TableCell>{formatDateRange(c.start_at, c.end_at)}</TableCell>
               <TableCell>
-                {formatDateRange(c.start_at, c.end_at)}
-              </TableCell>
-              <TableCell>
-                <Button size="small" color="error" onClick={() => api.delete(`/coupons/${c.id}`).then(load)}>
+                <Button size="small" color="error" onClick={() => voidCoupon(c)}>
                   作废
                 </Button>
               </TableCell>

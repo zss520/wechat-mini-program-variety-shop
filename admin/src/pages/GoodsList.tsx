@@ -5,6 +5,7 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { useFeedback } from "../components/FeedbackProvider";
 import { asArray, asRecord, displayNumber, displayText, displayYuan, toFiniteNumber } from "../utils/display";
 
 type Goods = {
@@ -21,6 +22,7 @@ type Goods = {
 
 export default function GoodsList() {
   const nav = useNavigate();
+  const fb = useFeedback();
   const [keyword, setKeyword] = useState("");
   const [onSale, setOnSale] = useState("");
   const [list, setList] = useState<Goods[]>([]);
@@ -32,15 +34,46 @@ export default function GoodsList() {
         const data = asRecord(d);
         setList(asArray(data.list));
         setTotal(toFiniteNumber(data.total) ?? 0);
-      });
+      })
+      .catch((e) => fb.error(e));
   };
   useEffect(() => {
     load();
   }, []);
+
+  const saveWeight = async (g: Goods, raw: string) => {
+    const v = Number(raw);
+    if (v === g.manual_weight) return;
+    if (!Number.isInteger(v) || v < -50 || v > 50) {
+      await fb.alert("排序加权须为 -50 到 50 的整数", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    try {
+      await api.patch(`/goods/${g.id}/weight`, { manualWeight: v });
+      load();
+    } catch (e) {
+      await fb.error(e);
+    }
+  };
+
+  const toggleSale = async (g: Goods) => {
+    if (g.on_sale) {
+      const ok = await fb.confirm(`确定下架「${g.name}」？顾客端将不再展示。`, { title: "下架商品", danger: true, confirmText: "下架" });
+      if (!ok) return;
+    }
+    try {
+      await api.patch(`/goods/${g.id}/on-sale`, { onSale: !g.on_sale });
+      load();
+      await fb.success(g.on_sale ? "已下架" : "已上架");
+    } catch (e) {
+      await fb.error(e);
+    }
+  };
+
   return (
     <PageContainer
       title="商品"
-      description={`共 ${displayNumber(total, "0")} 件`}
+      description={`共 ${displayNumber(total, "0")} 件。加权为整数 -50～50。`}
       extra={
         <Button variant="contained" onClick={() => nav("/goods/new")}>
           新建商品
@@ -48,7 +81,7 @@ export default function GoodsList() {
       }
     >
       <InlineForm>
-        <TextField size="small" label="名称" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
+        <TextField size="small" label="名称" placeholder="选填，回车查询" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>上架</InputLabel>
           <Select label="上架" value={onSale} onChange={(e) => setOnSale(String(e.target.value))}>
@@ -88,11 +121,8 @@ export default function GoodsList() {
                   type="number"
                   defaultValue={g.manual_weight}
                   sx={{ width: 88 }}
-                  onBlur={(e) => {
-                    const v = Number(e.target.value);
-                    if (v === g.manual_weight) return;
-                    api.patch(`/goods/${g.id}/weight`, { manualWeight: v }).then(load);
-                  }}
+                  inputProps={{ min: -50, max: 50, step: 1, title: "整数 -50～50，失焦保存" }}
+                  onBlur={(e) => saveWeight(g, e.target.value)}
                 />
               </TableCell>
               <TableCell>
@@ -102,7 +132,7 @@ export default function GoodsList() {
                 <Button size="small" onClick={() => nav(`/goods/${g.id}`)}>
                   编辑
                 </Button>
-                <Button size="small" onClick={() => api.patch(`/goods/${g.id}/on-sale`, { onSale: !g.on_sale }).then(load)}>
+                <Button size="small" onClick={() => toggleSale(g)}>
                   {g.on_sale ? "下架" : "上架"}
                 </Button>
               </TableCell>

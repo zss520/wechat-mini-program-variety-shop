@@ -145,6 +145,28 @@ export const theme = createTheme({
         root: { borderRadius: 6 },
       },
     },
+    MuiDialog: {
+      defaultProps: { maxWidth: "xs", fullWidth: true },
+      styleOverrides: {
+        container: { alignItems: "center", justifyContent: "center" },
+        paper: { borderRadius: 8, margin: 16 },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: {
+        root: { fontSize: 16, fontWeight: 600, padding: "20px 24px 8px" },
+      },
+    },
+    MuiDialogContent: {
+      styleOverrides: {
+        root: { padding: "8px 24px 12px" },
+      },
+    },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: { padding: "8px 24px 20px", justifyContent: "center" },
+      },
+    },
     MuiTooltip: {
       styleOverrides: {
         tooltip: { fontSize: 12, backgroundColor: "rgba(0,0,0,0.85)" },

@@ -6,17 +6,36 @@ import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { asArray, asRecord, displayNumber, displayPercent, displayText } from "../utils/display";
+import { useFeedback } from "../components/FeedbackProvider";
 
 export default function Reports() {
+  const fb = useFeedback();
   const [from, setFrom] = useState(dayjs().format("YYYY-MM-DD"));
   const [to, setTo] = useState(dayjs().format("YYYY-MM-DD"));
   const [funnel, setFunnel] = useState<{ steps: { name: string; uv: number }[] }>({ steps: [] });
   const [goods, setGoods] = useState<any[]>([]);
   const [signals, setSignals] = useState<any[]>([]);
-  const load = () => {
-    api.get("/reports/funnel", { params: { from, to } }).then((d) => setFunnel({ steps: asArray(asRecord(d).steps) }));
-    api.get("/reports/goods", { params: { from, to, pageSize: 50 } }).then((d) => setGoods(asArray(asRecord(d).list)));
-    api.get("/reports/signals", { params: { from, to } }).then((d) => setSignals(asArray(d)));
+  const load = async () => {
+    if (!from || !to) {
+      await fb.alert("请选择查询起止日期，格式为年-月-日", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (from > to) {
+      await fb.alert("结束日期不能早于开始日期", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    try {
+      const [funnelData, goodsData, signalData] = await Promise.all([
+        api.get("/reports/funnel", { params: { from, to } }),
+        api.get("/reports/goods", { params: { from, to, pageSize: 50 } }),
+        api.get("/reports/signals", { params: { from, to } }),
+      ]);
+      setFunnel({ steps: asArray(asRecord(funnelData).steps) });
+      setGoods(asArray(asRecord(goodsData).list));
+      setSignals(asArray(signalData));
+    } catch (e) {
+      await fb.error(e);
+    }
   };
   useEffect(() => {
     load();
@@ -26,12 +45,23 @@ export default function Reports() {
       title="数据分析"
       extra={
         <InlineForm sx={{ mb: 0 }}>
-          <TextField type="date" size="small" label="从" InputLabelProps={{ shrink: true }} value={from} onChange={(e) => setFrom(e.target.value)} />
-          <TextField type="date" size="small" label="到" InputLabelProps={{ shrink: true }} value={to} onChange={(e) => setTo(e.target.value)} />
+          <TextField required type="date" size="small" label="从" InputLabelProps={{ shrink: true }} value={from} onChange={(e) => setFrom(e.target.value)} />
+          <TextField required type="date" size="small" label="到" InputLabelProps={{ shrink: true }} value={to} onChange={(e) => setTo(e.target.value)} />
           <Button variant="outlined" onClick={load}>
             查询
           </Button>
-          <Button variant="contained" onClick={() => api.post("/jobs/recompute-heat").then(load)}>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              try {
+                await api.post("/jobs/recompute-heat");
+                await load();
+                await fb.success("热度已重算");
+              } catch (e) {
+                await fb.error(e);
+              }
+            }}
+          >
             重算热度
           </Button>
         </InlineForm>

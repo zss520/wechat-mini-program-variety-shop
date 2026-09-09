@@ -1,10 +1,11 @@
-import { Alert, Box, Button, TextField, Typography } from "@mui/material";
+import { Box, Button, TextField, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { useFeedback } from "../components/FeedbackProvider";
 import { formatDateTime } from "../utils/datetime";
 import { asArray, asRecord, displayFulfillType, displayNumber, displayText, displayYuan } from "../utils/display";
 
@@ -21,26 +22,31 @@ const STATUS: Record<string, string> = {
 export default function OrderDetail() {
   const { id } = useParams();
   const nav = useNavigate();
+  const fb = useFeedback();
   const [o, setO] = useState<Record<string, any> | null>(null);
   const [code, setCode] = useState("");
-  const [err, setErr] = useState("");
   const load = () =>
-    api.get(`/orders/${id}`).then((d) => {
-      setO(asRecord(d));
-      setCode(asRecord(d).pickup_code || "");
-    });
+    api
+      .get(`/orders/${id}`)
+      .then((d) => {
+        setO(asRecord(d));
+        setCode(asRecord(d).pickup_code || "");
+      })
+      .catch((e) => fb.error(e, "订单加载失败"));
   useEffect(() => {
     load();
   }, [id]);
-  const act = async (path: string, body?: unknown) => {
-    setErr("");
+
+  const act = async (path: string, body?: unknown, success = "操作已完成") => {
     try {
       await api.post(`/orders/${id}${path}`, body || {});
       load();
+      await fb.success(success);
     } catch (e) {
-      setErr((e as Error).message);
+      await fb.error(e);
     }
   };
+
   if (!o) return null;
   const meta = [
     { k: "履约", v: displayFulfillType(o.fulfill_type) },
@@ -58,15 +64,10 @@ export default function OrderDetail() {
         </Button>
       }
     >
-      {err && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {err}
-        </Alert>
-      )}
       <Box
         sx={{
           display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
           gap: 2,
           mb: 2.5,
           pb: 2.5,
@@ -108,35 +109,83 @@ export default function OrderDetail() {
       </DataTable>
       <InlineForm sx={{ mt: 2.5, mb: 0 }}>
         {o.status === "PENDING_PAY" && (
-          <Button variant="outlined" onClick={() => act("/mock-pay")}>
+          <Button
+            variant="outlined"
+            onClick={async () => {
+              const ok = await fb.confirm("仅开发环境可用。确定模拟支付该订单？", { title: "模拟支付" });
+              if (ok) act("/mock-pay", {}, "已模拟支付");
+            }}
+          >
             模拟支付（开发）
           </Button>
         )}
         {o.status === "PENDING_PACK" && (
-          <Button variant="contained" onClick={() => act("/pack")}>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              const ok = await fb.confirm("确认备货完成？顾客将收到待取货状态。", { title: "备货完成" });
+              if (ok) act("/pack", {}, "已标记备货完成");
+            }}
+          >
             备货完成
           </Button>
         )}
         {o.status === "WAIT_PICKUP" && (
           <>
-            <TextField size="small" label="提货码" value={code} onChange={(e) => setCode(e.target.value)} />
-            <Button variant="contained" onClick={() => act("/pickup", { code })}>
+            <TextField
+              required
+              size="small"
+              label="提货码"
+              placeholder="顾客出示的编码"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+            />
+            <Button
+              variant="contained"
+              onClick={async () => {
+                const v = code.trim();
+                if (!v) {
+                  await fb.alert("请填写提货码", { title: "请完善信息", severity: "warning" });
+                  return;
+                }
+                act("/pickup", { code: v }, "核销成功");
+              }}
+            >
               核销
             </Button>
           </>
         )}
         {o.status === "WAIT_DELIVER" && (
-          <Button variant="contained" onClick={() => act("/deliver/start")}>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              const ok = await fb.confirm("确认开始配送？", { title: "开始配送" });
+              if (ok) act("/deliver/start", {}, "已开始配送");
+            }}
+          >
             开始配送
           </Button>
         )}
         {o.status === "DELIVERING" && (
-          <Button variant="contained" onClick={() => act("/deliver/complete")}>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              const ok = await fb.confirm("确认顾客已收到货物？", { title: "确认送达" });
+              if (ok) act("/deliver/complete", {}, "已确认送达");
+            }}
+          >
             确认送达
           </Button>
         )}
         {(o.status === "PENDING_PAY" || o.status === "PENDING_PACK") && (
-          <Button color="error" variant="outlined" onClick={() => act("/cancel", { reason: "店主取消" })}>
+          <Button
+            color="error"
+            variant="outlined"
+            onClick={async () => {
+              const ok = await fb.confirm("取消后库存将回滚，确定取消该订单？", { title: "取消订单", danger: true, confirmText: "取消订单" });
+              if (ok) act("/cancel", { reason: "店主取消" }, "订单已取消");
+            }}
+          >
             取消订单
           </Button>
         )}

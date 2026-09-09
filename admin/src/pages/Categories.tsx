@@ -4,31 +4,93 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { useFeedback } from "../components/FeedbackProvider";
 import { asArray, displayNumber, displayText } from "../utils/display";
 
 type Cat = { id: number; name: string; sort: number; enabled: number };
 
 export default function Categories() {
+  const fb = useFeedback();
   const [list, setList] = useState<Cat[]>([]);
   const [name, setName] = useState("");
-  const load = () => api.get("/categories").then((d) => setList(asArray(d)));
+  const load = () => api.get("/categories").then((d) => setList(asArray(d))).catch((e) => fb.error(e));
   useEffect(() => {
     load();
   }, []);
+
+  const add = async () => {
+    const n = name.trim();
+    if (!n) {
+      await fb.alert("请填写分类名称", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (n.length > 20) {
+      await fb.alert("分类名称最多 20 个字", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    try {
+      await api.post("/categories", { name: n });
+      setName("");
+      load();
+      await fb.success("分类已新增");
+    } catch (e) {
+      await fb.error(e);
+    }
+  };
+
+  const rename = async (c: Cat) => {
+    const values = await fb.prompt({
+      title: "修改分类名称",
+      fields: [
+        { name: "name", label: "名称", required: true, helperText: "必填，最多 20 个字", defaultValue: c.name },
+      ],
+      confirmText: "保存",
+    });
+    if (!values) return;
+    const n = values.name.trim();
+    if (!n || n.length > 20) {
+      await fb.alert("分类名称须为 1～20 个字", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    try {
+      await api.put(`/categories/${c.id}`, { name: n });
+      load();
+      await fb.success("分类已更新");
+    } catch (e) {
+      await fb.error(e);
+    }
+  };
+
+  const remove = async (c: Cat) => {
+    const ok = await fb.confirm(`确定删除「${c.name}」？若该分类下仍有商品将无法删除。`, {
+      title: "删除分类",
+      danger: true,
+      confirmText: "删除",
+    });
+    if (!ok) return;
+    try {
+      await api.delete(`/categories/${c.id}`);
+      load();
+      await fb.success("分类已删除");
+    } catch (e) {
+      await fb.error(e);
+    }
+  };
+
   return (
-    <PageContainer title="分类">
+    <PageContainer title="分类" description="带 * 的为必填。名称 1～20 个字。">
       <InlineForm>
-        <TextField size="small" label="名称" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && name && api.post("/categories", { name }).then(() => { setName(""); load(); })} />
-        <Button
-          variant="contained"
-          onClick={() => {
-            if (!name) return;
-            api.post("/categories", { name }).then(() => {
-              setName("");
-              load();
-            });
-          }}
-        >
+        <TextField
+          required
+          size="small"
+          label="名称"
+          placeholder="如 酒水饮料"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          inputProps={{ maxLength: 20 }}
+        />
+        <Button variant="contained" onClick={add}>
           新增
         </Button>
       </InlineForm>
@@ -47,10 +109,16 @@ export default function Categories() {
               <TableCell>{displayText(c.name)}</TableCell>
               <TableCell>{displayNumber(c.sort)}</TableCell>
               <TableCell>
-                <Switch checked={!!c.enabled} onChange={(e) => api.put(`/categories/${c.id}`, { enabled: e.target.checked }).then(load)} />
+                <Switch
+                  checked={!!c.enabled}
+                  onChange={(e) => api.put(`/categories/${c.id}`, { enabled: e.target.checked }).then(load).catch((err) => fb.error(err))}
+                />
               </TableCell>
               <TableCell>
-                <Button color="error" onClick={() => api.delete(`/categories/${c.id}`).then(load).catch((e) => alert(e.message))}>
+                <Button size="small" onClick={() => rename(c)}>
+                  改名
+                </Button>
+                <Button color="error" onClick={() => remove(c)}>
                   删除
                 </Button>
               </TableCell>
