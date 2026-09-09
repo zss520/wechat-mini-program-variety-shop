@@ -13,6 +13,14 @@ async function run() {
   const miss = await restoreWxSession("code1", deviceId);
   assert(miss.needAuthorize === true && !miss.token, "new openid should need authorize");
 
+  let badPhone = false;
+  try {
+    await authorizeWxMember({ loginCode: "code-bad", deviceId: `bad_${stamp}`, nickname: "测试", phone: "12345" });
+  } catch (e: any) {
+    badPhone = String(e.message).includes("手机号");
+  }
+  assert(badPhone, "invalid phone should be rejected");
+
   const authed = await authorizeWxMember({
     loginCode: "code1",
     deviceId,

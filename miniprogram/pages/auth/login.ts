@@ -7,9 +7,23 @@ import {
   wxLoginCode,
 } from "../../utils/request";
 
+function validMobile(raw: string) {
+  return /^1[3-9]\d{9}$/.test(String(raw || "").replace(/\D/g, ""));
+}
+
+function phoneAuthFailReason(d: any): string {
+  const errno = Number(d?.errno || 0);
+  const msg = String(d?.errMsg || "");
+  if (errno === 1400001) return "微信手机号次数已用完，请填写手机号登录";
+  if (errno === 102 || msg.indexOf("no permission") >= 0) return "当前小程序暂未开通微信手机号，请填写手机号登录";
+  if (msg.indexOf("deny") >= 0 || msg.indexOf("cancel") >= 0) return "未授权微信手机号，请填写手机号后登录";
+  return "未获取到微信手机号，请填写手机号后登录";
+}
+
 Page({
   data: {
     nickname: "",
+    phone: "",
     avatarUrl: "",
     avatarLocal: "",
     agree: false,
@@ -45,6 +59,9 @@ Page({
   onNick(e: any) {
     this.setData({ nickname: (e.detail?.value || "").trim() });
   },
+  onPhone(e: any) {
+    this.setData({ phone: String(e.detail?.value || "").replace(/\D/g, "").slice(0, 11) });
+  },
   onAgree() {
     this.setData({ agree: !this.data.agree });
   },
@@ -52,7 +69,7 @@ Page({
     const url = this.data.privacyUrl;
     if (url) wx.setClipboardData({ data: url, success: () => wx.showToast({ title: "隐私政策链接已复制" }) });
   },
-  validate(): boolean {
+  validate(needPhone: boolean): boolean {
     if (!this.data.agree) {
       wx.showToast({ title: "请先同意隐私政策", icon: "none" });
       return false;
@@ -61,11 +78,18 @@ Page({
       wx.showToast({ title: "请填写微信昵称", icon: "none" });
       return false;
     }
+    if (this.data.phone && !validMobile(this.data.phone)) {
+      wx.showToast({ title: "请填写正确手机号", icon: "none" });
+      return false;
+    }
+    if (needPhone && !this.data.mockWx && !validMobile(this.data.phone)) {
+      wx.showToast({ title: "请填写正确手机号", icon: "none" });
+      return false;
+    }
     return true;
   },
   async submit(phoneCode?: string, phone?: string) {
     if (this.data.submitting) return;
-    if (!this.validate()) return;
     this.setData({ submitting: true });
     try {
       const loginCode = (await wxLoginCode()) || `dev_${Date.now()}`;
@@ -93,17 +117,21 @@ Page({
       this.setData({ submitting: false });
     }
   },
+  onAuthTap() {
+    if (!this.validate(true)) return;
+    this.submit(undefined, this.data.phone.trim() || undefined);
+  },
+  onWxPhoneTap() {
+    this.validate(false);
+  },
   onGetPhone(e: any) {
+    if (!this.validate(false)) return;
     const d = e.detail || {};
     if (d.errMsg && d.errMsg.indexOf("ok") < 0) {
-      wx.showToast({ title: "需要授权手机号才能下单", icon: "none" });
+      wx.showToast({ title: phoneAuthFailReason(d), icon: "none" });
       return;
     }
     if (d.code) this.submit(d.code);
-    else if (this.data.mockWx) this.submit(undefined, "13800138000");
-    else wx.showToast({ title: "未获取到手机号授权", icon: "none" });
-  },
-  onMockAuth() {
-    this.submit(undefined, "13800138000");
+    else wx.showToast({ title: "未获取到微信手机号，请填写手机号后登录", icon: "none" });
   },
 });

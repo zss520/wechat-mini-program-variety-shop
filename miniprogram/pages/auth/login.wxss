@@ -50,6 +50,9 @@
   border-radius: 16rpx;
   padding: 8rpx 24rpx;
 }
+.field + .field {
+  margin-top: 16rpx;
+}
 .nick {
   height: 88rpx;
   font-size: 30rpx;
@@ -88,14 +91,14 @@
 .auth-btn::after {
   border: none;
 }
-.mock-btn {
+.wx-phone-btn {
   margin-top: 20rpx;
   background: #fff7ed;
   color: #c2410c;
   border-radius: 48rpx;
   font-size: 28rpx;
 }
-.mock-btn::after {
+.wx-phone-btn::after {
   border: none;
 }
 .foot {

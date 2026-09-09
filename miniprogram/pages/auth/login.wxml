@@ -1,7 +1,7 @@
 <view class="wrap">
   <view class="hero">
     <view class="title">微信授权登录</view>
-    <view class="desc">授权后成为本店会员，即可下单。我们将获取你的微信昵称、头像和手机号，用于订单联系与会员服务。</view>
+    <view class="desc">填写昵称和手机号即可成为会员并下单。手机号用于订单联系与售后；也可选用微信一键授权手机号。</view>
   </view>
 
   <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
@@ -21,6 +21,16 @@
       bindchange="onNick"
     />
   </view>
+  <view class="field">
+    <input
+      type="number"
+      class="nick"
+      placeholder="{{mockWx ? '手机号（可留空，开发环境将使用测试号）' : '请填写手机号'}}"
+      value="{{phone}}"
+      maxlength="11"
+      bindinput="onPhone"
+    />
+  </view>
 
   <view class="agree" bindtap="onAgree">
     <view class="box {{agree ? 'on' : ''}}"></view>
@@ -30,14 +40,16 @@
     </view>
   </view>
 
+  <button class="auth-btn" bindtap="onAuthTap" loading="{{submitting}}">微信授权登录</button>
+
   <button
-    class="auth-btn"
-    open-type="getPhoneNumber"
+    wx:if="{{!mockWx}}"
+    class="wx-phone-btn"
+    open-type="{{agree && nickname ? 'getPhoneNumber' : ''}}"
+    bindtap="onWxPhoneTap"
     bindgetphonenumber="onGetPhone"
     loading="{{submitting}}"
-  >微信授权登录</button>
+  >使用微信手机号</button>
 
-  <button wx:if="{{mockWx}}" class="mock-btn" bindtap="onMockAuth" loading="{{submitting}}">开发模拟授权</button>
-
-  <view class="foot">未授权登录不能下单。授权成功即记为会员。</view>
+  <view class="foot">未登录不能下单。无需在登录时强行授权微信手机号。</view>
 </view>

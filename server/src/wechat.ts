@@ -46,27 +46,33 @@ export async function getAccessToken(): Promise<string> {
   return accessTokenCache.token;
 }
 
-export async function getWxPhone(phoneCode?: string, mockPhone?: string): Promise<string> {
-  if (config.mockWx) {
-    const p = String(mockPhone || "13800138000").replace(/\D/g, "");
-    if (!/^1[3-9]\d{9}$/.test(p)) throw new HttpError(400, "模拟手机号格式不正确");
-    return p;
-  }
-  if (!phoneCode) throw new HttpError(400, "缺少手机号授权凭证");
-  const token = await getAccessToken();
-  const { data } = await axios.post(
-    `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${encodeURIComponent(token)}`,
-    { code: phoneCode },
-    { timeout: 8000 }
-  );
-  if (data.errcode && Number(data.errcode) !== 0) {
-    throw new HttpError(400, data.errmsg || "微信手机号授权失败");
-  }
-  const info = data.phone_info || {};
-  const phone = String(info.purePhoneNumber || info.phoneNumber || "").replace(/\D/g, "");
-  const cn = phone.length > 11 ? phone.slice(-11) : phone;
-  if (!/^1[3-9]\d{9}$/.test(cn)) throw new HttpError(400, "未获取到有效手机号");
+export function normalizeCnMobile(raw?: string): string {
+  const digits = String(raw || "").replace(/\D/g, "");
+  const cn = digits.length > 11 ? digits.slice(-11) : digits;
+  if (!/^1[3-9]\d{9}$/.test(cn)) throw new HttpError(400, "手机号格式不正确");
   return cn;
+}
+
+export async function getWxPhone(phoneCode?: string, fallbackPhone?: string): Promise<string> {
+  if (config.mockWx) {
+    return normalizeCnMobile(fallbackPhone || "13800138000");
+  }
+  if (phoneCode) {
+    const token = await getAccessToken();
+    const { data } = await axios.post(
+      `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${encodeURIComponent(token)}`,
+      { code: phoneCode },
+      { timeout: 8000 }
+    );
+    if (data.errcode && Number(data.errcode) !== 0) {
+      throw new HttpError(400, data.errmsg || "微信手机号授权失败");
+    }
+    const info = data.phone_info || {};
+    const phone = String(info.purePhoneNumber || info.phoneNumber || "").replace(/\D/g, "");
+    return normalizeCnMobile(phone);
+  }
+  if (fallbackPhone) return normalizeCnMobile(fallbackPhone);
+  throw new HttpError(400, "请填写或授权手机号");
 }
 
 export function mockPayParams(orderNo: string) {
