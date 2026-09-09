@@ -3,6 +3,14 @@ import { asArray, asRecord, displayText } from "../../utils/display";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
+function homeBlock(home: Record<string, unknown>, key: string, fallbackTitle = "") {
+  const b = asRecord(home[key]);
+  return {
+    title: displayText(b.title, fallbackTitle),
+    list: asArray(b.list),
+  };
+}
+
 Page({
   data: {
     banners: [] as any[],
@@ -12,6 +20,10 @@ Page({
     forYou: [] as any[],
     seckills: [] as any[],
     groups: [] as any[],
+    seckillTitle: "限时秒杀",
+    groupTitle: "拼团",
+    dealTitle: "特价专区",
+    forYouTitle: "为你推荐",
     recommendTitle: "本店推荐",
     settings: {} as any,
     shopHint: "",
@@ -26,21 +38,30 @@ Page({
     try {
       const home = asRecord(await request("/home"));
       const boot = asRecord(await request("/shop/bootstrap"));
-      const banners = asArray(home.banners);
+      const banner = homeBlock(home, "banner");
+      const seckill = homeBlock(home, "seckill", "限时秒杀");
+      const group = homeBlock(home, "group", "拼团");
+      const deal = homeBlock(home, "deal", "特价专区");
+      const forYou = homeBlock(home, "forYou", "为你推荐");
+      const recommend = homeBlock(home, "recommend", "本店推荐");
       const settings = asRecord(boot.settings);
-      const seckills = asArray(home.seckills).map((x: any) => ({
+      const seckills = seckill.list.map((x: any) => ({
         ...x,
-        remainMs: x.end_at ? Math.max(0, new Date(x.end_at).getTime() - Date.now()) : 0,
+        remainMs: x.end_at ? Math.max(0, new Date(x.end_at).getTime() - Date.now()) : Number(x.remainMs) || 0,
       }));
       this.setData({
-        banners,
-        bannerImages: banners.map((b: any) => b.image_url).filter(Boolean),
-        deals: asArray(home.deals),
-        recommend: asArray(home.recommend),
-        forYou: asArray(home.forYou),
+        banners: banner.list,
+        bannerImages: banner.list.map((b: any) => b.image_url).filter(Boolean),
+        deals: deal.list,
+        recommend: recommend.list,
+        forYou: forYou.list,
         seckills,
-        groups: asArray(home.groups),
-        recommendTitle: displayText(home.recommendTitle, "本店推荐"),
+        groups: group.list,
+        seckillTitle: seckill.title,
+        groupTitle: group.title,
+        dealTitle: deal.title,
+        forYouTitle: forYou.title,
+        recommendTitle: recommend.title,
         settings,
         shopHint: [settings.pickup_address, settings.business_hours].filter(Boolean).join(" · "),
       });

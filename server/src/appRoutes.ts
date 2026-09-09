@@ -4,14 +4,15 @@ import { db } from "./db";
 import { ok, HttpError, parsePage } from "./http";
 import { optionalUser, requireRole, signToken } from "./auth";
 import { getSettings } from "./settings";
-import { applyGoodsSort, fillRecommend, publicGoods } from "./recommend";
+import { applyGoodsSort, publicGoods } from "./recommend";
+import { buildHome } from "./home";
 import { ingestEvents } from "./analytics";
 import { code2session, mockPayParams } from "./wechat";
 import { cancelOrder, createOrder, loadOrderDetail, markPaid, previewOrder, ST } from "./orderService";
 import { config, publicUrl } from "./config";
 import { claimCoupon, listClaimableCoupons } from "./marketing";
 import { activityWindowOk, listActiveGroupBuys, listActiveSeckills, loadTeam } from "./campaigns";
-import { cartUpsell, personalizedGoods, relatedGoods } from "./personalize";
+import { cartUpsell, relatedGoods } from "./personalize";
 import { listNotifyLogs, setSubscribe } from "./notify";
 import { salePriceOf } from "./pricing";
 
@@ -79,27 +80,7 @@ appRouter.post("/auth/wx-phone", requireRole("user"), async (req, res, next) => 
 
 appRouter.get("/home", optionalUser, async (req, res, next) => {
   try {
-    const banners = await db("banners").where({ enabled: 1 }).orderBy("sort", "desc").limit(5);
-    const now = new Date();
-    const deals = await db("goods")
-      .where({ on_sale: 1 })
-      .whereNull("deleted_at")
-      .whereNotNull("special_price_cent")
-      .where("special_start", "<=", now)
-      .where("special_end", ">=", now)
-      .orderBy("sort", "desc")
-      .limit(12);
-    const rec = await fillRecommend("home_recommend");
-    const forYou = await personalizedGoods(req.auth?.id || null, 8);
-    ok(res, {
-      banners: banners.map((b: { image_url: string }) => ({ ...b, image_url: publicUrl(b.image_url) })),
-      deals: deals.map(publicGoods),
-      seckills: await listActiveSeckills(),
-      groups: await listActiveGroupBuys(),
-      forYou,
-      recommendTitle: rec.slot?.title || "本店推荐",
-      recommend: rec.list.map(publicGoods),
-    });
+    ok(res, await buildHome(req.auth?.id || null));
   } catch (e) {
     next(e);
   }

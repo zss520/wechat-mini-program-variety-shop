@@ -32,7 +32,7 @@
 
 <view class="sec" wx:if="{{seckills.length}}">
   <view class="sec-head" bindtap="goSeckill">
-    <view class="sec-title">限时秒杀</view>
+    <view class="sec-title">{{disp.text(seckillTitle, '限时秒杀')}}</view>
     <view class="sec-more">更多<t-icon name="chevron-right" size="32rpx" /></view>
   </view>
   <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
@@ -47,7 +47,7 @@
 
 <view class="sec" wx:if="{{groups.length}}">
   <view class="sec-head" bindtap="goGroups">
-    <view class="sec-title">拼团</view>
+    <view class="sec-title">{{disp.text(groupTitle, '拼团')}}</view>
     <view class="sec-more">更多<t-icon name="chevron-right" size="32rpx" /></view>
   </view>
   <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
@@ -62,7 +62,7 @@
 
 <view class="sec deal-sec" wx:if="{{deals.length}}">
   <view class="sec-head">
-    <view class="sec-title">特价专区</view>
+    <view class="sec-title">{{disp.text(dealTitle, '特价专区')}}</view>
     <t-tag theme="danger" variant="light" size="small">限时</t-tag>
   </view>
   <view class="deal-item" wx:for="{{deals}}" wx:key="id">
@@ -72,7 +72,7 @@
 
 <view class="sec" wx:if="{{forYou.length}}">
   <view class="sec-head">
-    <view class="sec-title">为你推荐</view>
+    <view class="sec-title">{{disp.text(forYouTitle, '为你推荐')}}</view>
   </view>
   <view class="goods-grid">
     <view class="goods-grid-item" wx:for="{{forYou}}" wx:key="id">
