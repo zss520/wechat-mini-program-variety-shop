@@ -4,15 +4,32 @@ function isEmpty(v) {
   return v === undefined || v === null || v === '';
 }
 
+function isSpaceChar(c) {
+  return c === ' ' || c === '\t' || c === '\n' || c === '\r';
+}
+
+function trim(v) {
+  var s = '' + v;
+  var start = 0;
+  var end = s.length - 1;
+  while (start <= end && isSpaceChar(s.charAt(start))) {
+    start++;
+  }
+  while (end >= start && isSpaceChar(s.charAt(end))) {
+    end--;
+  }
+  if (start > end) return '';
+  return s.substring(start, end + 1);
+}
+
 function toNum(v) {
-  if (isEmpty(v) || typeof v === 'boolean') return NaN;
+  if (isEmpty(v) || typeof v === 'boolean') return parseFloat('');
   if (typeof v === 'number') return v;
-  var n = parseFloat('' + v);
-  return n;
+  return parseFloat('' + v);
 }
 
 function isFiniteNum(n) {
-  return typeof n === 'number' && n === n && n !== Infinity && n !== -Infinity;
+  return typeof n === 'number' && !isNaN(n) && isFinite(n);
 }
 
 function fallbackOf(fallback) {
@@ -23,7 +40,7 @@ function text(v, fallback) {
   var fb = fallbackOf(fallback);
   if (isEmpty(v)) return fb;
   if (typeof v === 'number' && !isFiniteNum(v)) return fb;
-  var s = ('' + v).replace(/^\s+|\s+$/g, '');
+  var s = trim(v);
   if (!s || s === 'undefined' || s === 'null' || s === 'NaN' || s === 'Invalid Date') return fb;
   return s;
 }
@@ -77,7 +94,7 @@ function couponNote(name, discountCent) {
 function join(a, b, fallback) {
   var left = text(a, '');
   var right = text(b, '');
-  var s = (left + ' ' + right).replace(/^\s+|\s+$/g, '');
+  var s = trim(left + ' ' + right);
   return s || fallbackOf(fallback);
 }
 
