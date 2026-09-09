@@ -5,14 +5,22 @@ import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { useFeedback } from "../components/FeedbackProvider";
-import { asArray, displayNumber, displayText } from "../utils/display";
+import { asArray, displayText } from "../utils/display";
 
 type Cat = { id: number; name: string; sort: number; enabled: number };
+
+function parseSort(raw: string) {
+  const t = raw.trim();
+  if (t === "") return 0;
+  const v = Number(t);
+  return Number.isInteger(v) ? v : null;
+}
 
 export default function Categories() {
   const fb = useFeedback();
   const [list, setList] = useState<Cat[]>([]);
   const [name, setName] = useState("");
+  const [sort, setSort] = useState("0");
   const load = () => api.get("/categories").then((d) => setList(asArray(d))).catch((e) => fb.error(e));
   useEffect(() => {
     load();
@@ -28,11 +36,32 @@ export default function Categories() {
       await fb.alert("分类名称最多 20 个字", { title: "请完善信息", severity: "warning" });
       return;
     }
+    const s = parseSort(sort);
+    if (s == null) {
+      await fb.alert("排序须为整数，数字越大越靠前", { title: "请完善信息", severity: "warning" });
+      return;
+    }
     try {
-      await api.post("/categories", { name: n });
+      await api.post("/categories", { name: n, sort: s });
       setName("");
+      setSort("0");
       load();
       await fb.success("分类已新增");
+    } catch (e) {
+      await fb.error(e);
+    }
+  };
+
+  const saveSort = async (c: Cat, raw: string) => {
+    const s = parseSort(raw);
+    if (s == null) {
+      await fb.alert("排序须为整数，数字越大越靠前", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (s === c.sort) return;
+    try {
+      await api.put(`/categories/${c.id}`, { sort: s });
+      load();
     } catch (e) {
       await fb.error(e);
     }
@@ -78,7 +107,7 @@ export default function Categories() {
   };
 
   return (
-    <PageContainer title="分类" description="带 * 的为必填。名称 1～20 个字。">
+    <PageContainer title="分类" description="带 * 的为必填。名称 1～20 个字。排序为整数，数字越大越靠前。">
       <InlineForm>
         <TextField
           required
@@ -89,6 +118,16 @@ export default function Categories() {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && add()}
           inputProps={{ maxLength: 20 }}
+        />
+        <TextField
+          size="small"
+          type="number"
+          label="排序"
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          sx={{ width: 100 }}
+          inputProps={{ step: 1, title: "整数，越大越靠前" }}
         />
         <Button variant="contained" onClick={add}>
           新增
@@ -107,7 +146,17 @@ export default function Categories() {
           {list.map((c) => (
             <TableRow key={c.id}>
               <TableCell>{displayText(c.name)}</TableCell>
-              <TableCell>{displayNumber(c.sort)}</TableCell>
+              <TableCell>
+                <TextField
+                  key={`${c.id}-${c.sort}`}
+                  size="small"
+                  type="number"
+                  defaultValue={c.sort}
+                  sx={{ width: 88 }}
+                  inputProps={{ step: 1, title: "整数，越大越靠前，失焦保存" }}
+                  onBlur={(e) => saveSort(c, e.target.value)}
+                />
+              </TableCell>
               <TableCell>
                 <Switch
                   checked={!!c.enabled}

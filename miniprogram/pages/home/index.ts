@@ -123,6 +123,8 @@ Page({
     track("banner_click", { extra: { banner_id: item.id, link_type: item.link_type } });
     if (item.link_type === "GOODS" && item.link_value) {
       wx.navigateTo({ url: `/pages/goods/detail?id=${item.link_value}&slot=banner&pos=1` });
+    } else if (item.link_type === "PATH" && item.link_value) {
+      wx.navigateTo({ url: String(item.link_value) });
     } else if (item.link_type === "CATEGORY") {
       wx.switchTab({ url: "/pages/category/index" });
     }

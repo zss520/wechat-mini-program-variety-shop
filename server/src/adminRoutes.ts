@@ -118,7 +118,7 @@ adminRouter.get("/categories", async (_req, res, next) => {
 
 adminRouter.post("/categories", async (req, res, next) => {
   try {
-    const body = z.object({ name: z.string().min(1).max(20), sort: z.number().optional(), enabled: z.boolean().optional() }).parse(req.body);
+    const body = z.object({ name: z.string().min(1).max(20), sort: z.number().int().optional(), enabled: z.boolean().optional() }).parse(req.body);
     const [id] = await db("categories").insert({
       name: body.name,
       sort: body.sort ?? 0,
@@ -134,7 +134,7 @@ adminRouter.put("/categories/:id", async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const body = z
-      .object({ name: z.string().min(1).max(20).optional(), sort: z.number().optional(), enabled: z.boolean().optional() })
+      .object({ name: z.string().min(1).max(20).optional(), sort: z.number().int().optional(), enabled: z.boolean().optional() })
       .parse(req.body);
     const patch: Record<string, unknown> = {};
     if (body.name) patch.name = body.name;
@@ -453,9 +453,58 @@ adminRouter.post("/orders/:id/mock-pay", async (req, res, next) => {
   }
 });
 
+function goodsDetailPath(goodsId: number | string) {
+  return `/pages/goods/detail?id=${goodsId}&slot=banner&pos=1`;
+}
+
+async function resolveBannerLink(linkType?: string, linkValue?: string) {
+  const type = linkType || "NONE";
+  const value = String(linkValue || "").trim();
+  if (type === "GOODS") {
+    const id = Number(value);
+    if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "请选择跳转商品");
+    const g = await db("goods").where({ id }).whereNull("deleted_at").first();
+    if (!g) throw new HttpError(400, "跳转商品不存在");
+    return { link_type: "GOODS" as const, link_value: String(id) };
+  }
+  if (type === "PATH") {
+    if (!value.startsWith("/pages/")) throw new HttpError(400, "小程序路径须以 /pages/ 开头");
+    return { link_type: "PATH" as const, link_value: value.slice(0, 128) };
+  }
+  if (type === "CATEGORY") {
+    const id = Number(value);
+    if (!Number.isInteger(id) || id <= 0) throw new HttpError(400, "请选择跳转分类");
+    return { link_type: "CATEGORY" as const, link_value: String(id) };
+  }
+  return { link_type: "NONE" as const, link_value: "" };
+}
+
+async function decorateBanners(rows: Record<string, unknown>[]) {
+  const ids = [
+    ...new Set(
+      rows
+        .filter((b) => b.link_type === "GOODS" && b.link_value)
+        .map((b) => Number(b.link_value))
+        .filter((n) => Number.isInteger(n) && n > 0)
+    ),
+  ];
+  const goods = ids.length ? await db("goods").whereIn("id", ids).select("id", "name", "category_id") : [];
+  const map = new Map(goods.map((g: { id: number; name: string; category_id: number }) => [Number(g.id), g]));
+  return rows.map((b) => {
+    const g = b.link_type === "GOODS" ? map.get(Number(b.link_value)) : null;
+    return {
+      ...b,
+      goods_name: g?.name || "",
+      category_id: g?.category_id || null,
+      mp_path: g ? goodsDetailPath(g.id) : b.link_type === "PATH" ? String(b.link_value || "") : "",
+    };
+  });
+}
+
 adminRouter.get("/banners", async (_req, res, next) => {
   try {
-    ok(res, await db("banners").orderBy("sort", "desc").orderBy("id", "desc"));
+    const list = await db("banners").orderBy("sort", "desc").orderBy("id", "desc");
+    ok(res, await decorateBanners(list));
   } catch (e) {
     next(e);
   }
@@ -469,7 +518,7 @@ adminRouter.post("/banners", async (req, res, next) => {
         title: z.string().max(40).optional(),
         linkType: z.enum(["NONE", "GOODS", "CATEGORY", "PATH"]).optional(),
         linkValue: z.string().optional(),
-        sort: z.number().optional(),
+        sort: z.number().int().optional(),
         enabled: z.boolean().optional(),
       })
       .parse(req.body);
@@ -477,15 +526,17 @@ adminRouter.post("/banners", async (req, res, next) => {
       const n = await db("banners").where({ enabled: 1 }).count({ c: "*" }).first();
       if (Number(n?.c || 0) >= 5) throw new HttpError(409, "最多启用 5 张轮播");
     }
+    const link = await resolveBannerLink(body.linkType, body.linkValue);
     const [id] = await db("banners").insert({
       image_url: body.imageUrl,
       title: body.title || "",
-      link_type: body.linkType || "NONE",
-      link_value: body.linkValue || "",
+      link_type: link.link_type,
+      link_value: link.link_value,
       sort: body.sort ?? 0,
       enabled: body.enabled === false ? 0 : 1,
     });
-    ok(res, await db("banners").where({ id }).first());
+    const row = await db("banners").where({ id }).first();
+    ok(res, (await decorateBanners([row]))[0]);
   } catch (e) {
     next(e);
   }
@@ -494,12 +545,26 @@ adminRouter.post("/banners", async (req, res, next) => {
 adminRouter.put("/banners/:id", async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const body = req.body || {};
+    const body = z
+      .object({
+        imageUrl: z.string().min(1).optional(),
+        title: z.string().max(40).optional().nullable(),
+        linkType: z.enum(["NONE", "GOODS", "CATEGORY", "PATH"]).optional(),
+        linkValue: z.string().optional().nullable(),
+        sort: z.number().int().optional(),
+        enabled: z.boolean().optional(),
+      })
+      .parse(req.body || {});
     const patch: Record<string, unknown> = {};
     if (body.imageUrl) patch.image_url = body.imageUrl;
     if (body.title != null) patch.title = body.title;
-    if (body.linkType) patch.link_type = body.linkType;
-    if (body.linkValue != null) patch.link_value = body.linkValue;
+    if (body.linkType) {
+      const link = await resolveBannerLink(body.linkType, body.linkValue || "");
+      patch.link_type = link.link_type;
+      patch.link_value = link.link_value;
+    } else if (body.linkValue != null) {
+      patch.link_value = body.linkValue;
+    }
     if (body.sort != null) patch.sort = body.sort;
     if (body.enabled != null) patch.enabled = body.enabled ? 1 : 0;
     if (patch.enabled === 1) {
@@ -507,7 +572,8 @@ adminRouter.put("/banners/:id", async (req, res, next) => {
       if (Number(n?.c || 0) >= 5) throw new HttpError(409, "最多启用 5 张轮播");
     }
     await db("banners").where({ id }).update(patch);
-    ok(res, await db("banners").where({ id }).first());
+    const row = await db("banners").where({ id }).first();
+    ok(res, (await decorateBanners([row]))[0]);
   } catch (e) {
     next(e);
   }
