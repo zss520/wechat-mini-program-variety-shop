@@ -67,6 +67,5 @@
     "t-textarea": "tdesign-miniprogram/textarea/textarea"
   },
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents",
-  "requiredPrivateInfos": ["getPhoneNumber"]
+  "lazyCodeLoading": "requiredComponents"
 }
