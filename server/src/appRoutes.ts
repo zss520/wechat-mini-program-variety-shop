@@ -5,7 +5,14 @@ import { ok, HttpError, parsePage } from "./http";
 import { optionalUser, requireRole, signToken } from "./auth";
 import { getSettings } from "./settings";
 import { applyGoodsSort, publicGoods } from "./recommend";
-import { buildHome } from "./home";
+import {
+  buildBannerBlock,
+  buildDealBlock,
+  buildForYouBlock,
+  buildGroupBlock,
+  buildRecommendBlock,
+  buildSeckillBlock,
+} from "./home";
 import { ingestEvents } from "./analytics";
 import { code2session, mockPayParams } from "./wechat";
 import { cancelOrder, createOrder, loadOrderDetail, markPaid, previewOrder, ST } from "./orderService";
@@ -78,9 +85,49 @@ appRouter.post("/auth/wx-phone", requireRole("user"), async (req, res, next) => 
   }
 });
 
-appRouter.get("/home", optionalUser, async (req, res, next) => {
+appRouter.get("/home/banner", async (_req, res, next) => {
   try {
-    ok(res, await buildHome(req.auth?.id || null));
+    ok(res, await buildBannerBlock());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/home/seckill", async (_req, res, next) => {
+  try {
+    ok(res, await buildSeckillBlock());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/home/group", async (_req, res, next) => {
+  try {
+    ok(res, await buildGroupBlock());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/home/deal", async (_req, res, next) => {
+  try {
+    ok(res, await buildDealBlock());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/home/for-you", optionalUser, async (req, res, next) => {
+  try {
+    ok(res, await buildForYouBlock(req.auth?.id || null));
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/home/recommend", async (_req, res, next) => {
+  try {
+    ok(res, await buildRecommendBlock());
   } catch (e) {
     next(e);
   }

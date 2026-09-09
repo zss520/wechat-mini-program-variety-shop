@@ -10,15 +10,6 @@ export type HomeBlock<T = unknown> = {
   list: T[];
 };
 
-export type HomePayload = {
-  banner: HomeBlock;
-  seckill: HomeBlock;
-  group: HomeBlock;
-  deal: HomeBlock;
-  forYou: HomeBlock;
-  recommend: HomeBlock & { slotId: string };
-};
-
 function block<T>(key: string, title: string, list: T[]): HomeBlock<T> {
   return { key, title, list };
 }
@@ -28,49 +19,49 @@ function remainMs(endAt?: string | Date | null) {
   return Math.max(0, new Date(endAt).getTime() - Date.now());
 }
 
-/** 与小程序首页展示块一一对应，顺序即页面自上而下（搜索条仍由前端写死）。 */
-export async function buildHome(userId: number | null): Promise<HomePayload> {
-  const now = new Date();
-  const [bannerRows, dealRows, rec, forYou, seckillRows, groupRows] = await Promise.all([
-    db("banners").where({ enabled: 1 }).orderBy("sort", "desc").limit(5),
-    db("goods")
-      .where({ on_sale: 1 })
-      .whereNull("deleted_at")
-      .whereNotNull("special_price_cent")
-      .where("special_start", "<=", now)
-      .where("special_end", ">=", now)
-      .orderBy("sort", "desc")
-      .limit(12),
-    fillRecommend("home_recommend"),
-    personalizedGoods(userId, 8),
-    listActiveSeckills(),
-    listActiveGroupBuys(),
-  ]);
-
-  const banner = block(
+export async function buildBannerBlock() {
+  const rows = await db("banners").where({ enabled: 1 }).orderBy("sort", "desc").limit(5);
+  return block(
     "banner",
     "",
-    bannerRows.map((b: { image_url: string }) => ({ ...b, image_url: publicUrl(b.image_url) }))
+    rows.map((b: { image_url: string }) => ({ ...b, image_url: publicUrl(b.image_url) }))
   );
-  const seckill = block(
+}
+
+export async function buildSeckillBlock() {
+  const rows = await listActiveSeckills();
+  return block(
     "seckill",
     "限时秒杀",
-    seckillRows.map((x: { end_at?: string | Date }) => ({ ...x, remainMs: remainMs(x.end_at) }))
+    rows.map((x: { end_at?: string | Date }) => ({ ...x, remainMs: remainMs(x.end_at) }))
   );
-  const group = block("group", "拼团", groupRows);
-  const deal = block("deal", "特价专区", dealRows.map(publicGoods));
-  const forYouBlock = block("forYou", "为你推荐", forYou);
-  const recommend = {
+}
+
+export async function buildGroupBlock() {
+  return block("group", "拼团", await listActiveGroupBuys());
+}
+
+export async function buildDealBlock() {
+  const now = new Date();
+  const rows = await db("goods")
+    .where({ on_sale: 1 })
+    .whereNull("deleted_at")
+    .whereNotNull("special_price_cent")
+    .where("special_start", "<=", now)
+    .where("special_end", ">=", now)
+    .orderBy("sort", "desc")
+    .limit(12);
+  return block("deal", "特价专区", rows.map(publicGoods));
+}
+
+export async function buildForYouBlock(userId: number | null) {
+  return block("forYou", "为你推荐", await personalizedGoods(userId, 8));
+}
+
+export async function buildRecommendBlock() {
+  const rec = await fillRecommend("home_recommend");
+  return {
     ...block("recommend", rec.slot?.title || "本店推荐", rec.list.map(publicGoods)),
     slotId: "home_recommend",
-  };
-
-  return {
-    banner,
-    seckill,
-    group,
-    deal,
-    forYou: forYouBlock,
-    recommend,
   };
 }

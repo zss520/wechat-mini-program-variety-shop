@@ -1,28 +1,49 @@
 import { db } from "../db";
-import { buildHome } from "../home";
+import {
+  buildBannerBlock,
+  buildDealBlock,
+  buildForYouBlock,
+  buildGroupBlock,
+  buildRecommendBlock,
+  buildSeckillBlock,
+} from "../home";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
 }
 
 async function run() {
-  const home = await buildHome(null);
-  const keys = ["banner", "seckill", "group", "deal", "forYou", "recommend"] as const;
-  for (const k of keys) {
-    const block = home[k];
-    assert(block && block.key === k, `${k} key`);
-    assert(typeof block.title === "string", `${k} title`);
-    assert(Array.isArray(block.list), `${k} list`);
+  const banner = await buildBannerBlock();
+  const seckill = await buildSeckillBlock();
+  const group = await buildGroupBlock();
+  const deal = await buildDealBlock();
+  const forYou = await buildForYouBlock(null);
+  const recommend = await buildRecommendBlock();
+
+  const blocks = [
+    ["banner", banner],
+    ["seckill", seckill],
+    ["group", group],
+    ["deal", deal],
+    ["forYou", forYou],
+    ["recommend", recommend],
+  ] as const;
+
+  for (const [key, block] of blocks) {
+    assert(block.key === key, `${key} key`);
+    assert(typeof block.title === "string", `${key} title`);
+    assert(Array.isArray(block.list), `${key} list`);
   }
-  assert(home.recommend.slotId === "home_recommend", "recommend slotId");
+  assert(recommend.slotId === "home_recommend", "recommend slotId");
+
   await db.destroy();
-  console.log("home blocks test passed", {
-    banner: home.banner.list.length,
-    seckill: home.seckill.list.length,
-    group: home.group.list.length,
-    deal: home.deal.list.length,
-    forYou: home.forYou.list.length,
-    recommend: home.recommend.list.length,
+  console.log("home block apis test passed", {
+    banner: banner.list.length,
+    seckill: seckill.list.length,
+    group: group.list.length,
+    deal: deal.list.length,
+    forYou: forYou.list.length,
+    recommend: recommend.list.length,
   });
 }
 

@@ -3,8 +3,8 @@ import { asArray, asRecord, displayText } from "../../utils/display";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
-function homeBlock(home: Record<string, unknown>, key: string, fallbackTitle = "") {
-  const b = asRecord(home[key]);
+function readBlock(raw: unknown, fallbackTitle = "") {
+  const b = asRecord(raw);
   return {
     title: displayText(b.title, fallbackTitle),
     list: asArray(b.list),
@@ -35,40 +35,63 @@ Page({
     this.load();
   },
   async load() {
-    try {
-      const home = asRecord(await request("/home"));
-      const boot = asRecord(await request("/shop/bootstrap"));
-      const banner = homeBlock(home, "banner");
-      const seckill = homeBlock(home, "seckill", "限时秒杀");
-      const group = homeBlock(home, "group", "拼团");
-      const deal = homeBlock(home, "deal", "特价专区");
-      const forYou = homeBlock(home, "forYou", "为你推荐");
-      const recommend = homeBlock(home, "recommend", "本店推荐");
-      const settings = asRecord(boot.settings);
-      const seckills = seckill.list.map((x: any) => ({
+    const parts = await Promise.allSettled([
+      this.loadBootstrap(),
+      this.loadBanner(),
+      this.loadSeckill(),
+      this.loadGroup(),
+      this.loadDeal(),
+      this.loadForYou(),
+      this.loadRecommend(),
+    ]);
+    const blockFails = parts.slice(1).filter((p) => p.status === "rejected");
+    if (blockFails.length === 6) {
+      const first = blockFails[0] as PromiseRejectedResult;
+      const msg = first.reason?.message || "首页加载失败";
+      wx.showToast({ title: msg, icon: "none" });
+    }
+  },
+  async loadBootstrap() {
+    const boot = asRecord(await request("/shop/bootstrap"));
+    const settings = asRecord(boot.settings);
+    this.setData({
+      settings,
+      shopHint: [settings.pickup_address, settings.business_hours].filter(Boolean).join(" · "),
+    });
+    if (settings.shop_name) wx.setNavigationBarTitle({ title: String(settings.shop_name) });
+  },
+  async loadBanner() {
+    const banner = readBlock(await request("/home/banner"));
+    this.setData({
+      banners: banner.list,
+      bannerImages: banner.list.map((b: any) => b.image_url).filter(Boolean),
+    });
+  },
+  async loadSeckill() {
+    const seckill = readBlock(await request("/home/seckill"), "限时秒杀");
+    this.setData({
+      seckillTitle: seckill.title,
+      seckills: seckill.list.map((x: any) => ({
         ...x,
         remainMs: x.end_at ? Math.max(0, new Date(x.end_at).getTime() - Date.now()) : Number(x.remainMs) || 0,
-      }));
-      this.setData({
-        banners: banner.list,
-        bannerImages: banner.list.map((b: any) => b.image_url).filter(Boolean),
-        deals: deal.list,
-        recommend: recommend.list,
-        forYou: forYou.list,
-        seckills,
-        groups: group.list,
-        seckillTitle: seckill.title,
-        groupTitle: group.title,
-        dealTitle: deal.title,
-        forYouTitle: forYou.title,
-        recommendTitle: recommend.title,
-        settings,
-        shopHint: [settings.pickup_address, settings.business_hours].filter(Boolean).join(" · "),
-      });
-      if (boot.settings?.shop_name) wx.setNavigationBarTitle({ title: boot.settings.shop_name });
-    } catch (e: any) {
-      wx.showToast({ title: e.message, icon: "none" });
-    }
+      })),
+    });
+  },
+  async loadGroup() {
+    const group = readBlock(await request("/home/group"), "拼团");
+    this.setData({ groupTitle: group.title, groups: group.list });
+  },
+  async loadDeal() {
+    const deal = readBlock(await request("/home/deal"), "特价专区");
+    this.setData({ dealTitle: deal.title, deals: deal.list });
+  },
+  async loadForYou() {
+    const forYou = readBlock(await request("/home/for-you"), "为你推荐");
+    this.setData({ forYouTitle: forYou.title, forYou: forYou.list });
+  },
+  async loadRecommend() {
+    const recommend = readBlock(await request("/home/recommend"), "本店推荐");
+    this.setData({ recommendTitle: recommend.title, recommend: recommend.list });
   },
   onPullDownRefresh() {
     this.load().finally(() => wx.stopPullDownRefresh());
