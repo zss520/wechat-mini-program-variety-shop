@@ -9,7 +9,8 @@
   <view class="row">
     <t-checkbox
       wx:if="{{!item.invalid}}"
-      checked="{{checked.indexOf(item.id)>-1}}"
+      value="{{item.id}}"
+      checked="{{item.selected}}"
       data-id="{{item.id}}"
       bind:change="onToggle"
     />

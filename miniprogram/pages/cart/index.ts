@@ -1,28 +1,49 @@
 import { request, ensureMember, isMember, tryRestoreMember } from "../../utils/request";
-import { asArray, asRecord, toFiniteNumber } from "../../utils/display";
+import { asArray, asRecord } from "../../utils/display";
+import { applyCartSelection, cartItemId, nextCheckedIds } from "../../utils/cartSelect";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { list: [] as any[], checked: [] as number[], total: 0, upsell: { suggestions: [] as any[], target: {} as any }, allChecked: false, needLogin: false },
+  data: {
+    list: [] as any[],
+    checked: [] as number[],
+    total: 0,
+    upsell: { suggestions: [] as any[], target: {} as any },
+    allChecked: false,
+    needLogin: false,
+  },
   onShow() {
     syncTabBar(this, "cart");
     this.load();
+  },
+  applyChecked(list: any[], checkedIds: unknown[]) {
+    const next = applyCartSelection(list, checkedIds);
+    this.setData(next);
   },
   async load() {
     if (!isMember()) {
       const restored = await tryRestoreMember();
       if (!restored) {
-        this.setData({ needLogin: true, list: [], upsell: { suggestions: [], target: {} } });
+        this.setData({
+          needLogin: true,
+          list: [],
+          checked: [],
+          total: 0,
+          allChecked: false,
+          upsell: { suggestions: [], target: {} },
+        });
         return;
       }
     }
     try {
       this.setData({ needLogin: false });
       const list = asArray(await request("/cart"));
-      const checked = list.filter((x: any) => !x.invalid).map((x: any) => x.id);
-      this.setData({ list, checked });
-      this.calc(list, checked);
+      const validIds = list.filter((x: any) => !x.invalid).map((x: any) => cartItemId(x.id));
+      const prev = (this.data.checked || []).map(cartItemId).filter((id) => id > 0);
+      const inited = (this.data.list || []).length > 0;
+      const checked = inited ? validIds.filter((id) => prev.indexOf(id) >= 0) : validIds;
+      this.applyChecked(list, checked);
       const rawUpsell = asRecord(await request("/cart/upsell"));
       const upsell = {
         suggestions: asArray(rawUpsell.suggestions),
@@ -34,37 +55,20 @@ Page({
       wx.showToast({ title: e.message, icon: "none" });
     }
   },
-  calc(list = this.data.list, checked = this.data.checked) {
-    const valid = list.filter((x: any) => !x.invalid);
-    const total = list
-      .filter((x: any) => checked.includes(x.id) && !x.invalid)
-      .reduce((s: number, x: any) => {
-        const price = toFiniteNumber(x.priceCent);
-        const qty = toFiniteNumber(x.qty);
-        return s + (price != null && qty != null ? price * qty : 0);
-      }, 0);
-    this.setData({ total, allChecked: valid.length > 0 && valid.every((x: any) => checked.includes(x.id)) });
-  },
-  toggle(e: any) {
-    const id = e.currentTarget.dataset.id;
-    let checked = this.data.checked.slice();
-    if (checked.includes(id)) checked = checked.filter((x) => x !== id);
-    else checked.push(id);
-    this.setData({ checked });
-    this.calc(this.data.list, checked);
-  },
   onToggle(e: any) {
-    this.toggle({ currentTarget: { dataset: { id: e.currentTarget.dataset.id } } });
+    const id = cartItemId(e.currentTarget?.dataset?.id ?? e.detail?.context?.value);
+    if (!id) return;
+    const want = e.detail && typeof e.detail.checked === "boolean" ? e.detail.checked : undefined;
+    this.applyChecked(this.data.list, nextCheckedIds(this.data.checked, id, want));
   },
-  toggleAll() {
-    const validIds = this.data.list.filter((x: any) => !x.invalid).map((x: any) => x.id);
-    const checked = this.data.allChecked ? [] : validIds;
-    this.setData({ checked });
-    this.calc(this.data.list, checked);
+  toggleAll(e: any) {
+    const validIds = this.data.list.filter((x: any) => !x.invalid).map((x: any) => cartItemId(x.id));
+    const want = e?.detail && typeof e.detail.checked === "boolean" ? e.detail.checked : !this.data.allChecked;
+    this.applyChecked(this.data.list, want ? validIds : []);
   },
   async changeQty(e: any) {
     const { id, d } = e.currentTarget.dataset;
-    const row = this.data.list.find((x: any) => x.id === id);
+    const row = this.data.list.find((x: any) => cartItemId(x.id) === cartItemId(id));
     if (!row) return;
     const qty = Math.max(1, row.qty + Number(d));
     await request(`/cart/${id}`, "PUT", { qty });
@@ -73,7 +77,7 @@ Page({
   async onQtyChange(e: any) {
     const id = e.currentTarget.dataset.id;
     const qty = Math.max(1, Number(e.detail.value));
-    const row = this.data.list.find((x: any) => x.id === id);
+    const row = this.data.list.find((x: any) => cartItemId(x.id) === cartItemId(id));
     if (!row || row.qty === qty) return;
     await request(`/cart/${id}`, "PUT", { qty });
     this.load();
@@ -90,8 +94,11 @@ Page({
     if (await ensureMember()) this.load();
   },
   settle() {
-    const items = this.data.list.filter((x: any) => this.data.checked.includes(x.id) && !x.invalid);
-    if (!items.length) return;
+    const items = this.data.list.filter((x: any) => x.selected && !x.invalid);
+    if (!items.length) {
+      wx.showToast({ title: "请先选择商品", icon: "none" });
+      return;
+    }
     track("cart_settle_click", { extra: { sku_count: items.length } });
     wx.setStorageSync("checkout_items", items.map((x: any) => ({ goodsId: x.goodsId, qty: x.qty })));
     wx.navigateTo({ url: "/pages/order/confirm?from=CART" });
