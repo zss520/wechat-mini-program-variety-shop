@@ -6,6 +6,7 @@ import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateTime } from "../utils/datetime";
+import { asArray, asRecord, displayFulfillType, displayNumber, displayText, displayYuan } from "../utils/display";
 
 const STATUS: Record<string, string> = {
   PENDING_PAY: "待付款",
@@ -25,8 +26,8 @@ export default function OrderDetail() {
   const [err, setErr] = useState("");
   const load = () =>
     api.get(`/orders/${id}`).then((d) => {
-      setO(d);
-      setCode(d.pickup_code || "");
+      setO(asRecord(d));
+      setCode(asRecord(d).pickup_code || "");
     });
   useEffect(() => {
     load();
@@ -42,15 +43,15 @@ export default function OrderDetail() {
   };
   if (!o) return null;
   const meta = [
-    { k: "履约", v: o.fulfill_type === "PICKUP" ? "自提" : "配送" },
-    { k: "实付", v: `¥${(o.pay_amount_cent / 100).toFixed(2)}` },
-    { k: "提货码", v: o.pickup_code || "-" },
-    { k: "状态", v: STATUS[o.status] || o.status },
+    { k: "履约", v: displayFulfillType(o.fulfill_type) },
+    { k: "实付", v: displayYuan(o.pay_amount_cent) },
+    { k: "提货码", v: displayText(o.pickup_code) },
+    { k: "状态", v: STATUS[o.status] || displayText(o.status) },
     { k: "下单时间", v: formatDateTime(o.created_at, true) },
   ];
   return (
     <PageContainer
-      title={`订单 ${o.order_no}`}
+      title={`订单 ${displayText(o.order_no)}`}
       extra={
         <Button variant="outlined" onClick={() => nav("/orders")}>
           返回列表
@@ -94,15 +95,15 @@ export default function OrderDetail() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {(o.items || []).map((it: Record<string, any>) => (
+          {asArray(o.items).map((it: Record<string, any>) => (
             <TableRow key={it.id}>
-              <TableCell>{it.name_snapshot}</TableCell>
-              <TableCell>¥{(it.price_cent / 100).toFixed(2)}</TableCell>
-              <TableCell>{it.qty}</TableCell>
-              <TableCell>¥{(it.amount_cent / 100).toFixed(2)}</TableCell>
+              <TableCell>{displayText(it.name_snapshot)}</TableCell>
+              <TableCell>{displayYuan(it.price_cent)}</TableCell>
+              <TableCell>{displayNumber(it.qty)}</TableCell>
+              <TableCell>{displayYuan(it.amount_cent)}</TableCell>
             </TableRow>
           ))}
-          {!(o.items || []).length && <EmptyRow cols={4} />}
+          {!asArray(o.items).length && <EmptyRow cols={4} />}
         </TableBody>
       </DataTable>
       <InlineForm sx={{ mt: 2.5, mb: 0 }}>

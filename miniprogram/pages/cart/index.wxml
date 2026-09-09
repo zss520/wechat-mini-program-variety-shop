@@ -1,3 +1,4 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <t-empty wx:if="{{!list.length}}" icon="cart" description="购物车是空的" />
 
 <t-swipe-cell wx:for="{{list}}" wx:key="id">
@@ -8,13 +9,13 @@
       data-id="{{item.id}}"
       bind:change="onToggle"
     />
-    <t-image src="{{item.coverUrl}}" width="140rpx" height="140rpx" shape="round" mode="aspectFill" />
+    <t-image src="{{disp.cover(item.coverUrl)}}" width="140rpx" height="140rpx" shape="round" mode="aspectFill" />
     <view class="info">
       <view class="name">
-        {{item.name}}
+        {{disp.text(item.name)}}
         <t-tag wx:if="{{item.invalid}}" theme="danger" variant="light" size="small">已失效</t-tag>
       </view>
-      <view class="price">¥{{item.priceCent / 100}}</view>
+      <view class="price">{{disp.money(item.priceCent)}}</view>
       <t-stepper
         wx:if="{{!item.invalid}}"
         value="{{item.qty}}"
@@ -29,18 +30,18 @@
 </t-swipe-cell>
 
 <view class="upsell" wx:if="{{upsell.suggestions.length}}">
-  <view class="uh">凑单：{{upsell.target.reason}} 还差 ¥{{upsell.target.remainCent / 100}}</view>
+  <view class="uh">凑单：{{disp.text(upsell.target.reason)}} 还差 {{disp.money(upsell.target.remainCent)}}</view>
   <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
     <view class="hitem" wx:for="{{upsell.suggestions}}" wx:key="id" data-id="{{item.id}}" bindtap="addUpsell">
-      <t-image src="{{item.coverUrl}}" width="100%" height="140rpx" mode="aspectFill" shape="round" />
-      <view class="uname">{{item.name}}</view>
-      <view class="price">¥{{item.priceCent / 100}}</view>
+      <t-image src="{{disp.cover(item.coverUrl)}}" width="100%" height="140rpx" mode="aspectFill" shape="round" />
+      <view class="uname">{{disp.text(item.name)}}</view>
+      <view class="price">{{disp.money(item.priceCent)}}</view>
     </view>
   </scroll-view>
 </view>
 
 <view class="bar" wx:if="{{list.length}}">
   <t-checkbox checked="{{allChecked}}" bind:change="toggleAll" label="全选" />
-  <view class="sum">合计 <text class="price">¥{{total / 100}}</text></view>
+  <view class="sum">合计 <text class="price">{{disp.money(total)}}</text></view>
   <t-button theme="primary" size="large" shape="round" bind:tap="settle">去结算</t-button>
 </view>

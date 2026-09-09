@@ -1,3 +1,4 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <t-tabs value="{{tab}}" bind:change="onTab" theme="line">
   <t-tab-panel label="领券" value="shop" />
   <t-tab-panel label="我的" value="mine" />
@@ -6,8 +7,8 @@
 <view wx:if="{{tab=='shop'}}">
   <view class="coupon" wx:for="{{shop}}" wx:key="id">
     <view class="left">
-      <view class="name">{{item.name}}</view>
-      <view class="sub">{{item.type=='DISCOUNT' ? '折扣券' : '满减券'}} · 满{{item.min_amount_cent/100}}可用</view>
+      <view class="name">{{disp.text(item.name)}}</view>
+      <view class="sub">{{item.type=='DISCOUNT' ? '折扣券' : '满减券'}} · 满{{disp.yuan(item.min_amount_cent)}}可用</view>
     </view>
     <t-button
       theme="primary"
@@ -24,10 +25,10 @@
 <view wx:if="{{tab=='mine'}}">
   <view class="coupon" wx:for="{{mine}}" wx:key="id">
     <view class="left">
-      <view class="name">{{item.name}}</view>
-      <view class="sub">截止 {{item.endAtText}}</view>
+      <view class="name">{{disp.text(item.name)}}</view>
+      <view class="sub">截止 {{disp.text(item.endAtText)}}</view>
     </view>
-    <t-tag theme="{{item.status=='UNUSED' ? 'primary' : 'default'}}" variant="light">{{item.statusText}}</t-tag>
+    <t-tag theme="{{item.status=='UNUSED' ? 'primary' : 'default'}}" variant="light">{{disp.text(item.statusText)}}</t-tag>
   </view>
   <t-empty wx:if="{{!mine.length}}" icon="coupon" description="暂无优惠券" />
 </view>

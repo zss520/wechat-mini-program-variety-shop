@@ -1,4 +1,5 @@
 import { request } from "../../utils/request";
+import { asArray, asRecord, displayText } from "../../utils/display";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
@@ -32,10 +33,10 @@ Page({
     if (this.catsReady) this.loadGoods();
   },
   async initCats() {
-    const raw = ((await request("/categories")) || []) as { id: number; name: string }[];
+    const raw = asArray<{ id: number; name: string }>(await request("/categories"));
     const cats: Cat[] = [
       ALL,
-      ...raw.map((c) => ({ value: String(c.id), label: c.name, id: Number(c.id) })),
+      ...raw.map((c) => ({ value: String(c.id), label: displayText(c.name), id: Number(c.id) })),
     ];
     this.catsReady = true;
     this.setData({ cats });
@@ -47,7 +48,7 @@ Page({
       const q = `?sort=${this.data.sort}&pageSize=50${this.data.catId ? `&categoryId=${this.data.catId}` : ""}`;
       const d = await request(`/goods${q}`);
       if (seq !== this.loadSeq) return;
-      this.setData({ list: d.list || [], loading: false });
+      this.setData({ list: asArray(asRecord(d).list), loading: false });
     } catch (e: any) {
       if (seq !== this.loadSeq) return;
       this.setData({ loading: false });

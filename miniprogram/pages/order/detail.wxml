@@ -1,16 +1,17 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <view class="hero">
-  <view class="st">{{statusText}}</view>
-  <view wx:if="{{o.pickup_code && (o.status=='WAIT_PICKUP' || o.status=='PENDING_PACK')}}" class="code">{{o.pickup_code}}</view>
+  <view class="st">{{disp.text(statusText)}}</view>
+  <view wx:if="{{o.pickup_code && (o.status=='WAIT_PICKUP' || o.status=='PENDING_PACK')}}" class="code">{{disp.text(o.pickup_code)}}</view>
   <view wx:if="{{o.pickup_code && (o.status=='WAIT_PICKUP' || o.status=='PENDING_PACK')}}" class="hint">到店出示提货码</view>
 </view>
 
 <t-cell-group theme="card">
-  <t-cell title="订单号" note="{{o.order_no}}" />
-  <t-cell title="实付" note="¥{{o.pay_amount_cent / 100}}" />
+  <t-cell title="订单号" note="{{disp.text(o.order_no)}}" />
+  <t-cell title="实付" note="{{disp.money(o.pay_amount_cent)}}" />
 </t-cell-group>
 
 <t-cell-group theme="card" title="商品">
-  <t-cell wx:for="{{o.items}}" wx:key="id" title="{{item.name_snapshot}}" note="x{{item.qty}}" />
+  <t-cell wx:for="{{o.items}}" wx:key="id" title="{{disp.text(item.name_snapshot)}}" note="x{{disp.num(item.qty)}}" />
 </t-cell-group>
 
 <view class="bar">

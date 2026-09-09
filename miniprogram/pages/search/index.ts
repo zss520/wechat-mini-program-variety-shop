@@ -1,4 +1,5 @@
 import { request } from "../../utils/request";
+import { asArray, asRecord } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
 Page({
@@ -18,10 +19,11 @@ Page({
     if (!keyword) return;
     const hist = [keyword].concat(this.data.history.filter((x) => x !== keyword)).slice(0, 10);
     wx.setStorageSync("search_history", hist);
-    const d = await request(`/goods?keyword=${encodeURIComponent(keyword)}&sort=composite`);
+    const d = asRecord(await request(`/goods?keyword=${encodeURIComponent(keyword)}&sort=composite`));
+    const list = asArray(d.list);
     track("search_submit", { keyword, extra: { result_count: d.total } });
     if (!d.total) track("search_no_result", { extra: { keyword } });
-    this.setData({ list: d.list || [], history: hist, searched: true });
+    this.setData({ list, history: hist, searched: true });
   },
   tapHist(e: any) {
     this.setData({ keyword: e.currentTarget.dataset.k });

@@ -1,0 +1,106 @@
+var FALLBACK = '—';
+
+function isEmpty(v) {
+  return v === undefined || v === null || v === '';
+}
+
+function toNum(v) {
+  if (isEmpty(v) || typeof v === 'boolean') return NaN;
+  if (typeof v === 'number') return v;
+  var n = parseFloat('' + v);
+  return n;
+}
+
+function isFiniteNum(n) {
+  return typeof n === 'number' && n === n && n !== Infinity && n !== -Infinity;
+}
+
+function fallbackOf(fallback) {
+  return isEmpty(fallback) ? FALLBACK : fallback;
+}
+
+function text(v, fallback) {
+  var fb = fallbackOf(fallback);
+  if (isEmpty(v)) return fb;
+  if (typeof v === 'number' && !isFiniteNum(v)) return fb;
+  var s = ('' + v).replace(/^\s+|\s+$/g, '');
+  if (!s || s === 'undefined' || s === 'null' || s === 'NaN' || s === 'Invalid Date') return fb;
+  return s;
+}
+
+function num(v, fallback) {
+  var fb = fallbackOf(fallback);
+  var n = toNum(v);
+  if (!isFiniteNum(n)) return fb;
+  return '' + n;
+}
+
+function hasNum(v) {
+  return isFiniteNum(toNum(v));
+}
+
+function yuan(v, fallback) {
+  var fb = fallbackOf(fallback);
+  var n = toNum(v);
+  if (!isFiniteNum(n)) return fb;
+  return '' + n / 100;
+}
+
+function money(v, fallback) {
+  var fb = fallbackOf(fallback);
+  var n = toNum(v);
+  if (!isFiniteNum(n)) return fb;
+  return '¥' + n / 100;
+}
+
+function minusMoney(v, fallback) {
+  var fb = isEmpty(fallback) ? '-¥0' : fallback;
+  var n = toNum(v);
+  if (!isFiniteNum(n)) return fb;
+  return '-¥' + n / 100;
+}
+
+function signed(v, fallback) {
+  var fb = fallbackOf(fallback);
+  var n = toNum(v);
+  if (!isFiniteNum(n)) return fb;
+  return (n > 0 ? '+' : '') + n;
+}
+
+function couponNote(name, discountCent) {
+  var n = text(name, '未选');
+  var c = toNum(discountCent);
+  if (!isFiniteNum(c) || c <= 0) return n;
+  return n + ' -¥' + c / 100;
+}
+
+function join(a, b, fallback) {
+  var left = text(a, '');
+  var right = text(b, '');
+  var s = (left + ' ' + right).replace(/^\s+|\s+$/g, '');
+  return s || fallbackOf(fallback);
+}
+
+function cover(v) {
+  var s = text(v, '');
+  return s || '/assets/tab-home.png';
+}
+
+function unit(v) {
+  var s = text(v, '');
+  return s ? '/' + s : '/—';
+}
+
+module.exports = {
+  text: text,
+  num: num,
+  hasNum: hasNum,
+  yuan: yuan,
+  money: money,
+  minusMoney: minusMoney,
+  signed: signed,
+  couponNote: couponNote,
+  join: join,
+  cover: cover,
+  unit: unit,
+};

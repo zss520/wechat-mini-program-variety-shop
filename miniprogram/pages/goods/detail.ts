@@ -1,4 +1,5 @@
 import { request, ensureLogin } from "../../utils/request";
+import { asArray, asRecord } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
 Page({
@@ -9,9 +10,9 @@ Page({
   },
   async load() {
     try {
-      const item = await request(`/goods/${this.data.id}`);
-      const images = item.images && item.images.length ? item.images : item.coverUrl ? [item.coverUrl] : [];
-      this.setData({ item, related: item.related || [], detailImages: images });
+      const item = asRecord(await request(`/goods/${this.data.id}`));
+      const images = asArray(item.images).length ? asArray<string>(item.images) : item.coverUrl ? [item.coverUrl] : [];
+      this.setData({ item, related: asArray(item.related), detailImages: images });
       track("goods_detail_view", { goods_id: item.id, extra: { from_slot: this.data.slot } });
     } catch (e: any) {
       wx.showToast({ title: e.message, icon: "none" });

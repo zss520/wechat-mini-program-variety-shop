@@ -1,3 +1,4 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <t-tabs value="{{tab}}" bind:change="onTab" theme="line" space-evenly>
   <t-tab-panel label="全部" value="ALL" />
   <t-tab-panel label="待付款" value="PENDING_PAY" />
@@ -10,9 +11,9 @@
   <t-cell
     wx:for="{{list}}"
     wx:key="id"
-    title="{{item.order_no}}"
-    description="{{item.statusText}}"
-    note="¥{{item.pay_amount_cent / 100}}"
+    title="{{disp.text(item.order_no)}}"
+    description="{{disp.text(item.statusText)}}"
+    note="{{disp.money(item.pay_amount_cent)}}"
     hover
     arrow
     data-id="{{item.id}}"

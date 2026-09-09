@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { asArray, asRecord, displayNumber, displayPercent, displayText } from "../utils/display";
 
 export default function Reports() {
   const [from, setFrom] = useState(dayjs().format("YYYY-MM-DD"));
@@ -13,9 +14,9 @@ export default function Reports() {
   const [goods, setGoods] = useState<any[]>([]);
   const [signals, setSignals] = useState<any[]>([]);
   const load = () => {
-    api.get("/reports/funnel", { params: { from, to } }).then(setFunnel);
-    api.get("/reports/goods", { params: { from, to, pageSize: 50 } }).then((d) => setGoods(d.list));
-    api.get("/reports/signals", { params: { from, to } }).then(setSignals);
+    api.get("/reports/funnel", { params: { from, to } }).then((d) => setFunnel({ steps: asArray(asRecord(d).steps) }));
+    api.get("/reports/goods", { params: { from, to, pageSize: 50 } }).then((d) => setGoods(asArray(asRecord(d).list)));
+    api.get("/reports/signals", { params: { from, to } }).then((d) => setSignals(asArray(d)));
   };
   useEffect(() => {
     load();
@@ -45,9 +46,9 @@ export default function Reports() {
             <Card>
               <CardContent sx={{ py: 1.5, "&:last-child": { pb: 1.5 } }}>
                 <Typography color="text.secondary" sx={{ fontSize: 13 }}>
-                  {s.name}
+                  {displayText(s.name)}
                 </Typography>
-                <Typography sx={{ fontSize: 22, fontWeight: 600 }}>{s.uv}</Typography>
+                <Typography sx={{ fontSize: 22, fontWeight: 600 }}>{displayNumber(s.uv)}</Typography>
               </CardContent>
             </Card>
           </Grid>
@@ -60,7 +61,7 @@ export default function Reports() {
           </Typography>
           {signals.map((s, i) => (
             <Typography key={i} sx={{ mb: 0.5 }}>
-              {s.name}：{s.message}
+              {displayText(s.name)}：{displayText(s.message)}
             </Typography>
           ))}
         </>
@@ -83,13 +84,13 @@ export default function Reports() {
         <TableBody>
           {goods.map((g) => (
             <TableRow key={g.id}>
-              <TableCell>{g.name}</TableCell>
-              <TableCell>{g.expose_uv}</TableCell>
-              <TableCell>{g.sampleInsufficient ? "样本少" : g.ctr != null ? `${(g.ctr * 100).toFixed(1)}%` : "—"}</TableCell>
-              <TableCell>{g.sampleInsufficient ? "样本少" : g.cvr != null ? `${(g.cvr * 100).toFixed(1)}%` : "—"}</TableCell>
-              <TableCell>{g.pay_qty}</TableCell>
-              <TableCell>{g.heat_score}</TableCell>
-              <TableCell>{g.manual_weight}</TableCell>
+              <TableCell>{displayText(g.name)}</TableCell>
+              <TableCell>{displayNumber(g.expose_uv)}</TableCell>
+              <TableCell>{g.sampleInsufficient ? "样本少" : displayPercent(g.ctr)}</TableCell>
+              <TableCell>{g.sampleInsufficient ? "样本少" : displayPercent(g.cvr)}</TableCell>
+              <TableCell>{displayNumber(g.pay_qty)}</TableCell>
+              <TableCell>{displayNumber(g.heat_score)}</TableCell>
+              <TableCell>{displayNumber(g.manual_weight)}</TableCell>
             </TableRow>
           ))}
           {!goods.length && <EmptyRow cols={7} />}

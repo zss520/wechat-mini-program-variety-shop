@@ -1,9 +1,10 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
-  <t-image src="{{item.goods.coverUrl}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
+  <t-image src="{{disp.cover(item.goods.coverUrl)}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
   <view class="info">
-    <view class="name">{{item.title}}</view>
-    <view class="price">¥{{item.group_price_cent / 100}}</view>
-    <t-tag theme="primary" variant="light" size="small">{{item.required_count}}人成团</t-tag>
+    <view class="name">{{disp.text(item.title)}}</view>
+    <view class="price">{{disp.money(item.group_price_cent)}}</view>
+    <t-tag theme="primary" variant="light" size="small">{{disp.num(item.required_count)}}人成团</t-tag>
   </view>
   <t-icon name="chevron-right" size="40rpx" color="#c5b8aa" />
 </view>

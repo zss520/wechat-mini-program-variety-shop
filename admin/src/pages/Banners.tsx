@@ -4,12 +4,13 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { asArray, displayText } from "../utils/display";
 
 export default function Banners() {
   const [list, setList] = useState<any[]>([]);
   const [imageUrl, setImageUrl] = useState("");
   const [title, setTitle] = useState("");
-  const load = () => api.get("/banners").then(setList);
+  const load = () => api.get("/banners").then((d) => setList(asArray(d)));
   useEffect(() => {
     load();
   }, []);
@@ -45,7 +46,7 @@ export default function Banners() {
           {list.map((b) => (
             <TableRow key={b.id}>
               <TableCell>{b.image_url && <img src={b.image_url} alt="" width={80} style={{ borderRadius: 6 }} />}</TableCell>
-              <TableCell>{b.title}</TableCell>
+              <TableCell>{displayText(b.title)}</TableCell>
               <TableCell>
                 <Switch checked={!!b.enabled} onChange={(e) => api.put(`/banners/${b.id}`, { enabled: e.target.checked }).then(load)} />
               </TableCell>

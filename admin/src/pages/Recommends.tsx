@@ -4,6 +4,7 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { asArray, asRecord, displayNumber, displayText } from "../utils/display";
 
 export default function Recommends() {
   const [slot, setSlot] = useState<any>(null);
@@ -13,11 +14,12 @@ export default function Recommends() {
   const [pick, setPick] = useState<number>(0);
   const load = () => {
     api.get("/recommend-slots/home_recommend").then((d) => {
-      setSlot(d.slot);
-      setItems(d.items);
+      const data = asRecord(d);
+      if (data.slot && typeof data.slot === "object") setSlot(asRecord(data.slot));
+      setItems(asArray(data.items));
     });
-    api.get("/recommend-slots/home_recommend/preview").then((d) => setPreview(d.list || []));
-    api.get("/goods", { params: { pageSize: 100, onSale: 1 } }).then((d) => setGoods(d.list));
+    api.get("/recommend-slots/home_recommend/preview").then((d) => setPreview(asArray(asRecord(d).list)));
+    api.get("/goods", { params: { pageSize: 100, onSale: 1 } }).then((d) => setGoods(asArray(asRecord(d).list)));
   };
   useEffect(() => {
     load();
@@ -53,7 +55,7 @@ export default function Recommends() {
           <MenuItem value={0}>选择商品</MenuItem>
           {goods.map((g) => (
             <MenuItem key={g.id} value={g.id}>
-              {g.name}
+              {displayText(g.name)}
             </MenuItem>
           ))}
         </TextField>
@@ -84,9 +86,9 @@ export default function Recommends() {
         <TableBody>
           {items.map((it, idx) => (
             <TableRow key={it.goods_id}>
-              <TableCell>{it.name}</TableCell>
-              <TableCell>{it.stock}</TableCell>
-              <TableCell>{it.heat_score}</TableCell>
+              <TableCell>{displayText(it.name)}</TableCell>
+              <TableCell>{displayNumber(it.stock)}</TableCell>
+              <TableCell>{displayNumber(it.heat_score)}</TableCell>
               <TableCell>
                 <Button
                   disabled={idx === 0}
@@ -111,7 +113,7 @@ export default function Recommends() {
       <ol style={{ margin: 0, paddingLeft: 20, color: "rgba(0,0,0,0.88)" }}>
         {preview.map((g) => (
           <li key={g.id} style={{ marginBottom: 6 }}>
-            {g.name} {g.pin ? "（置顶）" : ""} 库存 {g.stock}
+            {displayText(g.name)} {g.pin ? "（置顶）" : ""} 库存 {displayNumber(g.stock)}
           </li>
         ))}
       </ol>

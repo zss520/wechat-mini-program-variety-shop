@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
+import { asArray, displayText } from "../utils/display";
 
 type Cat = { id: number; name: string };
 
@@ -30,8 +31,9 @@ export default function GoodsForm() {
   });
   useEffect(() => {
     api.get("/categories").then((list: Cat[]) => {
-      setCats(list);
-      if (!id && list[0]) setForm((f) => ({ ...f, categoryId: list[0].id }));
+      const cats = asArray<Cat>(list);
+      setCats(cats);
+      if (!id && cats[0]) setForm((f) => ({ ...f, categoryId: cats[0].id }));
     });
     if (id) {
       api.get(`/goods/${id}`).then((g: Record<string, unknown>) => {
@@ -103,7 +105,7 @@ export default function GoodsForm() {
           <TextField select label="分类" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: Number(e.target.value) })}>
             {cats.map((c) => (
               <MenuItem key={c.id} value={c.id}>
-                {c.name}
+                {displayText(c.name)}
               </MenuItem>
             ))}
           </TextField>

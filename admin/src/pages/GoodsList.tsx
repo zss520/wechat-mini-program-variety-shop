@@ -5,6 +5,7 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { asArray, asRecord, displayNumber, displayText, displayYuan, toFiniteNumber } from "../utils/display";
 
 type Goods = {
   id: number;
@@ -28,8 +29,9 @@ export default function GoodsList() {
     api
       .get("/goods", { params: { keyword, onSale, pageSize: 50 } })
       .then((d: { list: Goods[]; total: number }) => {
-        setList(d.list);
-        setTotal(d.total);
+        const data = asRecord(d);
+        setList(asArray(data.list));
+        setTotal(toFiniteNumber(data.total) ?? 0);
       });
   };
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function GoodsList() {
   return (
     <PageContainer
       title="商品"
-      description={`共 ${total} 件`}
+      description={`共 ${displayNumber(total, "0")} 件`}
       extra={
         <Button variant="contained" onClick={() => nav("/goods/new")}>
           新建商品
@@ -75,11 +77,11 @@ export default function GoodsList() {
         <TableBody>
           {list.map((g) => (
             <TableRow key={g.id}>
-              <TableCell>{g.name}</TableCell>
-              <TableCell>{g.category_name}</TableCell>
-              <TableCell>¥{(g.price_cent / 100).toFixed(2)}</TableCell>
-              <TableCell>{g.stock}</TableCell>
-              <TableCell>{g.heat_score}</TableCell>
+              <TableCell>{displayText(g.name)}</TableCell>
+              <TableCell>{displayText(g.category_name)}</TableCell>
+              <TableCell>{displayYuan(g.price_cent)}</TableCell>
+              <TableCell>{displayNumber(g.stock)}</TableCell>
+              <TableCell>{displayNumber(g.heat_score)}</TableCell>
               <TableCell>
                 <TextField
                   size="small"

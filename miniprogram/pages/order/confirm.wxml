@@ -1,3 +1,4 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <view class="seg">
   <t-segmented value="{{fulfillType}}" options="{{fulfillOptions}}" bind:change="onType" />
 </view>
@@ -6,13 +7,13 @@
   <t-cell
     wx:if="{{fulfillType=='PICKUP'}}"
     title="到店自提"
-    description="{{settings.pickup_address}}（{{settings.business_hours}}）"
+    description="{{disp.text(settings.pickup_address)}}（{{disp.text(settings.business_hours)}}）"
     left-icon="shop"
   />
   <t-cell
     wx:else
     title="收货地址"
-    description="{{preview.address.contact_name}} {{preview.address.detail}}"
+    description="{{disp.join(preview.address.contact_name, preview.address.detail)}}"
     left-icon="location"
     arrow
     hover
@@ -24,9 +25,9 @@
   <t-cell
     wx:for="{{preview.items}}"
     wx:key="goodsId"
-    title="{{item.name}}"
-    note="¥{{item.amountCent / 100}}"
-    description="x{{item.qty}}"
+    title="{{disp.text(item.name)}}"
+    note="{{disp.money(item.amountCent)}}"
+    description="x{{disp.num(item.qty)}}"
   />
 </t-cell-group>
 
@@ -34,17 +35,17 @@
   <picker range="{{coupons}}" range-key="name" bindchange="pickCoupon">
     <t-cell
       title="优惠券"
-      note="{{preview.couponName || '未选'}}{{preview.couponDiscountCent ? ' -¥' + preview.couponDiscountCent/100 : ''}}"
+      note="{{disp.couponNote(preview.couponName, preview.couponDiscountCent)}}"
       left-icon="coupon"
       arrow
     />
   </picker>
-  <t-cell title="积分抵扣" description="可用 {{preview.pointsBalance || 0}}" left-icon="gift">
+  <t-cell title="积分抵扣" description="可用 {{disp.num(preview.pointsBalance, '0')}}" left-icon="gift">
     <t-switch slot="note" value="{{usePoints}}" bind:change="onPoints" />
   </t-cell>
-  <t-cell title="运费" note="¥{{preview.freightCent / 100 || 0}}" />
-  <t-cell title="优惠" note="-¥{{preview.discountCent / 100 || 0}}" />
-  <t-cell title="应付" note="¥{{preview.payAmountCent / 100 || 0}}" />
+  <t-cell title="运费" note="{{disp.money(preview.freightCent, '¥0')}}" />
+  <t-cell title="优惠" note="{{disp.minusMoney(preview.discountCent)}}" />
+  <t-cell title="应付" note="{{disp.money(preview.payAmountCent, '¥0')}}" />
 </t-cell-group>
 
 <view class="remark">

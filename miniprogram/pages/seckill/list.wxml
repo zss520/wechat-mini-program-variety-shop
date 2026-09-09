@@ -1,9 +1,10 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <view class="card" wx:for="{{list}}" wx:key="id" data-item="{{item}}" bindtap="buy">
-  <t-image src="{{item.goods.coverUrl}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
+  <t-image src="{{disp.cover(item.goods.coverUrl)}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
   <view class="info">
-    <view class="name">{{item.title}}</view>
-    <view class="price">¥{{item.seckill_price_cent / 100}}</view>
-    <t-tag theme="danger" variant="light" size="small">剩{{item.seckill_stock}}</t-tag>
+    <view class="name">{{disp.text(item.title)}}</view>
+    <view class="price">{{disp.money(item.seckill_price_cent)}}</view>
+    <t-tag theme="danger" variant="light" size="small">剩{{disp.num(item.seckill_stock)}}</t-tag>
     <t-count-down wx:if="{{item.remainMs}}" time="{{item.remainMs}}" format="HH:mm:ss" size="small" theme="square" />
   </view>
   <t-button theme="primary" size="small" shape="round">抢购</t-button>

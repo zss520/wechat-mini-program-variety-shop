@@ -4,22 +4,23 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { asArray, asRecord, displayNumber, displayText, displayYuan } from "../utils/display";
 
 export default function Dashboard() {
   const nav = useNavigate();
   const [d, setD] = useState({ pendingPack: 0, waitPickup: 0, grouping: 0, todayOrders: 0, todayAmountCent: 0, lowStock: 0 });
   const [low, setLow] = useState<{ list: any[]; threshold: number }>({ list: [], threshold: 5 });
   useEffect(() => {
-    api.get("/dashboard/summary").then(setD).catch(() => undefined);
-    api.get("/dashboard/low-stock").then(setLow).catch(() => undefined);
+    api.get("/dashboard/summary").then((raw) => setD(asRecord(raw, { pendingPack: 0, waitPickup: 0, grouping: 0, todayOrders: 0, todayAmountCent: 0, lowStock: 0 }))).catch(() => undefined);
+    api.get("/dashboard/low-stock").then((raw) => setLow(asRecord(raw, { list: [], threshold: 5 }))).catch(() => undefined);
   }, []);
   const cards = [
-    { t: "待备货", v: d.pendingPack, to: "/orders" },
-    { t: "待自提", v: d.waitPickup, to: "/orders" },
-    { t: "拼团中", v: d.grouping, to: "/marketing/campaigns" },
-    { t: "今日订单", v: d.todayOrders, to: "/orders" },
-    { t: "今日销售额", v: `¥${(d.todayAmountCent / 100).toFixed(2)}`, to: "/reports" },
-    { t: "低库存商品", v: d.lowStock, to: "/goods" },
+    { t: "待备货", v: displayNumber(d.pendingPack), to: "/orders" },
+    { t: "待自提", v: displayNumber(d.waitPickup), to: "/orders" },
+    { t: "拼团中", v: displayNumber(d.grouping), to: "/marketing/campaigns" },
+    { t: "今日订单", v: displayNumber(d.todayOrders), to: "/orders" },
+    { t: "今日销售额", v: displayYuan(d.todayAmountCent), to: "/reports" },
+    { t: "低库存商品", v: displayNumber(d.lowStock), to: "/goods" },
   ];
   return (
     <PageContainer title="工作台" description="今日经营概览，点击卡片可跳转对应业务。" card={false}>
@@ -45,7 +46,7 @@ export default function Dashboard() {
           库存预警
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          在售商品库存 ≤ {low.threshold}
+          在售商品库存 ≤ {displayNumber(low.threshold)}
         </Typography>
         <DataTable>
           <TableHead>
@@ -55,13 +56,13 @@ export default function Dashboard() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {low.list.map((g) => (
+            {asArray(low.list).map((g: any) => (
               <TableRow key={g.id} hover sx={{ cursor: "pointer" }} onClick={() => nav(`/goods/${g.id}`)}>
-                <TableCell>{g.name}</TableCell>
-                <TableCell sx={{ color: "error.main", fontWeight: 600 }}>{g.stock}</TableCell>
+                <TableCell>{displayText(g.name)}</TableCell>
+                <TableCell sx={{ color: "error.main", fontWeight: 600 }}>{displayNumber(g.stock)}</TableCell>
               </TableRow>
             ))}
-            {!low.list.length && <EmptyRow cols={2} text="暂无低于阈值的在售商品" />}
+            {!asArray(low.list).length && <EmptyRow cols={2} text="暂无低于阈值的在售商品" />}
           </TableBody>
         </DataTable>
       </Paper>

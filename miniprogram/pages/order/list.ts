@@ -1,4 +1,5 @@
 import { request, ensureLogin } from "../../utils/request";
+import { asArray, asRecord, displayText } from "../../utils/display";
 
 const MAP: Record<string, string> = {
   PENDING_PAY: "待付款",
@@ -19,9 +20,9 @@ Page({
   async load() {
     await ensureLogin();
     const q = this.data.status ? `?status=${this.data.status}` : "";
-    const d = await request(`/orders${q}`);
+    const d = asRecord(await request(`/orders${q}`));
     this.setData({
-      list: (d.list || []).map((o: any) => ({ ...o, statusText: MAP[o.status] || o.status })),
+      list: asArray(d.list).map((o: any) => ({ ...o, statusText: MAP[o.status] || displayText(o.status) })),
     });
   },
   tab(e: any) {

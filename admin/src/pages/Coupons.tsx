@@ -5,6 +5,7 @@ import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateRange } from "../utils/datetime";
+import { asArray, asRecord, displayCouponRule, displayNumber, displayText } from "../utils/display";
 
 const empty = {
   name: "",
@@ -23,7 +24,7 @@ const empty = {
 export default function Coupons() {
   const [list, setList] = useState<any[]>([]);
   const [form, setForm] = useState(empty);
-  const load = () => api.get("/coupons").then((d: { list: any[] }) => setList(d.list));
+  const load = () => api.get("/coupons").then((d: { list: any[] }) => setList(asArray(asRecord(d).list)));
   useEffect(() => {
     load();
   }, []);
@@ -73,13 +74,10 @@ export default function Coupons() {
         <TableBody>
           {list.map((c) => (
             <TableRow key={c.id}>
-              <TableCell>{c.name}</TableCell>
+              <TableCell>{displayText(c.name)}</TableCell>
               <TableCell>{c.type === "DISCOUNT" ? "折扣" : "满减"}</TableCell>
-              <TableCell>
-                满{(c.min_amount_cent / 100).toFixed(0)}
-                {c.type === "DISCOUNT" ? ` 打${(c.discount_bp / 1000).toFixed(1)}折` : ` 减${(c.reduce_cent / 100).toFixed(0)}`}
-              </TableCell>
-              <TableCell>{c.claimed_count}</TableCell>
+              <TableCell>{displayCouponRule(c)}</TableCell>
+              <TableCell>{displayNumber(c.claimed_count)}</TableCell>
               <TableCell>
                 {formatDateRange(c.start_at, c.end_at)}
               </TableCell>

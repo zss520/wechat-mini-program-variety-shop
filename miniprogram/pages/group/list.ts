@@ -1,10 +1,11 @@
 import { request } from "../../utils/request";
+import { asArray } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
 Page({
   data: { list: [] as any[] },
   async onShow() {
-    const list = await request("/group-buys");
+    const list = asArray(await request("/group-buys"));
     this.setData({ list });
   },
   open(e: any) {

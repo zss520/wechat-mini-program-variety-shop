@@ -1,14 +1,15 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <view class="head">
   <view class="label">当前积分</view>
-  <view class="num">{{balance}}</view>
+  <view class="num">{{disp.num(balance)}}</view>
 </view>
 <t-cell-group theme="card" title="积分明细">
   <t-cell
     wx:for="{{ledger}}"
     wx:key="id"
-    title="{{item.reason}} {{item.delta > 0 ? '+' : ''}}{{item.delta}}"
-    description="{{item.createdAtText}}{{item.note ? ' · ' + item.note : ''}}"
-    note="余额 {{item.balance_after}}"
+    title="{{disp.text(item.reason)}} {{disp.signed(item.delta)}}"
+    description="{{disp.text(item.createdAtText)}}{{item.note ? ' · ' + item.note : ''}}"
+    note="余额 {{disp.num(item.balance_after)}}"
   />
 </t-cell-group>
 <t-empty wx:if="{{!ledger.length}}" icon="gift" description="暂无积分记录" />

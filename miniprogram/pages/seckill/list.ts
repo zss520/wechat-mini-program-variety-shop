@@ -1,10 +1,11 @@
 import { request } from "../../utils/request";
+import { asArray } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
 Page({
   data: { list: [] as any[] },
   async onShow() {
-    const list = (await request("/seckills")).map((x: any) => ({
+    const list = asArray(await request("/seckills")).map((x: any) => ({
       ...x,
       remainMs: x.end_at ? Math.max(0, new Date(x.end_at).getTime() - Date.now()) : 0,
     }));

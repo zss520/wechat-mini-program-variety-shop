@@ -1,3 +1,4 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <t-swiper
   wx:if="{{detailImages.length}}"
   list="{{detailImages}}"
@@ -7,19 +8,19 @@
 
 <view class="box">
   <view class="price-row">
-    <text class="price big">¥{{item.priceCent / 100}}</text>
-    <text class="origin" wx:if="{{item.originPriceCent}}">¥{{item.originPriceCent / 100}}</text>
+    <text class="price big">{{disp.money(item.priceCent)}}</text>
+    <text class="origin" wx:if="{{item.originPriceCent}}">{{disp.money(item.originPriceCent)}}</text>
     <t-tag wx:if="{{item.soldOut}}" theme="default" variant="dark" size="small">售罄</t-tag>
-    <t-tag wx:elif="{{item.stock < 10}}" theme="warning" variant="light" size="small">仅剩{{item.stock}}件</t-tag>
+    <t-tag wx:elif="{{disp.hasNum(item.stock) && item.stock < 10}}" theme="warning" variant="light" size="small">仅剩{{disp.num(item.stock)}}件</t-tag>
     <t-tag wx:else theme="success" variant="light" size="small">有货</t-tag>
   </view>
-  <view class="name">{{item.name}}</view>
-  <view class="sub">{{item.subtitle}}</view>
+  <view class="name">{{disp.text(item.name)}}</view>
+  <view class="sub">{{disp.text(item.subtitle, '')}}</view>
   <t-cell title="购买数量" bordered="{{false}}">
     <t-stepper slot="note" value="{{qty}}" min="{{1}}" max="{{item.stock || 1}}" theme="filled" bind:change="onQty" />
   </t-cell>
   <t-divider />
-  <view class="detail">{{item.detail}}</view>
+  <view class="detail">{{disp.text(item.detail, '')}}</view>
 </view>
 
 <view class="rel" wx:if="{{related.length}}">
@@ -27,9 +28,9 @@
   <t-cell
     wx:for="{{related}}"
     wx:key="id"
-    title="{{item.name}}"
-    note="¥{{item.priceCent / 100}}"
-    image="{{item.coverUrl}}"
+    title="{{disp.text(item.name)}}"
+    note="{{disp.money(item.priceCent)}}"
+    image="{{disp.cover(item.coverUrl)}}"
     hover
     data-id="{{item.id}}"
     bind:click="goRel"

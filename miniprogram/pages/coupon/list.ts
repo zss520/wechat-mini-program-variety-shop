@@ -1,5 +1,6 @@
 import { request, ensureLogin } from "../../utils/request";
 import { formatDateTime } from "../../utils/datetime";
+import { asArray, displayText } from "../../utils/display";
 
 Page({
   data: { tab: "shop", shop: [] as any[], mine: [] as any[] },
@@ -8,12 +9,11 @@ Page({
   },
   async load() {
     await ensureLogin();
-    const shop = await request("/coupons");
+    const shop = asArray(await request("/coupons"));
     const ST: Record<string, string> = { UNUSED: "未使用", USED: "已使用", EXPIRED: "已过期" };
-    const rawMine = await request("/me/coupons");
-    const mine = (Array.isArray(rawMine) ? rawMine : []).map((x: any) => ({
+    const mine = asArray(await request("/me/coupons")).map((x: any) => ({
       ...x,
-      statusText: ST[x.status] || x.status,
+      statusText: ST[x.status] || displayText(x.status),
       endAtText: formatDateTime(x.end_at),
     }));
     this.setData({ shop, mine });

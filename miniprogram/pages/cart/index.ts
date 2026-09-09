@@ -1,9 +1,10 @@
 import { request, ensureLogin } from "../../utils/request";
+import { asArray, asRecord, toFiniteNumber } from "../../utils/display";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { list: [] as any[], checked: [] as number[], total: 0, upsell: null as any, allChecked: false },
+  data: { list: [] as any[], checked: [] as number[], total: 0, upsell: { suggestions: [] as any[], target: {} as any }, allChecked: false },
   onShow() {
     syncTabBar(this, "cart");
     this.load();
@@ -11,11 +12,15 @@ Page({
   async load() {
     try {
       await ensureLogin();
-      const list = await request("/cart");
+      const list = asArray(await request("/cart"));
       const checked = list.filter((x: any) => !x.invalid).map((x: any) => x.id);
       this.setData({ list, checked });
       this.calc(list, checked);
-      const upsell = await request("/cart/upsell");
+      const rawUpsell = asRecord(await request("/cart/upsell"));
+      const upsell = {
+        suggestions: asArray(rawUpsell.suggestions),
+        target: asRecord(rawUpsell.target),
+      };
       this.setData({ upsell });
       if (upsell?.suggestions?.length) track("cart_upsell", { extra: { remain: upsell.target?.remainCent } });
     } catch (e: any) {
@@ -24,7 +29,13 @@ Page({
   },
   calc(list = this.data.list, checked = this.data.checked) {
     const valid = list.filter((x: any) => !x.invalid);
-    const total = list.filter((x: any) => checked.includes(x.id) && !x.invalid).reduce((s: number, x: any) => s + x.priceCent * x.qty, 0);
+    const total = list
+      .filter((x: any) => checked.includes(x.id) && !x.invalid)
+      .reduce((s: number, x: any) => {
+        const price = toFiniteNumber(x.priceCent);
+        const qty = toFiniteNumber(x.qty);
+        return s + (price != null && qty != null ? price * qty : 0);
+      }, 0);
     this.setData({ total, allChecked: valid.length > 0 && valid.every((x: any) => checked.includes(x.id)) });
   },
   toggle(e: any) {

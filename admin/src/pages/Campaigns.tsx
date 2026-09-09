@@ -5,6 +5,7 @@ import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateRange } from "../utils/datetime";
+import { asArray, asRecord, displayNumber, displayText, displayYuan } from "../utils/display";
 
 type Goods = { id: number; name: string };
 
@@ -16,12 +17,13 @@ export default function Campaigns() {
   const [s, setS] = useState({ title: "", goodsId: 0, seckillPriceCent: 0, seckillStock: 10, perUserLimit: 1, startAt: "", endAt: "" });
   const load = () => {
     api.get("/goods", { params: { pageSize: 100 } }).then((d: { list: Goods[] }) => {
-      setGoods(d.list);
-      if (!g.goodsId && d.list[0]) setG((x) => ({ ...x, goodsId: d.list[0].id }));
-      if (!s.goodsId && d.list[0]) setS((x) => ({ ...x, goodsId: d.list[0].id }));
+      const list = asArray<Goods>(asRecord(d).list);
+      setGoods(list);
+      if (!g.goodsId && list[0]) setG((x) => ({ ...x, goodsId: list[0].id }));
+      if (!s.goodsId && list[0]) setS((x) => ({ ...x, goodsId: list[0].id }));
     });
-    api.get("/group-buys").then(setGroups);
-    api.get("/seckills").then(setSeckills);
+    api.get("/group-buys").then((d) => setGroups(asArray(d)));
+    api.get("/seckills").then((d) => setSeckills(asArray(d)));
   };
   useEffect(() => {
     load();
@@ -47,7 +49,7 @@ export default function Campaigns() {
           <TextField select size="small" label="商品" value={g.goodsId} onChange={(e) => setG({ ...g, goodsId: Number(e.target.value) })} sx={{ minWidth: 180 }}>
             {goods.map((x) => (
               <MenuItem key={x.id} value={x.id}>
-                {x.name}
+                {displayText(x.name)}
               </MenuItem>
             ))}
           </TextField>
@@ -72,9 +74,9 @@ export default function Campaigns() {
         <TableBody>
           {groups.map((x) => (
             <TableRow key={x.id}>
-              <TableCell>{x.title}</TableCell>
+              <TableCell>{displayText(x.title)}</TableCell>
               <TableCell>
-                {x.required_count}人 / ¥{(x.group_price_cent / 100).toFixed(2)}
+                {displayNumber(x.required_count)}人 / {displayYuan(x.group_price_cent)}
               </TableCell>
               <TableCell>
                 {formatDateRange(x.start_at, x.end_at)}
@@ -99,7 +101,7 @@ export default function Campaigns() {
           <TextField select size="small" label="商品" value={s.goodsId} onChange={(e) => setS({ ...s, goodsId: Number(e.target.value) })} sx={{ minWidth: 180 }}>
             {goods.map((x) => (
               <MenuItem key={x.id} value={x.id}>
-                {x.name}
+                {displayText(x.name)}
               </MenuItem>
             ))}
           </TextField>
@@ -124,9 +126,9 @@ export default function Campaigns() {
         <TableBody>
           {seckills.map((x) => (
             <TableRow key={x.id}>
-              <TableCell>{x.title}</TableCell>
+              <TableCell>{displayText(x.title)}</TableCell>
               <TableCell>
-                ¥{(x.seckill_price_cent / 100).toFixed(2)} / 剩{x.seckill_stock}
+                {displayYuan(x.seckill_price_cent)} / 剩{displayNumber(x.seckill_stock)}
               </TableCell>
               <TableCell>
                 {formatDateRange(x.start_at, x.end_at)}

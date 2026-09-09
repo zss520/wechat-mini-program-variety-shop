@@ -1,9 +1,10 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <t-cell-group theme="card">
   <t-cell
     wx:for="{{list}}"
     wx:key="id"
-    title="{{item.contact_name}} {{item.phone}}"
-    description="{{item.detail}}"
+    title="{{disp.join(item.contact_name, item.phone)}}"
+    description="{{disp.text(item.detail)}}"
     left-icon="location"
     arrow
     hover

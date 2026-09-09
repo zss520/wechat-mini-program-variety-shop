@@ -4,13 +4,14 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { asArray, asRecord, displayNumber, displayText, displayYuan } from "../utils/display";
 
 type Row = { id: number; nickname: string; phone: string; points_balance: number; orderCount: number; payAmountCent: number };
 
 export default function Members() {
   const [keyword, setKeyword] = useState("");
   const [list, setList] = useState<Row[]>([]);
-  const load = () => api.get("/members", { params: { keyword, pageSize: 50 } }).then((d: { list: Row[] }) => setList(d.list));
+  const load = () => api.get("/members", { params: { keyword, pageSize: 50 } }).then((d: { list: Row[] }) => setList(asArray(asRecord(d).list)));
   useEffect(() => {
     load();
   }, []);
@@ -45,11 +46,11 @@ export default function Members() {
         <TableBody>
           {list.map((u) => (
             <TableRow key={u.id}>
-              <TableCell>{u.nickname}</TableCell>
-              <TableCell>{u.phone}</TableCell>
-              <TableCell>{u.points_balance}</TableCell>
-              <TableCell>{u.orderCount}</TableCell>
-              <TableCell>¥{(u.payAmountCent / 100).toFixed(2)}</TableCell>
+              <TableCell>{displayText(u.nickname)}</TableCell>
+              <TableCell>{displayText(u.phone)}</TableCell>
+              <TableCell>{displayNumber(u.points_balance)}</TableCell>
+              <TableCell>{displayNumber(u.orderCount)}</TableCell>
+              <TableCell>{displayYuan(u.payAmountCent)}</TableCell>
               <TableCell>
                 <Button size="small" onClick={() => adjust(u.id)}>
                   调积分

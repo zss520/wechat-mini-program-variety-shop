@@ -6,6 +6,7 @@ import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateTime } from "../utils/datetime";
+import { asArray, asRecord, displayFulfillType, displayJoin, displayText, displayYuan } from "../utils/display";
 
 const STATUS: Record<string, string> = {
   PENDING_PAY: "待付款",
@@ -24,7 +25,7 @@ export default function Orders() {
   const nav = useNavigate();
   const [status, setStatus] = useState("");
   const [list, setList] = useState<Row[]>([]);
-  const load = () => api.get("/orders", { params: { status, pageSize: 50 } }).then((d: { list: Row[] }) => setList(d.list));
+  const load = () => api.get("/orders", { params: { status, pageSize: 50 } }).then((d: { list: Row[] }) => setList(asArray(asRecord(d).list)));
   useEffect(() => {
     load();
   }, []);
@@ -58,13 +59,13 @@ export default function Orders() {
         <TableBody>
           {list.map((o) => (
             <TableRow key={o.id} hover sx={{ cursor: "pointer" }} onClick={() => nav(`/orders/${o.id}`)}>
-              <TableCell>{o.order_no}</TableCell>
+              <TableCell>{displayText(o.order_no)}</TableCell>
               <TableCell>
-                {o.nickname} {o.phone}
+                {displayJoin(o.nickname, o.phone)}
               </TableCell>
-              <TableCell>¥{(o.pay_amount_cent / 100).toFixed(2)}</TableCell>
-              <TableCell>{o.fulfill_type === "PICKUP" ? "自提" : "配送"}</TableCell>
-              <TableCell>{STATUS[o.status] || o.status}</TableCell>
+              <TableCell>{displayYuan(o.pay_amount_cent)}</TableCell>
+              <TableCell>{displayFulfillType(o.fulfill_type)}</TableCell>
+              <TableCell>{STATUS[o.status] || displayText(o.status)}</TableCell>
               <TableCell>{formatDateTime(o.created_at)}</TableCell>
               <TableCell>
                 <Button

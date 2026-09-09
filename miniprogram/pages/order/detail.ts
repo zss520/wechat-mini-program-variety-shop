@@ -1,4 +1,5 @@
 import { request, ensureLogin } from "../../utils/request";
+import { asArray, asRecord, displayText } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
 const MAP: Record<string, string> = {
@@ -22,8 +23,8 @@ Page({
   },
   async load() {
     await ensureLogin();
-    const o = await request(`/orders/${this.data.id}`);
-    this.setData({ o, statusText: MAP[o.status] || o.status });
+    const o = asRecord(await request(`/orders/${this.data.id}`));
+    this.setData({ o: { ...o, items: asArray(o.items) }, statusText: MAP[o.status] || displayText(o.status) });
     if (o.pickup_code) track("pickup_code_view", { order_no: o.order_no });
   },
   async pay() {

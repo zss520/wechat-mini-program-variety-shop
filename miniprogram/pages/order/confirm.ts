@@ -1,4 +1,5 @@
 import { request, ensurePhone } from "../../utils/request";
+import { asArray, asRecord } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
 Page({
@@ -34,7 +35,7 @@ Page({
     let items: any[] = [];
     if (q.from === "BUY_NOW" || q.from === "SECKILL") items = [{ goodsId: Number(q.goodsId), qty: Number(q.qty || 1) }];
     else items = wx.getStorageSync("checkout_items") || [];
-    const coupons = await request("/me/coupons?status=UNUSED").catch(() => []);
+    const coupons = asArray(await request("/me/coupons?status=UNUSED").catch(() => []));
     this.setData({
       items,
       settings,
@@ -46,7 +47,7 @@ Page({
       activityId: Number(q.activityId || 0),
       teamId: Number(q.teamId || 0),
     });
-    const addresses = await request("/addresses");
+    const addresses = asArray(await request("/addresses"));
     const def = addresses.find((a: any) => a.is_default) || addresses[0];
     this.setData({ addresses, addressId: def ? def.id : 0 });
     this.refresh();
@@ -62,13 +63,19 @@ Page({
   },
   async refresh() {
     try {
-      const preview = await request("/orders/preview", "POST", {
+      const preview = asRecord(await request("/orders/preview", "POST", {
         fulfillType: this.data.fulfillType,
         addressId: this.data.fulfillType === "DELIVERY" ? this.data.addressId : null,
         items: this.data.items,
         ...this.extra(),
+      }));
+      this.setData({
+        preview: {
+          ...preview,
+          items: asArray(preview.items),
+          address: asRecord(preview.address),
+        },
       });
-      this.setData({ preview });
     } catch (e: any) {
       wx.showToast({ title: e.message, icon: "none" });
     }

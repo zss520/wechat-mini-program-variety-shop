@@ -1,3 +1,5 @@
+import { toFiniteNumber } from "../../utils/display";
+
 Component({
   properties: {
     item: { type: Object, value: {} },
@@ -20,10 +22,10 @@ Component({
       });
     },
     "item.originPriceCent, item.priceCent, item.specialActive"(origin: number, price: number, special: boolean) {
-      const o = Number(origin || 0);
-      const p = Number(price || 0);
+      const o = toFiniteNumber(origin);
+      const p = toFiniteNumber(price);
       let saveText = "";
-      if (special && o > p && p > 0) {
+      if (special && o != null && p != null && o > p && p > 0) {
         const n = (o - p) / 100;
         saveText = `省¥${Number.isInteger(n) ? n : n.toFixed(1)}`;
       }

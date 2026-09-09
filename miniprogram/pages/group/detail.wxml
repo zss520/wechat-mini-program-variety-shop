@@ -1,10 +1,11 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <view class="box" wx:if="{{act}}">
-  <t-image src="{{act.goods.coverUrl}}" width="100%" height="360rpx" mode="aspectFill" />
+  <t-image src="{{disp.cover(act.goods.coverUrl)}}" width="100%" height="360rpx" mode="aspectFill" />
   <view class="body">
-    <view class="name">{{act.title}}</view>
-    <view class="price">团价 ¥{{act.group_price_cent / 100}}</view>
-    <t-tag theme="primary" variant="light">{{act.required_count}}人成团</t-tag>
-    <view class="sub" wx:if="{{team}}">已有 {{team.paidCount}} 人，还差 {{team.remain}} 人</view>
+    <view class="name">{{disp.text(act.title)}}</view>
+    <view class="price">团价 {{disp.money(act.group_price_cent)}}</view>
+    <t-tag theme="primary" variant="light">{{disp.num(act.required_count)}}人成团</t-tag>
+    <view class="sub" wx:if="{{team}}">已有 {{disp.num(team.paidCount)}} 人，还差 {{disp.num(team.remain)}} 人</view>
     <t-count-down wx:if="{{remainMs}}" time="{{remainMs}}" format="HH:mm:ss" theme="square" />
     <t-button theme="primary" size="large" shape="round" block bind:tap="open">发起拼团</t-button>
     <t-button wx:if="{{teamId}}" theme="light" size="large" shape="round" block bind:tap="join">参加该团</t-button>

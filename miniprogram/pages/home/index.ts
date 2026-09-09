@@ -1,4 +1,5 @@
 import { request } from "../../utils/request";
+import { asArray, asRecord, displayText } from "../../utils/display";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
@@ -23,23 +24,23 @@ Page({
   },
   async load() {
     try {
-      const home = await request("/home");
-      const boot = await request("/shop/bootstrap");
-      const banners = home.banners || [];
-      const settings = boot.settings || {};
-      const seckills = (home.seckills || []).map((x: any) => ({
+      const home = asRecord(await request("/home"));
+      const boot = asRecord(await request("/shop/bootstrap"));
+      const banners = asArray(home.banners);
+      const settings = asRecord(boot.settings);
+      const seckills = asArray(home.seckills).map((x: any) => ({
         ...x,
         remainMs: x.end_at ? Math.max(0, new Date(x.end_at).getTime() - Date.now()) : 0,
       }));
       this.setData({
         banners,
         bannerImages: banners.map((b: any) => b.image_url).filter(Boolean),
-        deals: home.deals || [],
-        recommend: home.recommend || [],
-        forYou: home.forYou || [],
+        deals: asArray(home.deals),
+        recommend: asArray(home.recommend),
+        forYou: asArray(home.forYou),
         seckills,
-        groups: home.groups || [],
-        recommendTitle: home.recommendTitle,
+        groups: asArray(home.groups),
+        recommendTitle: displayText(home.recommendTitle, "本店推荐"),
         settings,
         shopHint: [settings.pickup_address, settings.business_hours].filter(Boolean).join(" · "),
       });

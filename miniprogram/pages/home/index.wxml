@@ -1,3 +1,4 @@
+<wxs src="../../utils/display.wxs" module="disp" />
 <view class="tab-page">
 <view class="search-wrap" bindtap="goSearch">
   <t-search placeholder="搜索商品" disabled shape="round" />
@@ -36,9 +37,9 @@
   </view>
   <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
     <view class="hitem" wx:for="{{seckills}}" wx:key="id" data-item="{{item}}" bindtap="openSeckill">
-      <t-image src="{{item.goods.coverUrl}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
-      <view class="t">{{item.title}}</view>
-      <view class="price">¥{{item.seckill_price_cent / 100}}</view>
+      <t-image src="{{disp.cover(item.goods.coverUrl)}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
+      <view class="t">{{disp.text(item.title)}}</view>
+      <view class="price">{{disp.money(item.seckill_price_cent)}}</view>
       <t-count-down wx:if="{{item.remainMs}}" time="{{item.remainMs}}" format="HH:mm:ss" size="small" theme="square" />
     </view>
   </scroll-view>
@@ -51,10 +52,10 @@
   </view>
   <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
     <view class="hitem" wx:for="{{groups}}" wx:key="id" data-id="{{item.id}}" bindtap="openGroup">
-      <t-image src="{{item.goods.coverUrl}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
-      <view class="t">{{item.title}}</view>
-      <view class="price">¥{{item.group_price_cent / 100}}</view>
-      <t-tag theme="primary" variant="light" size="small">{{item.required_count}}人团</t-tag>
+      <t-image src="{{disp.cover(item.goods.coverUrl)}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
+      <view class="t">{{disp.text(item.title)}}</view>
+      <view class="price">{{disp.money(item.group_price_cent)}}</view>
+      <t-tag theme="primary" variant="light" size="small">{{disp.num(item.required_count)}}人团</t-tag>
     </view>
   </scroll-view>
 </view>
@@ -82,7 +83,7 @@
 
 <view class="sec" wx:if="{{recommend.length}}">
   <view class="sec-head">
-    <view class="sec-title">{{recommendTitle}}</view>
+    <view class="sec-title">{{disp.text(recommendTitle, '本店推荐')}}</view>
   </view>
   <view class="goods-grid">
     <view class="goods-grid-item" wx:for="{{recommend}}" wx:key="id">

@@ -3,11 +3,12 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateTime } from "../utils/datetime";
+import { asArray, asRecord, displayNumber, displayText } from "../utils/display";
 
 export default function Notices() {
   const [list, setList] = useState<any[]>([]);
   useEffect(() => {
-    api.get("/notices", { params: { pageSize: 50 } }).then((d: { list: any[] }) => setList(d.list));
+    api.get("/notices", { params: { pageSize: 50 } }).then((d: { list: any[] }) => setList(asArray(asRecord(d).list)));
   }, []);
   return (
     <PageContainer title="订阅通知记录" description="开发环境写入本地记录，不调用微信模板。顾客同意「备货完成」后，店主核销前备货会记一条 SENT。">
@@ -24,10 +25,10 @@ export default function Notices() {
         <TableBody>
           {list.map((n) => (
             <TableRow key={n.id}>
-              <TableCell>{n.user_id}</TableCell>
-              <TableCell>{n.scene}</TableCell>
+              <TableCell>{displayNumber(n.user_id)}</TableCell>
+              <TableCell>{displayText(n.scene)}</TableCell>
               <TableCell>
-                {n.title} {n.body}
+                {displayText(n.title)} {displayText(n.body, "")}
               </TableCell>
               <TableCell>{n.status === "SENT" ? "已记发送" : "未订阅跳过"}</TableCell>
               <TableCell>{formatDateTime(n.created_at, true)}</TableCell>

@@ -4,13 +4,14 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import { asArray, displayNumber, displayText } from "../utils/display";
 
 type Cat = { id: number; name: string; sort: number; enabled: number };
 
 export default function Categories() {
   const [list, setList] = useState<Cat[]>([]);
   const [name, setName] = useState("");
-  const load = () => api.get("/categories").then(setList);
+  const load = () => api.get("/categories").then((d) => setList(asArray(d)));
   useEffect(() => {
     load();
   }, []);
@@ -43,8 +44,8 @@ export default function Categories() {
         <TableBody>
           {list.map((c) => (
             <TableRow key={c.id}>
-              <TableCell>{c.name}</TableCell>
-              <TableCell>{c.sort}</TableCell>
+              <TableCell>{displayText(c.name)}</TableCell>
+              <TableCell>{displayNumber(c.sort)}</TableCell>
               <TableCell>
                 <Switch checked={!!c.enabled} onChange={(e) => api.put(`/categories/${c.id}`, { enabled: e.target.checked }).then(load)} />
               </TableCell>
