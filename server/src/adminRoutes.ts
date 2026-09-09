@@ -2,7 +2,6 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import { z } from "zod";
 import { db } from "./db";
 import { ok } from "./http";
@@ -10,6 +9,7 @@ import { HttpError } from "./http";
 import { parsePage, maskPhone, yuanToCent } from "./http";
 import { requireRole, signToken } from "./auth";
 import { getSettings, saveSettings } from "./settings";
+import { ensureGoodsThumb, ensureUploadDirs, MAX_GOODS_IMAGES, MAX_IMAGE_BYTES, normalizeGoodsImages } from "./image";
 import {
   cancelOrder,
   completeDeliver,
@@ -28,17 +28,16 @@ import { changePoints, couponPayload } from "./marketing";
 import { listNotifyLogs } from "./notify";
 import { toSqlDateTime } from "./pricing";
 
-const uploadDir = config.uploadDir;
-fs.mkdirSync(uploadDir, { recursive: true });
+ensureUploadDirs();
 const upload = multer({
   storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, uploadDir),
+    destination: (_req, _file, cb) => cb(null, config.uploadDir),
     filename: (_req, file, cb) => {
       const ext = path.extname(file.originalname || "").slice(0, 8) || ".jpg";
       cb(null, `${Date.now()}_${Math.random().toString(16).slice(2)}${ext}`);
     },
   }),
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: { fileSize: MAX_IMAGE_BYTES },
   fileFilter: (_req, file, cb) => {
     if (!/^image\/(jpeg|png|webp)$/.test(file.mimetype)) cb(new Error("仅支持 jpg/png/webp"));
     else cb(null, true);
@@ -193,7 +192,7 @@ function goodsBody(body: unknown, partial = false) {
     unit: z.string().min(1).max(8),
     stock: z.number().int().min(0),
     coverUrl: z.string().min(1),
-    images: z.array(z.string()).max(8).optional(),
+    images: z.array(z.string().min(1)).max(MAX_GOODS_IMAGES, { message: "商品图片最多 6 张" }).optional(),
     detail: z.string().optional(),
     onSale: z.boolean().optional(),
     sort: z.number().optional(),
@@ -208,6 +207,8 @@ function goodsBody(body: unknown, partial = false) {
 adminRouter.post("/goods", async (req, res, next) => {
   try {
     const body = goodsBody(req.body, false) as ReturnType<typeof goodsBody> & { priceYuan: number };
+    const pics = normalizeGoodsImages(String(body.coverUrl || ""), body.images as string[] | undefined);
+    const thumbUrl = await ensureGoodsThumb(pics.coverUrl);
     const [id] = await db("goods").insert({
       name: body.name,
       subtitle: body.subtitle || "",
@@ -216,8 +217,9 @@ adminRouter.post("/goods", async (req, res, next) => {
       origin_price_cent: body.originPriceYuan ? yuanToCent(body.originPriceYuan) : null,
       unit: body.unit,
       stock: body.stock,
-      cover_url: body.coverUrl,
-      images: JSON.stringify(body.images || []),
+      cover_url: pics.coverUrl,
+      thumb_url: thumbUrl || null,
+      images: JSON.stringify(pics.images),
       detail: body.detail || "",
       on_sale: body.onSale === false ? 0 : 1,
       sort: body.sort ?? 0,
@@ -235,6 +237,8 @@ adminRouter.post("/goods", async (req, res, next) => {
 adminRouter.put("/goods/:id", async (req, res, next) => {
   try {
     const id = Number(req.params.id);
+    const existing = await db("goods").where({ id }).whereNull("deleted_at").first();
+    if (!existing) throw new HttpError(404, "商品不存在");
     const body = goodsBody(req.body, true) as Record<string, unknown>;
     const patch: Record<string, unknown> = {};
     if (body.name) patch.name = body.name;
@@ -246,8 +250,21 @@ adminRouter.put("/goods/:id", async (req, res, next) => {
     }
     if (body.unit) patch.unit = body.unit;
     if (body.stock != null) patch.stock = body.stock;
-    if (body.coverUrl) patch.cover_url = body.coverUrl;
-    if (body.images) patch.images = JSON.stringify(body.images);
+    if (body.coverUrl || body.images !== undefined) {
+      let prevImages: string[] = [];
+      try {
+        prevImages = typeof existing.images === "string" ? JSON.parse(existing.images || "[]") : existing.images || [];
+      } catch {
+        prevImages = [];
+      }
+      const pics = normalizeGoodsImages(
+        String(body.coverUrl || existing.cover_url || ""),
+        (body.images as string[] | undefined) ?? prevImages
+      );
+      patch.cover_url = pics.coverUrl;
+      patch.images = JSON.stringify(pics.images);
+      patch.thumb_url = (await ensureGoodsThumb(pics.coverUrl, existing)) || null;
+    }
     if (body.detail != null) patch.detail = body.detail;
     if (body.onSale != null) patch.on_sale = body.onSale ? 1 : 0;
     if (body.sort != null) patch.sort = body.sort;
@@ -332,9 +349,15 @@ adminRouter.get("/goods/:id", async (req, res, next) => {
 
 adminRouter.post("/uploads/image", (req, res, next) => {
   upload.single("file")(req, res, (err) => {
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      return next(new HttpError(400, "单张图片不能超过 400KB"));
+    }
     if (err) return next(new HttpError(400, err.message || "上传失败"));
     try {
       if (!req.file) throw new HttpError(400, "未选择文件");
+      if (req.file.size > MAX_IMAGE_BYTES) {
+        throw new HttpError(400, "单张图片不能超过 400KB");
+      }
       const url = `${config.publicUrl}/uploads/${req.file.filename}`;
       ok(res, { url });
     } catch (e) {

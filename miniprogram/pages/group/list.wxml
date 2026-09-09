@@ -1,6 +1,6 @@
 <wxs src="../../utils/display.wxs" module="disp" />
 <view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
-  <t-image src="{{disp.cover(item.goods.coverUrl)}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
+  <t-image src="{{disp.thumb(item.goods.thumbUrl, item.goods.coverUrl)}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
   <view class="info">
     <view class="name">{{disp.text(item.title)}}</view>
     <view class="price">{{disp.money(item.group_price_cent)}}</view>

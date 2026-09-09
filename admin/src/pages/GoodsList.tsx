@@ -1,4 +1,4 @@
-import { Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
+import { Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
@@ -12,6 +12,7 @@ type Goods = {
   id: number;
   name: string;
   cover_url: string;
+  thumb_url?: string;
   price_cent: number;
   stock: number;
   on_sale: number;
@@ -110,7 +111,31 @@ export default function GoodsList() {
         <TableBody>
           {list.map((g) => (
             <TableRow key={g.id}>
-              <TableCell>{displayText(g.name)}</TableCell>
+              <TableCell>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+                  <Box
+                    component="img"
+                    src={g.thumb_url || g.cover_url || "/static/placeholders/empty.png"}
+                    alt=""
+                    onError={(e) => {
+                      const el = e.currentTarget;
+                      el.onerror = null;
+                      el.src = "/static/placeholders/empty.png";
+                    }}
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      objectFit: "cover",
+                      borderRadius: 1,
+                      bgcolor: "#f5f5f5",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {displayText(g.name)}
+                  </Box>
+                </Box>
+              </TableCell>
               <TableCell>{displayText(g.category_name)}</TableCell>
               <TableCell>{displayYuan(g.price_cent)}</TableCell>
               <TableCell>{displayNumber(g.stock)}</TableCell>

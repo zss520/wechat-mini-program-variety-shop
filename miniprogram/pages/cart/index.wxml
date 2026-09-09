@@ -9,7 +9,7 @@
       data-id="{{item.id}}"
       bind:change="onToggle"
     />
-    <t-image src="{{disp.cover(item.coverUrl)}}" width="140rpx" height="140rpx" shape="round" mode="aspectFill" />
+    <t-image src="{{disp.thumb(item.thumbUrl, item.coverUrl)}}" width="140rpx" height="140rpx" shape="round" mode="aspectFill" />
     <view class="info">
       <view class="name">
         {{disp.text(item.name)}}
@@ -33,7 +33,7 @@
   <view class="uh">凑单：{{disp.text(upsell.target.reason)}} 还差 {{disp.money(upsell.target.remainCent)}}</view>
   <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
     <view class="hitem" wx:for="{{upsell.suggestions}}" wx:key="id" data-id="{{item.id}}" bindtap="addUpsell">
-      <t-image src="{{disp.cover(item.coverUrl)}}" width="100%" height="140rpx" mode="aspectFill" shape="round" />
+      <t-image src="{{disp.thumb(item.thumbUrl, item.coverUrl)}}" width="100%" height="140rpx" mode="aspectFill" shape="round" />
       <view class="uname">{{disp.text(item.name)}}</view>
       <view class="price">{{disp.money(item.priceCent)}}</view>
     </view>

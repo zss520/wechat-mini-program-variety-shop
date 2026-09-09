@@ -103,6 +103,12 @@ function cover(v) {
   return s || '/assets/tab-home.png';
 }
 
+function thumb(thumbUrl, coverUrl) {
+  var a = text(thumbUrl, '');
+  if (a) return a;
+  return cover(coverUrl);
+}
+
 function unit(v) {
   var s = text(v, '');
   return s ? '/' + s : '/—';
@@ -119,5 +125,6 @@ module.exports = {
   couponNote: couponNote,
   join: join,
   cover: cover,
+  thumb: thumb,
   unit: unit,
 };

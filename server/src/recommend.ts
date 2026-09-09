@@ -80,6 +80,7 @@ export function publicGoods(g: any) {
     images = [];
   }
   const cover = publicUrl(g.cover_url) || publicUrl("/static/placeholders/empty.png");
+  const thumb = publicUrl(g.thumb_url) || cover;
   const sale = salePriceOf(g);
   return {
     id: g.id,
@@ -94,6 +95,7 @@ export function publicGoods(g: any) {
     stock: g.stock,
     soldCount: g.sold_count,
     coverUrl: cover,
+    thumbUrl: thumb,
     images: (images.length ? images : [g.cover_url || "/static/placeholders/empty.png"]).map((u: string) => publicUrl(u)),
     detail: g.detail,
     onSale: g.on_sale,

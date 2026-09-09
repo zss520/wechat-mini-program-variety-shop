@@ -161,17 +161,29 @@ appRouter.get("/cart", requireRole("user"), async (req, res, next) => {
     const rows = await db("cart_items")
       .where("cart_items.user_id", req.auth!.id)
       .join("goods", "goods.id", "cart_items.goods_id")
-      .select("cart_items.*", "goods.name", "goods.cover_url", "goods.price_cent", "goods.stock", "goods.on_sale", "goods.unit", "goods.deleted_at");
+      .select(
+        "cart_items.*",
+        "goods.name",
+        "goods.cover_url",
+        "goods.thumb_url",
+        "goods.price_cent",
+        "goods.stock",
+        "goods.on_sale",
+        "goods.unit",
+        "goods.deleted_at"
+      );
     ok(
       res,
       rows.map((r: Record<string, unknown>) => {
         const sale = salePriceOf(r as any);
+        const cover = publicUrl(String(r.cover_url || "")) || publicUrl("/static/placeholders/empty.png");
         return {
           id: r.id,
           goodsId: r.goods_id,
           qty: r.qty,
           name: r.name,
-          coverUrl: r.cover_url,
+          coverUrl: cover,
+          thumbUrl: publicUrl(String(r.thumb_url || "")) || cover,
           priceCent: sale.priceCent,
           originPriceCent: sale.originCent,
           unit: r.unit,

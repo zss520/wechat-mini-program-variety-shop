@@ -30,7 +30,7 @@
     wx:key="id"
     title="{{disp.text(item.name)}}"
     note="{{disp.money(item.priceCent)}}"
-    image="{{disp.cover(item.coverUrl)}}"
+    image="{{disp.thumb(item.thumbUrl, item.coverUrl)}}"
     hover
     data-id="{{item.id}}"
     bind:click="goRel"

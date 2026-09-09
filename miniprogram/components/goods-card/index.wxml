@@ -3,7 +3,7 @@
   <view class="cover-box">
     <t-image
       class="cover"
-      src="{{disp.cover(item.coverUrl)}}"
+      src="{{disp.thumb(item.thumbUrl, item.coverUrl)}}"
       mode="aspectFill"
       width="{{coverW}}"
       height="{{coverH}}"
