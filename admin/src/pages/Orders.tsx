@@ -19,7 +19,7 @@ const STATUS: Record<string, string> = {
   CANCELLED: "已取消",
 };
 
-type Row = { id: number; order_no: string; status: string; pay_amount_cent: number; fulfill_type: string; nickname?: string; phone?: string; created_at: string };
+type Row = { id: number; order_no: string; status: string; pay_amount_cent: number; fulfill_type: string; pickup_code?: string | null; nickname?: string; phone?: string; created_at: string };
 
 export default function Orders() {
   const nav = useNavigate();
@@ -51,6 +51,7 @@ export default function Orders() {
             <TableCell>顾客</TableCell>
             <TableCell>金额</TableCell>
             <TableCell>履约</TableCell>
+            <TableCell>取货码</TableCell>
             <TableCell>状态</TableCell>
             <TableCell>下单时间</TableCell>
             <TableCell>操作</TableCell>
@@ -65,6 +66,9 @@ export default function Orders() {
               </TableCell>
               <TableCell>{displayYuan(o.pay_amount_cent)}</TableCell>
               <TableCell>{displayFulfillType(o.fulfill_type)}</TableCell>
+              <TableCell sx={{ fontFamily: "ui-monospace, Menlo, monospace", letterSpacing: o.pickup_code ? "0.12em" : 0, fontWeight: o.pickup_code ? 700 : 400 }}>
+                {displayText(o.pickup_code)}
+              </TableCell>
               <TableCell>{STATUS[o.status] || displayText(o.status)}</TableCell>
               <TableCell>{formatDateTime(o.created_at)}</TableCell>
               <TableCell>
@@ -80,7 +84,7 @@ export default function Orders() {
               </TableCell>
             </TableRow>
           ))}
-          {!list.length && <EmptyRow cols={7} />}
+          {!list.length && <EmptyRow cols={8} />}
         </TableBody>
       </DataTable>
     </PageContainer>
