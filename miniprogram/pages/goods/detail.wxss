@@ -46,5 +46,6 @@
   gap: 16rpx;
 }
 page {
+  padding-top: 24rpx;
   padding-bottom: 40rpx;
 }
