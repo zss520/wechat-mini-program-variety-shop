@@ -46,7 +46,7 @@ Page({
     }
   },
   privacy() {
-    const url = this.data.settings.privacyUrl || "http://127.0.0.1:3000/privacy";
+    const url = this.data.settings.privacyUrl || "http://10.0.8.98:3000/privacy";
     wx.setClipboardData({ data: url });
   },
 });
