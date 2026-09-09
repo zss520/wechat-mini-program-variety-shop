@@ -14,7 +14,7 @@ const MAP: Record<string, string> = {
 };
 
 Page({
-  data: { o: {} as any, statusText: "", settings: {} as any, id: 0 },
+  data: { o: {} as any, statusText: "", settings: {} as any, id: 0, showCode: false },
   onLoad(q: any) {
     this.setData({ id: Number(q.id), settings: wx.getStorageSync("settings") || {} });
   },
@@ -24,7 +24,12 @@ Page({
   async load() {
     if (!(await ensureMember())) return;
     const o = asRecord(await request(`/orders/${this.data.id}`));
-    this.setData({ o: { ...o, items: asArray(o.items) }, statusText: MAP[o.status] || displayText(o.status) });
+    const showCode = Boolean(o.pickup_code && (o.status === "WAIT_PICKUP" || o.status === "PENDING_PACK"));
+    this.setData({
+      o: { ...o, items: asArray(o.items) },
+      statusText: MAP[o.status] || displayText(o.status),
+      showCode,
+    });
     if (o.pickup_code) track("pickup_code_view", { order_no: o.order_no });
   },
   async pay() {

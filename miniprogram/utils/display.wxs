@@ -56,6 +56,11 @@ function hasNum(v) {
   return isFiniteNum(toNum(v));
 }
 
+function gt0(v) {
+  var n = toNum(v);
+  return isFiniteNum(n) && n > 0;
+}
+
 function yuan(v, fallback) {
   var fb = fallbackOf(fallback);
   var n = toNum(v);
@@ -91,6 +96,25 @@ function couponNote(name, discountCent) {
   return n + ' -¥' + c / 100;
 }
 
+function couponUsed(name, discountCent) {
+  var c = toNum(discountCent);
+  var n = text(name, '');
+  if (!isFiniteNum(c) || c <= 0) return '未使用';
+  if (n) return n + ' -¥' + c / 100;
+  return '-¥' + c / 100;
+}
+
+function pointsUsed(used, discountCent) {
+  var u = toNum(used);
+  var c = toNum(discountCent);
+  var hasU = isFiniteNum(u) && u > 0;
+  var hasC = isFiniteNum(c) && c > 0;
+  if (!hasU && !hasC) return '未使用';
+  var s = hasU ? '抵扣' + u + '积分' : '积分抵扣';
+  if (hasC) return s + ' -¥' + c / 100;
+  return s;
+}
+
 function join(a, b, fallback) {
   var left = text(a, '');
   var right = text(b, '');
@@ -118,11 +142,14 @@ module.exports = {
   text: text,
   num: num,
   hasNum: hasNum,
+  gt0: gt0,
   yuan: yuan,
   money: money,
   minusMoney: minusMoney,
   signed: signed,
   couponNote: couponNote,
+  couponUsed: couponUsed,
+  pointsUsed: pointsUsed,
   join: join,
   cover: cover,
   thumb: thumb,

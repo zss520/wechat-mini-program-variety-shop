@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady } from "../orderService";
+import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrderDetail } from "../orderService";
 import { claimCoupon } from "../marketing";
 import { couponDiscount } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
@@ -55,6 +55,17 @@ async function run() {
   const previewCoupon = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { userCouponId: uc.id });
   assert(previewCoupon.couponDiscountCent === 200, `full reduce expected 200 got ${previewCoupon.couponDiscountCent}`);
   assert(previewCoupon.payAmountCent === 1300, `pay after coupon expected 1300 got ${previewCoupon.payAmountCent}`);
+
+  const couponOrder = await createOrder({
+    userId: uid,
+    items: [{ goodsId: gid, qty: 1 }],
+    fulfillType: "PICKUP",
+    userCouponId: uc.id,
+  });
+  const couponDetail = await loadOrderDetail(couponOrder.id);
+  assert(couponDetail && couponDetail.coupon_name === "满10减2", "order detail should expose coupon name");
+  assert(Number(couponDetail.coupon_discount_cent) === 200, "order detail should keep coupon discount");
+  assert(Number(couponDetail.goods_amount_cent) === 1500, "order detail should keep goods amount");
 
   const previewPts = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { usePoints: true });
   assert(previewPts.pointsUsed === 200 && previewPts.payAmountCent === 1300, "200 points should offset 2 yuan on 15 yuan special");

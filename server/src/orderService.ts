@@ -516,5 +516,14 @@ export async function loadOrderDetail(orderId: number) {
       /* keep */
     }
   }
-  return { ...order, items, logs, user };
+  let coupon_name = "";
+  if (order.user_coupon_id) {
+    const row = await db("user_coupons")
+      .leftJoin("coupons", "coupons.id", "user_coupons.coupon_id")
+      .where("user_coupons.id", order.user_coupon_id)
+      .select("coupons.name as coupon_name")
+      .first();
+    coupon_name = String(row?.coupon_name || "");
+  }
+  return { ...order, items, logs, user, coupon_name };
 }

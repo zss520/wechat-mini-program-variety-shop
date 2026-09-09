@@ -1,7 +1,10 @@
 .hero {
   background: linear-gradient(180deg, #c2410c 0%, #ea580c 100%);
   color: #fff;
-  padding: 48rpx 32rpx;
+  padding: 48rpx 32rpx 40rpx;
+}
+.hero.has-code {
+  padding-bottom: 64rpx;
 }
 .st {
   font-size: 36rpx;
@@ -10,12 +13,20 @@
 .code {
   font-size: 64rpx;
   letter-spacing: 12rpx;
-  margin: 24rpx 0 8rpx;
+  margin: 28rpx 0 12rpx;
   font-weight: 700;
 }
 .hint {
   opacity: 0.85;
   font-size: 24rpx;
+  padding-bottom: 12rpx;
+}
+.detail-body {
+  padding-top: 16rpx;
+  padding-bottom: 24rpx;
+}
+.detail-body.below-code {
+  padding-top: 40rpx;
 }
 .bar {
   margin: 24rpx;
@@ -26,4 +37,7 @@
 t-cell-group {
   display: block;
   margin-top: 16rpx;
+}
+.detail-body t-cell-group:first-child {
+  margin-top: 0;
 }
