@@ -38,6 +38,9 @@ Page({
   goRel(e: any) {
     wx.redirectTo({ url: `/pages/goods/detail?id=${e.currentTarget.dataset.id}&slot=detail_related` });
   },
+  goCart() {
+    wx.switchTab({ url: "/pages/cart/index" });
+  },
   async buy() {
     if (this.data.item.soldOut) return;
     if (!(await ensureMember())) return;

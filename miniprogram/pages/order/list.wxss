@@ -1,4 +1,11 @@
+t-tabs {
+  display: block;
+}
+
+.order-list {
+  padding: 40rpx 0 48rpx;
+}
+
 t-cell-group {
   display: block;
-  margin-top: 16rpx;
 }

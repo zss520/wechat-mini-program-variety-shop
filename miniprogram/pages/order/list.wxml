@@ -7,17 +7,19 @@
   <t-tab-panel label="已完成" value="COMPLETED" />
 </t-tabs>
 
-<t-cell-group theme="card">
-  <t-cell
-    wx:for="{{list}}"
-    wx:key="id"
-    title="{{disp.text(item.order_no)}}"
-    description="{{disp.text(item.statusText)}}"
-    note="{{disp.money(item.pay_amount_cent)}}"
-    hover
-    arrow
-    data-id="{{item.id}}"
-    bind:click="open"
-  />
-</t-cell-group>
-<t-empty wx:if="{{!list.length}}" icon="file" description="暂无订单" />
+<view class="order-list">
+  <t-cell-group theme="card">
+    <t-cell
+      wx:for="{{list}}"
+      wx:key="id"
+      title="{{disp.text(item.order_no)}}"
+      description="{{disp.text(item.statusText)}}"
+      note="{{disp.money(item.pay_amount_cent)}}"
+      hover
+      arrow
+      data-id="{{item.id}}"
+      bind:click="open"
+    />
+  </t-cell-group>
+  <t-empty wx:if="{{!list.length}}" icon="file" description="暂无订单" />
+</view>
