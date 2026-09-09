@@ -54,6 +54,8 @@ Page({
   async loadBootstrap() {
     const boot = asRecord(await request("/shop/bootstrap"));
     const settings = asRecord(boot.settings);
+    wx.setStorageSync("settings", { ...settings, privacyUrl: boot.privacyUrl });
+    wx.setStorageSync("mockWx", !!boot.mockWx);
     this.setData({
       settings,
       shopHint: [settings.pickup_address, settings.business_hours].filter(Boolean).join(" · "),

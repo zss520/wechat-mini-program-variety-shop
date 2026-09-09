@@ -1,9 +1,10 @@
 <view class="tab-page">
 <view class="head" bindtap="login">
-  <t-avatar icon="user" size="large" />
+  <t-avatar wx:if="{{user.avatarUrl}}" image="{{user.avatarUrl}}" size="large" />
+  <t-avatar wx:else icon="user" size="large" />
   <view class="who">
-    <view class="nick">{{user.nickname || '点击登录'}}</view>
-    <view class="sub">{{user.phone || '登录后同步订单与优惠券'}}</view>
+    <view class="nick">{{logged ? user.nickname : '点击登录'}}</view>
+    <view class="sub">{{phoneText}}</view>
   </view>
   <t-icon name="chevron-right" size="40rpx" color="#fff" />
 </view>
@@ -26,5 +27,6 @@
   </t-cell>
   <t-cell title="联系店主" left-icon="service" note="{{settings.phone || ''}}" arrow hover bind:click="call" />
   <t-cell title="隐私政策" left-icon="info-circle" arrow hover bind:click="privacy" />
+  <t-cell wx:if="{{logged}}" title="退出登录" left-icon="close" hover bind:click="logout" />
 </t-cell-group>
 </view>

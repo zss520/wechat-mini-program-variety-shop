@@ -1,0 +1,43 @@
+<view class="wrap">
+  <view class="hero">
+    <view class="title">微信授权登录</view>
+    <view class="desc">授权后成为本店会员，即可下单。我们将获取你的微信昵称、头像和手机号，用于订单联系与会员服务。</view>
+  </view>
+
+  <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+    <image wx:if="{{avatarUrl}}" class="avatar" src="{{avatarUrl}}" mode="aspectFill" />
+    <view wx:else class="avatar ph">选头像</view>
+  </button>
+  <view class="hint">点击更换头像</view>
+
+  <view class="field">
+    <input
+      type="nickname"
+      class="nick"
+      placeholder="请输入微信昵称"
+      value="{{nickname}}"
+      maxlength="32"
+      bindblur="onNick"
+      bindchange="onNick"
+    />
+  </view>
+
+  <view class="agree" bindtap="onAgree">
+    <view class="box {{agree ? 'on' : ''}}"></view>
+    <view class="agree-txt">
+      已阅读并同意
+      <text class="link" catchtap="openPrivacy">《隐私政策》</text>
+    </view>
+  </view>
+
+  <button
+    class="auth-btn"
+    open-type="getPhoneNumber"
+    bindgetphonenumber="onGetPhone"
+    loading="{{submitting}}"
+  >微信授权登录</button>
+
+  <button wx:if="{{mockWx}}" class="mock-btn" bindtap="onMockAuth" loading="{{submitting}}">开发模拟授权</button>
+
+  <view class="foot">未授权登录不能下单。授权成功即记为会员。</view>
+</view>

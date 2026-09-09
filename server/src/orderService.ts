@@ -213,7 +213,7 @@ export async function createOrder(params: {
   };
   const preview = await previewOrder(params.userId, params.items, params.fulfillType, params.addressId, extras);
   const user = await db("users").where({ id: params.userId }).first();
-  if (!user?.phone) throw new HttpError(400, "下单前请绑定手机号");
+  if (!user?.phone) throw new HttpError(401, "请先微信授权登录", 10010);
 
   return db.transaction(async (trx) => {
     if (extras.activityType === "SECKILL" && extras.activityId) {

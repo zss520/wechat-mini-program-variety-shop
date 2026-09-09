@@ -80,7 +80,7 @@ cd server && npm run migrate && npm run seed
 3. 点顶部 **预览**，用微信扫码（预览码）。
 4. 要点 **上传** 后，到 [公众平台](https://mp.weixin.qq.com/) → 管理 → 版本管理 → 选为体验版，即可下载体验版二维码；测试微信号须先加为体验者。
 
-开发开关（仅本地）：`.env` 中 `MOCK_WX=true`、`MOCK_PAY=true`，可走模拟登录与模拟支付。正式上线必须关闭，并配置微信支付商户号与回调 `POST /api/pay/wechat/notify`。
+开发开关（仅本地）：`.env` 中 `MOCK_WX=true`、`MOCK_PAY=true`。模拟微信授权登录会固定同一设备 openid，并可用「开发模拟授权」跳过真机手机号组件。正式上线必须关闭 `MOCK_WX` / `MOCK_PAY`，填写 `WX_APPID`、`WX_SECRET`，并配置微信支付商户号与回调 `POST /api/pay/wechat/notify`。小程序须在公众平台开通「手机号」权限，开发者工具勾选不校验合法域名。
 
 ```bash
 # 库存并发单测（走测试库 variety_shop_test，1 件库存两单仅一单成功）

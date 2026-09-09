@@ -1,4 +1,4 @@
-import { request, ensurePhone } from "../../utils/request";
+import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord } from "../../utils/display";
 
 Page({
@@ -33,7 +33,7 @@ Page({
   },
   async open() {
     try {
-      await ensurePhone();
+      if (!(await ensureMember())) return;
       const res = await request(`/group-buys/${this.data.activityId}/open`, "POST", { qty: 1, fulfillType: "PICKUP" });
       await this.payAfter(res);
     } catch (e: any) {
@@ -42,7 +42,7 @@ Page({
   },
   async join() {
     try {
-      await ensurePhone();
+      if (!(await ensureMember())) return;
       const res = await request(`/group-buys/teams/${this.data.teamId}/join`, "POST", { qty: 1, fulfillType: "PICKUP" });
       await this.payAfter(res);
     } catch (e: any) {

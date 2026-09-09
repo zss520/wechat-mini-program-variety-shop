@@ -1,8 +1,8 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { db } from "./db";
 import { ok, HttpError, parsePage } from "./http";
-import { optionalUser, requireRole, signToken } from "./auth";
+import { optionalUser, requireRole } from "./auth";
 import { getSettings } from "./settings";
 import { applyGoodsSort, publicGoods } from "./recommend";
 import {
@@ -14,7 +14,11 @@ import {
   buildSeckillBlock,
 } from "./home";
 import { ingestEvents } from "./analytics";
-import { code2session, mockPayParams } from "./wechat";
+import { getWxPhone, mockPayParams } from "./wechat";
+import { authorizeWxMember, publicMember, restoreWxSession } from "./wxAuth";
+import { ensureUploadDirs, MAX_IMAGE_BYTES } from "./image";
+import multer from "multer";
+import path from "path";
 import { cancelOrder, createOrder, loadOrderDetail, markPaid, previewOrder, ST } from "./orderService";
 import { config, publicUrl } from "./config";
 import { claimCoupon, listClaimableCoupons } from "./marketing";
@@ -22,6 +26,32 @@ import { activityWindowOk, listActiveGroupBuys, listActiveSeckills, loadTeam } f
 import { cartUpsell, relatedGoods } from "./personalize";
 import { listNotifyLogs, setSubscribe } from "./notify";
 import { salePriceOf } from "./pricing";
+
+ensureUploadDirs();
+const avatarUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, path.join(config.uploadDir, "avatars")),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || "").slice(0, 8) || ".jpg";
+      cb(null, `${Date.now()}_${Math.random().toString(16).slice(2)}${ext}`);
+    },
+  }),
+  limits: { fileSize: MAX_IMAGE_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype || /^image\//.test(file.mimetype) || file.mimetype === "application/octet-stream") cb(null, true);
+    else cb(new Error("仅支持 jpg/png/webp"));
+  },
+});
+
+async function requireBoundPhone(req: Request, _res: Response, next: NextFunction) {
+  try {
+    const user = await db("users").where({ id: req.auth!.id }).first();
+    if (!user?.phone) throw new HttpError(401, "请先微信授权登录", 10010);
+    next();
+  } catch (e) {
+    next(e);
+  }
+}
 
 export const appRouter = Router();
 
@@ -43,31 +73,31 @@ appRouter.get("/shop/bootstrap", async (_req, res, next) => {
 
 appRouter.post("/auth/wx-login", async (req, res, next) => {
   try {
-    const body = z.object({ code: z.string().min(1), nickname: z.string().optional(), avatarUrl: z.string().optional() }).parse(req.body);
-    const sess = await code2session(body.code);
-    let user = await db("users").where({ openid: sess.openid }).first();
-    if (!user) {
-      const [id] = await db("users").insert({
-        openid: sess.openid,
-        unionid: sess.unionid || null,
-        nickname: body.nickname || "微信用户",
-        avatar_url: body.avatarUrl || "",
-      });
-      user = await db("users").where({ id }).first();
-    } else if (body.nickname || body.avatarUrl) {
-      await db("users")
-        .where({ id: user.id })
-        .update({
-          nickname: body.nickname || user.nickname,
-          avatar_url: body.avatarUrl || user.avatar_url,
-        });
-      user = await db("users").where({ id: user.id }).first();
-    }
-    const token = signToken({ id: user.id, role: "user" });
-    ok(res, {
-      token,
-      user: { id: user.id, nickname: user.nickname, avatarUrl: user.avatar_url, phone: user.phone, phoneBound: Boolean(user.phone) },
-    });
+    const body = z
+      .object({
+        code: z.string().min(1),
+        deviceId: z.string().max(64).optional(),
+      })
+      .parse(req.body);
+    ok(res, await restoreWxSession(body.code, body.deviceId));
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.post("/auth/wx-authorize", async (req, res, next) => {
+  try {
+    const body = z
+      .object({
+        loginCode: z.string().min(1),
+        phoneCode: z.string().optional(),
+        phone: z.string().optional(),
+        nickname: z.string().min(1).max(32),
+        avatarUrl: z.string().max(512).optional(),
+        deviceId: z.string().max(64).optional(),
+      })
+      .parse(req.body);
+    ok(res, await authorizeWxMember(body));
   } catch (e) {
     next(e);
   }
@@ -75,14 +105,53 @@ appRouter.post("/auth/wx-login", async (req, res, next) => {
 
 appRouter.post("/auth/wx-phone", requireRole("user"), async (req, res, next) => {
   try {
-    const body = z.object({ phone: z.string().min(6), code: z.string().optional() }).parse(req.body);
-    if (!config.mockWx && !body.code) throw new HttpError(400, "缺少手机号凭证");
-    await db("users").where({ id: req.auth!.id }).update({ phone: body.phone, phone_bound_at: db.fn.now() });
+    const body = z.object({ code: z.string().optional(), phone: z.string().optional() }).parse(req.body);
+    const phone = await getWxPhone(body.code, body.phone);
+    await db("users").where({ id: req.auth!.id }).update({ phone, phone_bound_at: db.fn.now() });
     const user = await db("users").where({ id: req.auth!.id }).first();
-    ok(res, { phone: user.phone, phoneBound: true });
+    ok(res, publicMember(user));
   } catch (e) {
     next(e);
   }
+});
+
+appRouter.get("/auth/me", requireRole("user"), async (req, res, next) => {
+  try {
+    const user = await db("users").where({ id: req.auth!.id }).first();
+    if (!user) throw new HttpError(401, "请先微信授权登录");
+    ok(res, publicMember(user));
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.post("/me/profile", requireRole("user"), async (req, res, next) => {
+  try {
+    const body = z.object({ nickname: z.string().min(1).max(32).optional(), avatarUrl: z.string().max(512).optional() }).parse(req.body);
+    const patch: Record<string, unknown> = {};
+    if (body.nickname) patch.nickname = body.nickname.trim();
+    if (body.avatarUrl) patch.avatar_url = body.avatarUrl;
+    if (Object.keys(patch).length) await db("users").where({ id: req.auth!.id }).update(patch);
+    const user = await db("users").where({ id: req.auth!.id }).first();
+    ok(res, publicMember(user));
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.post("/me/avatar", requireRole("user"), (req, res, next) => {
+  avatarUpload.single("file")(req, res, async (err) => {
+    try {
+      if (err) throw new HttpError(400, err.message || "头像上传失败");
+      if (!req.file) throw new HttpError(400, "请选择头像");
+      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      await db("users").where({ id: req.auth!.id }).update({ avatar_url: avatarUrl });
+      const user = await db("users").where({ id: req.auth!.id }).first();
+      ok(res, publicMember(user));
+    } catch (e) {
+      next(e);
+    }
+  });
 });
 
 appRouter.get("/home/banner", async (_req, res, next) => {
@@ -346,7 +415,7 @@ appRouter.get("/cart/upsell", requireRole("user"), async (req, res, next) => {
   }
 });
 
-appRouter.post("/orders/preview", requireRole("user"), async (req, res, next) => {
+appRouter.post("/orders/preview", requireRole("user"), requireBoundPhone, async (req, res, next) => {
   try {
     const body = z
       .object({
@@ -375,7 +444,7 @@ appRouter.post("/orders/preview", requireRole("user"), async (req, res, next) =>
   }
 });
 
-appRouter.post("/orders", requireRole("user"), async (req, res, next) => {
+appRouter.post("/orders", requireRole("user"), requireBoundPhone, async (req, res, next) => {
   try {
     const body = z
       .object({
@@ -439,7 +508,7 @@ appRouter.get("/orders/:id", requireRole("user"), async (req, res, next) => {
   }
 });
 
-appRouter.post("/orders/:id/pay", requireRole("user"), async (req, res, next) => {
+appRouter.post("/orders/:id/pay", requireRole("user"), requireBoundPhone, async (req, res, next) => {
   try {
     const order = await db("orders").where({ id: Number(req.params.id), user_id: req.auth!.id }).first();
     if (!order) throw new HttpError(404, "订单不存在");
@@ -575,7 +644,7 @@ appRouter.get("/group-buys/teams/:id", async (req, res, next) => {
   }
 });
 
-appRouter.post("/group-buys/:id/open", requireRole("user"), async (req, res, next) => {
+appRouter.post("/group-buys/:id/open", requireRole("user"), requireBoundPhone, async (req, res, next) => {
   try {
     const body = z
       .object({
@@ -620,7 +689,7 @@ appRouter.post("/group-buys/:id/open", requireRole("user"), async (req, res, nex
   }
 });
 
-appRouter.post("/group-buys/teams/:id/join", requireRole("user"), async (req, res, next) => {
+appRouter.post("/group-buys/teams/:id/join", requireRole("user"), requireBoundPhone, async (req, res, next) => {
   try {
     const body = z
       .object({

@@ -23,6 +23,7 @@ App({
       const settings = { ...(data.settings || {}), privacyUrl: data.privacyUrl };
       this.globalData.settings = settings;
       wx.setStorageSync("settings", settings);
+      wx.setStorageSync("mockWx", !!data.mockWx);
       if (data.settings?.shop_name) {
         wx.setNavigationBarTitle({ title: data.settings.shop_name });
       }

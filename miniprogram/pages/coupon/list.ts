@@ -1,4 +1,4 @@
-import { request, ensureLogin } from "../../utils/request";
+import { request, ensureMember } from "../../utils/request";
 import { formatDateTime } from "../../utils/datetime";
 import { asArray, displayText } from "../../utils/display";
 
@@ -8,7 +8,7 @@ Page({
     this.load();
   },
   async load() {
-    await ensureLogin();
+    if (!(await ensureMember())) return;
     const shop = asArray(await request("/coupons"));
     const ST: Record<string, string> = { UNUSED: "未使用", USED: "已使用", EXPIRED: "已过期" };
     const mine = asArray(await request("/me/coupons")).map((x: any) => ({

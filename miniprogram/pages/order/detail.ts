@@ -1,4 +1,4 @@
-import { request, ensureLogin } from "../../utils/request";
+import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord, displayText } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
@@ -22,7 +22,7 @@ Page({
     this.load();
   },
   async load() {
-    await ensureLogin();
+    if (!(await ensureMember())) return;
     const o = asRecord(await request(`/orders/${this.data.id}`));
     this.setData({ o: { ...o, items: asArray(o.items) }, statusText: MAP[o.status] || displayText(o.status) });
     if (o.pickup_code) track("pickup_code_view", { order_no: o.order_no });

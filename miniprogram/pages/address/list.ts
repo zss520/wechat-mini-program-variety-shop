@@ -1,4 +1,4 @@
-import { request, ensureLogin } from "../../utils/request";
+import { request, ensureMember } from "../../utils/request";
 import { asArray } from "../../utils/display";
 
 Page({
@@ -7,7 +7,7 @@ Page({
     this.load();
   },
   async load() {
-    await ensureLogin();
+    if (!(await ensureMember())) return;
     this.setData({ list: asArray(await request("/addresses")) });
   },
   add() {

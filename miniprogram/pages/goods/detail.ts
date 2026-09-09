@@ -1,4 +1,4 @@
-import { request, ensureLogin } from "../../utils/request";
+import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
@@ -30,7 +30,7 @@ Page({
     this.setData({ qty: Math.min(max, Math.max(1, Number(e.detail.value))) });
   },
   async addCart() {
-    await ensureLogin();
+    if (!(await ensureMember())) return;
     await request("/cart", "POST", { goodsId: this.data.item.id, qty: this.data.qty });
     track("add_to_cart", { goods_id: this.data.item.id, extra: { qty: this.data.qty } });
     wx.showToast({ title: "已加入购物车" });
@@ -40,7 +40,7 @@ Page({
   },
   async buy() {
     if (this.data.item.soldOut) return;
-    await ensureLogin();
+    if (!(await ensureMember())) return;
     track("buy_now_click", { goods_id: this.data.item.id });
     wx.navigateTo({
       url: `/pages/order/confirm?from=BUY_NOW&goodsId=${this.data.item.id}&qty=${this.data.qty}`,

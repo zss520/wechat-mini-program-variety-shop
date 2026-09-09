@@ -11,10 +11,12 @@ export const MAX_IMAGE_BYTES = 400 * 1024;
 export const THUMB_SIZE = 200;
 
 const thumbsDir = path.join(config.uploadDir, "thumbs");
+const avatarsDir = path.join(config.uploadDir, "avatars");
 
 export function ensureUploadDirs() {
   fs.mkdirSync(config.uploadDir, { recursive: true });
   fs.mkdirSync(thumbsDir, { recursive: true });
+  fs.mkdirSync(avatarsDir, { recursive: true });
 }
 
 export function imagePathname(url?: string | null): string {

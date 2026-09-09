@@ -3,6 +3,7 @@
     "pages/home/index",
     "pages/category/index",
     "pages/search/index",
+    "pages/auth/login",
     "pages/goods/detail",
     "pages/cart/index",
     "pages/order/confirm",
@@ -66,5 +67,6 @@
     "t-textarea": "tdesign-miniprogram/textarea/textarea"
   },
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "requiredPrivateInfos": ["getPhoneNumber"]
 }

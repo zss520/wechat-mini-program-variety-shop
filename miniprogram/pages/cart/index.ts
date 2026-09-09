@@ -1,17 +1,24 @@
-import { request, ensureLogin } from "../../utils/request";
+import { request, ensureMember, isMember, tryRestoreMember } from "../../utils/request";
 import { asArray, asRecord, toFiniteNumber } from "../../utils/display";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { list: [] as any[], checked: [] as number[], total: 0, upsell: { suggestions: [] as any[], target: {} as any }, allChecked: false },
+  data: { list: [] as any[], checked: [] as number[], total: 0, upsell: { suggestions: [] as any[], target: {} as any }, allChecked: false, needLogin: false },
   onShow() {
     syncTabBar(this, "cart");
     this.load();
   },
   async load() {
+    if (!isMember()) {
+      const restored = await tryRestoreMember();
+      if (!restored) {
+        this.setData({ needLogin: true, list: [], upsell: { suggestions: [], target: {} } });
+        return;
+      }
+    }
     try {
-      await ensureLogin();
+      this.setData({ needLogin: false });
       const list = asArray(await request("/cart"));
       const checked = list.filter((x: any) => !x.invalid).map((x: any) => x.id);
       this.setData({ list, checked });
@@ -78,6 +85,9 @@ Page({
   addUpsell(e: any) {
     const id = e.currentTarget.dataset.id;
     request("/cart", "POST", { goodsId: id, qty: 1 }).then(() => this.load());
+  },
+  async login() {
+    if (await ensureMember()) this.load();
   },
   settle() {
     const items = this.data.list.filter((x: any) => this.data.checked.includes(x.id) && !x.invalid);

@@ -1,25 +1,61 @@
-import { ensureLogin, request } from "../../utils/request";
+import { clearSession, currentUser, ensureMember, goLogin, isMember, request, tryRestoreMember } from "../../utils/request";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
+function maskPhone(p: string) {
+  if (!p || p.length < 7) return p || "";
+  return `${p.slice(0, 3)}****${p.slice(-4)}`;
+}
+
 Page({
-  data: { user: {} as any, settings: {} as any, subscribed: false },
+  data: {
+    user: {} as any,
+    settings: {} as any,
+    subscribed: false,
+    logged: false,
+    phoneText: "",
+  },
   onShow() {
     syncTabBar(this, "mine");
     track("page_view");
-    this.setData({ user: wx.getStorageSync("user") || {}, settings: wx.getStorageSync("settings") || {} });
+    this.refresh();
   },
-  async login() {
-    await ensureLogin();
-    this.setData({ user: wx.getStorageSync("user") || {} });
+  async refresh() {
+    if (!isMember()) await tryRestoreMember();
+    const user = currentUser();
+    const logged = isMember();
+    this.setData({
+      user,
+      logged,
+      phoneText: logged ? maskPhone(user.phone || "") : "授权登录后同步订单与优惠券",
+      settings: wx.getStorageSync("settings") || {},
+    });
+    if (logged) {
+      request("/auth/me")
+        .then((u: any) => {
+          wx.setStorageSync("user", u);
+          this.setData({ user: u, phoneText: maskPhone(u.phone || "") });
+        })
+        .catch(() => undefined);
+    }
   },
-  orders() {
+  login() {
+    if (this.data.logged) return;
+    goLogin("/pages/mine/index");
+  },
+  async needMember() {
+    return ensureMember();
+  },
+  async orders() {
+    if (!(await this.needMember())) return;
     wx.navigateTo({ url: "/pages/order/list" });
   },
-  coupons() {
+  async coupons() {
+    if (!(await this.needMember())) return;
     wx.navigateTo({ url: "/pages/coupon/list" });
   },
-  points() {
+  async points() {
+    if (!(await this.needMember())) return;
     wx.navigateTo({ url: "/pages/points/index" });
   },
   groups() {
@@ -29,13 +65,14 @@ Page({
     wx.navigateTo({ url: "/pages/seckill/list" });
   },
   async sub() {
-    await ensureLogin();
+    if (!(await this.needMember())) return;
     const next = !this.data.subscribed;
     await request("/subscribe", "POST", { scene: "PACK_READY", accepted: next });
     this.setData({ subscribed: next });
     wx.showToast({ title: next ? "已开启备货通知" : "已关闭" });
   },
-  addr() {
+  async addr() {
+    if (!(await this.needMember())) return;
     wx.navigateTo({ url: "/pages/address/list" });
   },
   call() {
@@ -48,5 +85,10 @@ Page({
   privacy() {
     const url = this.data.settings.privacyUrl || "http://10.0.8.98:3000/privacy";
     wx.setClipboardData({ data: url });
+  },
+  logout() {
+    clearSession();
+    this.refresh();
+    wx.showToast({ title: "已退出", icon: "none" });
   },
 });

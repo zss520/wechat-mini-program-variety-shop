@@ -1,4 +1,4 @@
-import { request, ensureLogin } from "../../utils/request";
+import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord, displayText } from "../../utils/display";
 
 const MAP: Record<string, string> = {
@@ -18,7 +18,7 @@ Page({
     this.load();
   },
   async load() {
-    await ensureLogin();
+    if (!(await ensureMember())) return;
     const q = this.data.status ? `?status=${this.data.status}` : "";
     const d = asRecord(await request(`/orders${q}`));
     this.setData({

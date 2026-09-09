@@ -1,4 +1,4 @@
-import { request, ensurePhone } from "../../utils/request";
+import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord } from "../../utils/display";
 import { track } from "../../utils/tracker";
 
@@ -24,7 +24,7 @@ Page({
     ],
   },
   async onLoad(q: any) {
-    await ensurePhone();
+    if (!(await ensureMember())) return;
     const settings = wx.getStorageSync("settings") || {};
     const fulfillOptions = settings.delivery_enabled
       ? [

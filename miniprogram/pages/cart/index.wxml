@@ -1,5 +1,9 @@
 <wxs src="../../utils/display.wxs" module="disp" />
-<t-empty wx:if="{{!list.length}}" icon="cart" description="购物车是空的" />
+<view wx:if="{{needLogin}}" class="need-login">
+  <t-empty icon="user" description="授权登录后查看购物车" />
+  <t-button theme="primary" shape="round" bind:tap="login">微信授权登录</t-button>
+</view>
+<t-empty wx:elif="{{!list.length}}" icon="cart" description="购物车是空的" />
 
 <t-swipe-cell wx:for="{{list}}" wx:key="id">
   <view class="row">
