@@ -36,16 +36,22 @@ Component({
     ready() {
       const io = this.createIntersectionObserver({ thresholds: [0.5] });
       io.relativeToViewport().observe(".card", (res: any) => {
-        if (res.intersectionRatio >= 0.5 && !this.data._exposed) {
+        if (res.intersectionRatio >= 0.5) {
+          if (this.data._timer) return;
           this.data._timer = setTimeout(() => {
-            this.setData({ _exposed: true });
-            const { track } = require("../../utils/tracker");
+            this.data._timer = null;
+            const { track, shouldTrackExpose } = require("../../utils/tracker");
+            const item = this.data.item || {};
+            if (!shouldTrackExpose(item.id, this.data.slotId)) return;
             track("goods_expose", {
-              goods_id: this.data.item.id,
+              goods_id: item.id,
               slot_id: this.data.slotId,
               position: this.data.position,
             });
           }, 300);
+        } else if (this.data._timer) {
+          clearTimeout(this.data._timer);
+          this.data._timer = null;
         }
       });
       this.data._io = io;

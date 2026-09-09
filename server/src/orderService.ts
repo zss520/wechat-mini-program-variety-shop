@@ -383,7 +383,7 @@ export async function markPaid(orderId: number, txId: string, raw?: unknown) {
     const items = await trx("order_items").where({ order_id: orderId });
     for (const it of items) {
       await trx("goods").where({ id: it.goods_id }).increment("sold_count", it.qty);
-      await bumpPayStats(trx, it.goods_id, order.user_id, it.qty, it.amount_cent);
+      await bumpPayStats(trx, it.goods_id, order.user_id, it.qty, it.amount_cent, orderId);
     }
     const settings = await getSettings();
     const earn = Math.floor(Number(order.pay_amount_cent || 0) / 100) * Number(settings.points_earn_per_yuan || 1);

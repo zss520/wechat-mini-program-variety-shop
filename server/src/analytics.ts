@@ -1,6 +1,19 @@
 import { Knex } from "knex";
 import { db } from "./db";
 import { todayShanghai } from "./http";
+import {
+  addHeat,
+  asIsoDate,
+  decayWeight,
+  diffIsoDays,
+  emptyHeat,
+  heatRaw,
+  mixHeat,
+  rateMetrics,
+  scaleByP95,
+  shiftIsoDate,
+  type HeatStats,
+} from "./scoring";
 
 export const EVENT_NAMES = new Set([
   "app_launch",
@@ -60,16 +73,32 @@ async function ensureDailyRow(trx: Knex | Knex.Transaction, goodsId: number, dat
 export async function bumpPayStats(
   trx: Knex | Knex.Transaction,
   goodsId: number,
-  _userId: number,
+  userId: number,
   qty: number,
-  amountCent: number
+  amountCent: number,
+  orderId?: number
 ) {
   await ensureDailyRow(trx, goodsId);
-  await trx("goods_stats_daily")
-    .where({ stat_date: todayShanghai(), goods_id: goodsId })
-    .increment("pay_qty", qty)
-    .increment("pay_uv", 1)
-    .increment("pay_amount_cent", amountCent);
+  const date = todayShanghai();
+  let incUv = 1;
+  if (userId) {
+    const prev = await trx("order_items")
+      .join("orders", "orders.id", "order_items.order_id")
+      .where("order_items.goods_id", goodsId)
+      .where("orders.user_id", userId)
+      .whereNotNull("orders.paid_at")
+      .whereNot("orders.status", "CANCELLED")
+      .whereRaw("DATE(orders.paid_at) = ?", [date])
+      .modify((b) => {
+        if (orderId) b.whereNot("orders.id", orderId);
+      })
+      .select("orders.id as paid_order_id")
+      .first();
+    if (prev) incUv = 0;
+  }
+  const q = trx("goods_stats_daily").where({ stat_date: date, goods_id: goodsId });
+  await q.clone().increment("pay_qty", qty).increment("pay_amount_cent", amountCent);
+  if (incUv) await q.clone().increment("pay_uv", 1);
 }
 
 export async function ingestEvents(
@@ -136,11 +165,38 @@ export async function ingestEvents(
     });
     accepted += 1;
   }
-  if (rows.length) await db("analytics_events").insert(rows);
+  const persist: typeof rows = [];
+  const exposeSeen = new Set<string>();
+  const uvSeen = new Set<string>();
+  const today = todayShanghai();
+  const since30 = new Date(Date.now() - 30 * 1000);
 
-  // light increment for expose/click/cart (pv + uv; uv overwritten by daily rollup)
   for (const r of rows) {
-    if (!r.goods_id) continue;
+    let skipExpose = false;
+    if (r.event === "goods_expose" && r.goods_id && r.session_id) {
+      const ek = `${r.session_id}|${r.goods_id}|${r.slot_id || ""}`;
+      if (exposeSeen.has(ek)) skipExpose = true;
+      else {
+        const hit = await db("analytics_events")
+          .where({
+            event: "goods_expose",
+            session_id: r.session_id,
+            goods_id: r.goods_id,
+          })
+          .where("ts", ">=", since30)
+          .modify((b) => {
+            if (r.slot_id) b.where("slot_id", r.slot_id);
+            else b.where(function () {
+              this.whereNull("slot_id").orWhere("slot_id", "");
+            });
+          })
+          .first("id");
+        if (hit) skipExpose = true;
+        else exposeSeen.add(ek);
+      }
+    }
+    if (!skipExpose) persist.push(r);
+    if (skipExpose || !r.goods_id) continue;
     const pair =
       r.event === "goods_expose"
         ? { pv: "expose_pv", uv: "expose_uv" }
@@ -149,24 +205,43 @@ export async function ingestEvents(
         : r.event === "add_to_cart"
         ? { pv: "cart_pv", uv: "cart_uv" }
         : r.event === "goods_detail_view"
-        ? { pv: null, uv: "detail_uv" }
+        ? { pv: null as string | null, uv: "detail_uv" }
         : null;
     if (!pair) continue;
-    const insert: Record<string, unknown> = { stat_date: todayShanghai(), goods_id: r.goods_id };
+    const idPart = r.user_id || r.anonymous_id || r.session_id;
+    let incUv = false;
+    if (idPart) {
+      const uk = `${r.event}|${r.goods_id}|${idPart}|${today}`;
+      if (!uvSeen.has(uk)) {
+        const q = db("analytics_events").where({ event: r.event, goods_id: r.goods_id }).where("ts", ">=", `${today} 00:00:00`);
+        if (r.user_id) q.andWhere("user_id", r.user_id);
+        else if (r.anonymous_id) q.andWhere("anonymous_id", r.anonymous_id);
+        else q.andWhere("session_id", r.session_id);
+        const existed = await q.first("id");
+        if (!existed) incUv = true;
+        uvSeen.add(uk);
+      }
+    }
+    const incPv = !!pair.pv;
+    if (!incPv && !incUv) continue;
+    const insert: Record<string, unknown> = { stat_date: today, goods_id: r.goods_id };
     const merge: Record<string, unknown> = {};
-    if (pair.pv) {
+    if (incPv && pair.pv) {
       insert[pair.pv] = 1;
       merge[pair.pv] = db.raw("?? + 1", [pair.pv]);
     }
-    insert[pair.uv] = 1;
-    merge[pair.uv] = db.raw("?? + 1", [pair.uv]);
-    await db("goods_stats_daily").insert(insert).onConflict(["stat_date", "goods_id"]).merge(merge);
+    if (incUv) {
+      insert[pair.uv] = 1;
+      merge[pair.uv] = db.raw("?? + 1", [pair.uv]);
+    } else {
+      insert[pair.uv] = 0;
+    }
+    if (Object.keys(merge).length) {
+      await db("goods_stats_daily").insert(insert).onConflict(["stat_date", "goods_id"]).merge(merge);
+    }
   }
+  if (persist.length) await db("analytics_events").insert(persist);
   return { accepted, dropped };
-}
-
-function sum(rows: Record<string, number>[], key: string) {
-  return rows.reduce((s, r) => s + Number(r[key] || 0), 0);
 }
 
 export async function goodsReport(opts: { from: string; to: string; categoryId?: number; keyword?: string; page: number; pageSize: number }) {
@@ -203,6 +278,7 @@ export async function goodsReport(opts: { from: string; to: string; categoryId?:
       "goods.on_sale",
       "goods.heat_score",
       "goods.manual_weight",
+      "goods.created_at",
       "c.name as category_name",
       db.raw("IFNULL(s.expose_uv,0) as expose_uv"),
       db.raw("IFNULL(s.expose_pv,0) as expose_pv"),
@@ -224,14 +300,10 @@ export async function goodsReport(opts: { from: string; to: string; categoryId?:
   const mapped = list.map((r: Record<string, unknown>) => {
     const exposeUv = Number(r.expose_uv || 0);
     const clickUv = Number(r.click_uv || 0);
-    const sample = exposeUv < 10 || clickUv < 5;
-    const ctr = exposeUv > 0 ? clickUv / exposeUv : null;
-    const cvr = clickUv > 0 ? Number(r.pay_uv || 0) / clickUv : null;
+    const rates = rateMetrics(exposeUv, clickUv, Number(r.cart_uv || 0), Number(r.pay_uv || 0));
     return {
       ...r,
-      ctr,
-      cvr,
-      sampleInsufficient: sample,
+      ...rates,
     };
   });
   return { list: mapped, page: opts.page, pageSize: opts.pageSize, total };
@@ -268,21 +340,16 @@ export async function funnelReport(from: string, to: string) {
   };
 }
 
-function ln1(n: number) {
-  return Math.log(1 + Math.max(0, n));
-}
-
 export async function recomputeHeat() {
   const goods = await db("goods").whereNull("deleted_at").where({ on_sale: 1 });
   const end = todayShanghai();
-  const start7 = new Date();
-  start7.setDate(start7.getDate() - 6);
-  const from7 = start7.toISOString().slice(0, 10);
+  const from7 = shiftIsoDate(end, -6);
+  const from30 = shiftIsoDate(end, -29);
 
   const eventRows = await db("analytics_events")
     .whereIn("event", ["goods_expose", "goods_click", "add_to_cart", "goods_detail_view"])
     .whereNotNull("goods_id")
-    .whereBetween("ts", [`${from7} 00:00:00`, `${end} 23:59:59`])
+    .whereBetween("ts", [`${from30} 00:00:00`, `${end} 23:59:59`])
     .select(
       db.raw("DATE_FORMAT(ts, '%Y-%m-%d') as d"),
       "goods_id",
@@ -311,44 +378,70 @@ export async function recomputeHeat() {
     }
   }
 
-  const stats = (await db("goods_stats_daily")
-    .whereBetween("stat_date", [from7, end])
-    .select("goods_id")
-    .sum({ expose_uv: "expose_uv" })
-    .sum({ click_uv: "click_uv" })
-    .sum({ cart_uv: "cart_uv" })
-    .sum({ pay_qty: "pay_qty" })
-    .groupBy("goods_id")) as Array<{ goods_id: number; expose_uv: number; click_uv: number; cart_uv: number; pay_qty: number }>;
-  const todayStats = await db("goods_stats_daily").where({ stat_date: end });
-  const s7: Record<number, { expose_uv: number; click_uv: number; cart_uv: number; pay_qty: number }> = {};
-  for (const r of stats) {
-    s7[r.goods_id] = {
-      expose_uv: Number(r.expose_uv || 0),
-      click_uv: Number(r.click_uv || 0),
-      cart_uv: Number(r.cart_uv || 0),
-      pay_qty: Number(r.pay_qty || 0),
-    };
+  const payRows = await db("order_items")
+    .join("orders", "orders.id", "order_items.order_id")
+    .whereNotNull("orders.paid_at")
+    .whereNot("orders.status", "CANCELLED")
+    .whereBetween("orders.paid_at", [`${from30} 00:00:00`, `${end} 23:59:59`])
+    .select(
+      db.raw("DATE_FORMAT(orders.paid_at, '%Y-%m-%d') as d"),
+      "order_items.goods_id",
+      db.raw("COUNT(DISTINCT orders.user_id) as pay_uv"),
+      db.raw("SUM(order_items.qty) as pay_qty"),
+      db.raw("SUM(order_items.amount_cent) as pay_amount_cent")
+    )
+    .groupByRaw("DATE_FORMAT(orders.paid_at, '%Y-%m-%d'), order_items.goods_id");
+  for (const r of payRows as Array<{ d: string; goods_id: number; pay_uv: number; pay_qty: number; pay_amount_cent: number }>) {
+    await ensureDailyRow(db, r.goods_id, String(r.d).slice(0, 10));
+    await db("goods_stats_daily")
+      .where({ stat_date: String(r.d).slice(0, 10), goods_id: r.goods_id })
+      .update({
+        pay_uv: Number(r.pay_uv || 0),
+        pay_qty: Number(r.pay_qty || 0),
+        pay_amount_cent: Number(r.pay_amount_cent || 0),
+      });
   }
-  const s1: Record<number, { expose_uv: number; click_uv: number; cart_uv: number; pay_qty: number }> = {};
-  for (const r of todayStats) {
-    s1[r.goods_id] = {
-      expose_uv: Number(r.expose_uv || 0),
-      click_uv: Number(r.click_uv || 0),
-      cart_uv: Number(r.cart_uv || 0),
-      pay_qty: Number(r.pay_qty || 0),
-    };
-  }
-  const rawOf = (x?: { expose_uv: number; click_uv: number; cart_uv: number; pay_qty: number }) =>
-    0.1 * ln1(x?.expose_uv || 0) + 0.2 * ln1(x?.click_uv || 0) + 0.25 * ln1(x?.cart_uv || 0) + 0.45 * ln1(x?.pay_qty || 0);
 
-  const raws7 = goods.map((g) => rawOf(s7[g.id]));
-  const raws1 = goods.map((g) => rawOf(s1[g.id]));
-  const max7 = Math.max(1e-9, ...raws7);
-  const max1 = Math.max(1e-9, ...raws1);
+  const daily = (await db("goods_stats_daily")
+    .whereBetween("stat_date", [from30, end])
+    .select(
+      "stat_date",
+      "goods_id",
+      "expose_uv",
+      "click_uv",
+      "cart_uv",
+      "pay_uv",
+      "pay_qty"
+    )) as Array<HeatStats & { stat_date: string; goods_id: number }>;
+
+  const byGoods: Record<number, HeatStats> = {};
+  const s7: Record<number, HeatStats> = {};
+  const s1: Record<number, HeatStats> = {};
+  for (const r of daily) {
+    const gid = Number(r.goods_id);
+    const day = asIsoDate(r.stat_date);
+    if (!gid || !day) continue;
+    const stats: HeatStats = {
+      expose_uv: Number(r.expose_uv || 0),
+      click_uv: Number(r.click_uv || 0),
+      cart_uv: Number(r.cart_uv || 0),
+      pay_uv: Number(r.pay_uv || 0),
+      pay_qty: Number(r.pay_qty || 0),
+    };
+    const w = decayWeight(diffIsoDays(day, end), 7);
+    byGoods[gid] = addHeat(byGoods[gid] || emptyHeat(), stats, w);
+    if (day >= from7) s7[gid] = addHeat(s7[gid] || emptyHeat(), stats, 1);
+    if (day === end) s1[gid] = addHeat(s1[gid] || emptyHeat(), stats, 1);
+  }
+
+  const raws1 = goods.map((g) => heatRaw(s1[g.id]));
+  const raws7 = goods.map((g) => heatRaw(s7[g.id]));
+  const raws30 = goods.map((g) => heatRaw(byGoods[g.id]));
+  const heat1 = scaleByP95(raws1);
+  const heat7 = scaleByP95(raws7);
+  const heat30 = scaleByP95(raws30);
   for (let i = 0; i < goods.length; i++) {
-    const heat7 = (100 * raws7[i]) / max7;
-    const heat1 = (100 * raws1[i]) / max1;
-    const score = Math.round(0.65 * heat7 + 0.35 * heat1);
+    const score = mixHeat(heat1[i], heat7[i], heat30[i]);
     await db("goods").where({ id: goods[i].id }).update({ heat_score: score, heat_updated_at: db.fn.now() });
   }
 }
@@ -372,6 +465,10 @@ export async function signals(from: string, to: string) {
     }
     if (heatTop.some((h) => h.id === g.id) && Number(g.stock) <= 5) {
       out.push({ type: "HOT_LOW_STOCK", goodsId: g.id, name: g.name, message: "热度高库存低，建议补货" });
+    }
+    const created = g.created_at ? new Date(g.created_at as string).getTime() : 0;
+    if (Number(g.on_sale) === 1 && Number(g.stock) > 0 && Number(g.expose_uv) === 0 && created && Date.now() - created >= 3 * 86400000) {
+      out.push({ type: "NO_EXPOSE", goodsId: g.id, name: g.name, message: "有库存无曝光，考虑加入推荐或提高权重" });
     }
   }
   return out;

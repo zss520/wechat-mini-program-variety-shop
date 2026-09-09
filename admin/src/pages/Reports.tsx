@@ -1,4 +1,4 @@
-import { Button, Card, CardContent, Grid, TextField, Typography } from "@mui/material";
+import { Button, Card, CardContent, Grid, TextField, Tooltip, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import dayjs from "dayjs";
@@ -7,6 +7,17 @@ import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { asArray, asRecord, displayNumber, displayPercent, displayText } from "../utils/display";
 import { useFeedback } from "../components/FeedbackProvider";
+
+function rateCell(ok: boolean, value: unknown) {
+  if (!ok) {
+    return (
+      <Typography component="span" color="text.secondary" sx={{ fontSize: 13 }}>
+        样本少
+      </Typography>
+    );
+  }
+  return displayPercent(value);
+}
 
 export default function Reports() {
   const fb = useFeedback();
@@ -43,6 +54,7 @@ export default function Reports() {
   return (
     <PageContainer
       title="数据分析"
+      description="曝光按会话 30 秒去重；购买率以支付成功人数为准。人数不足 10 标「样本少」。热度 0–100，近 7 日为主并做转化平滑，按分位缩放以免爆款压扁其余商品。"
       extra={
         <InlineForm sx={{ mb: 0 }}>
           <TextField required type="date" size="small" label="从" InputLabelProps={{ shrink: true }} value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -103,11 +115,37 @@ export default function Reports() {
         <TableHead>
           <TableRow>
             <TableCell>商品</TableCell>
-            <TableCell>曝光UV</TableCell>
-            <TableCell>CTR</TableCell>
-            <TableCell>购买率</TableCell>
+            <TableCell>
+              <Tooltip title="去重后的曝光人数">
+                <span>曝光UV</span>
+              </Tooltip>
+            </TableCell>
+            <TableCell>
+              <Tooltip title="点击人数 / 曝光人数">
+                <span>CTR</span>
+              </Tooltip>
+            </TableCell>
+            <TableCell>
+              <Tooltip title="加购人数 / 点击人数">
+                <span>加购率</span>
+              </Tooltip>
+            </TableCell>
+            <TableCell>
+              <Tooltip title="支付成功人数 / 点击人数，不以客户端 pay_success 为准">
+                <span>点击购买率</span>
+              </Tooltip>
+            </TableCell>
+            <TableCell>
+              <Tooltip title="支付成功人数 / 曝光人数，衡量坑位质量">
+                <span>曝光购买率</span>
+              </Tooltip>
+            </TableCell>
             <TableCell>支付件数</TableCell>
-            <TableCell>热度</TableCell>
+            <TableCell>
+              <Tooltip title="0–100，近7日 50% + 当日 30% + 30日衰减 20%；含平滑 CTR/CVR">
+                <span>热度</span>
+              </Tooltip>
+            </TableCell>
             <TableCell>加权</TableCell>
           </TableRow>
         </TableHead>
@@ -116,14 +154,16 @@ export default function Reports() {
             <TableRow key={g.id}>
               <TableCell>{displayText(g.name)}</TableCell>
               <TableCell>{displayNumber(g.expose_uv)}</TableCell>
-              <TableCell>{g.sampleInsufficient ? "样本少" : displayPercent(g.ctr)}</TableCell>
-              <TableCell>{g.sampleInsufficient ? "样本少" : displayPercent(g.cvr)}</TableCell>
+              <TableCell>{rateCell(!!g.ctrSampleOk, g.ctr)}</TableCell>
+              <TableCell>{rateCell(!!g.cartSampleOk, g.cartRate)}</TableCell>
+              <TableCell>{rateCell(!!g.cvrSampleOk, g.cvr)}</TableCell>
+              <TableCell>{rateCell(!!g.exposeCvrSampleOk, g.exposeCvr)}</TableCell>
               <TableCell>{displayNumber(g.pay_qty)}</TableCell>
               <TableCell>{displayNumber(g.heat_score)}</TableCell>
               <TableCell>{displayNumber(g.manual_weight)}</TableCell>
             </TableRow>
           ))}
-          {!goods.length && <EmptyRow cols={7} />}
+          {!goods.length && <EmptyRow cols={9} />}
         </TableBody>
       </DataTable>
     </PageContainer>

@@ -3,6 +3,21 @@ import { request } from "./request";
 const KEY = "anon_id";
 let queue: any[] = [];
 let timer: any = null;
+const exposeAt: Record<string, number> = {};
+
+/** 同一会话 + 商品 + 坑位 30 秒内只报一次曝光 */
+export function shouldTrackExpose(goodsId: unknown, slotId: unknown) {
+  const key = `${session()}|${goodsId || ""}|${slotId || ""}`;
+  const now = Date.now();
+  const last = exposeAt[key] || 0;
+  if (now - last < 30000) return false;
+  exposeAt[key] = now;
+  const keys = Object.keys(exposeAt);
+  if (keys.length > 200) {
+    for (const k of keys.slice(0, keys.length - 200)) delete exposeAt[k];
+  }
+  return true;
+}
 
 function anon() {
   let id = wx.getStorageSync(KEY);

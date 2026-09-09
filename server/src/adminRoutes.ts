@@ -21,6 +21,7 @@ import {
 } from "./orderService";
 import { markPaid } from "./orderService";
 import { funnelReport, goodsReport, recomputeHeat, signals } from "./analytics";
+import { memberPersona } from "./persona";
 import { fillRecommend } from "./recommend";
 import { config } from "./config";
 import { campaignBody } from "./campaigns";
@@ -754,8 +755,11 @@ adminRouter.get("/members", async (req, res, next) => {
     for (const s of stats as any[]) map[s.user_id] = { order_count: Number(s.order_count || 0), pay_amount: Number(s.pay_amount || 0) };
     ok(res, {
       list: list.map((u: any) => ({
-        ...u,
+        id: u.id,
+        nickname: u.nickname,
         phone: maskPhone(u.phone),
+        points_balance: u.points_balance,
+        created_at: u.created_at,
         orderCount: map[u.id]?.order_count || 0,
         payAmountCent: map[u.id]?.pay_amount || 0,
       })),
@@ -763,6 +767,14 @@ adminRouter.get("/members", async (req, res, next) => {
       pageSize,
       total: Number(total?.c || 0),
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/members/:id/persona", async (req, res, next) => {
+  try {
+    ok(res, await memberPersona(Number(req.params.id)));
   } catch (e) {
     next(e);
   }

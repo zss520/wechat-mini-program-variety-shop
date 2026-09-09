@@ -2,42 +2,80 @@ import { db } from "./db";
 import { getSettings } from "./settings";
 import { publicGoods } from "./recommend";
 import { salePriceOf } from "./pricing";
+import { decayWeight, pickDiverse } from "./scoring";
 
-const W_AFFINITY = 0.35;
-const W_COPURCHASE = 0.25;
-const W_HEAT = 0.25;
-const W_WEIGHT = 0.15;
+const W_AFFINITY = 0.3;
+const W_COPURCHASE = 0.16;
+const W_HEAT = 0.22;
+const W_WEIGHT = 0.12;
+const W_CLICK = 0.14;
+const W_REPEAT = 0.06;
 
-async function userSignals(userId: number) {
+type Sig = {
+  affinity: Record<number, number>;
+  copurchase: Record<number, number>;
+  maxCo: number;
+  clickScore: Record<number, number>;
+  maxClick: number;
+  lastPaidAt: Record<number, number>;
+  buyCount: Record<number, number>;
+  repeatCat: Record<number, number>;
+};
+
+async function userSignals(userId: number): Promise<Sig> {
   const paid = await db("order_items")
     .join("orders", "orders.id", "order_items.order_id")
     .join("goods", "goods.id", "order_items.goods_id")
     .where("orders.user_id", userId)
     .whereNotNull("orders.paid_at")
     .whereNot("orders.status", "CANCELLED")
-    .select("order_items.goods_id", "order_items.qty", "goods.category_id", "orders.id as order_id");
+    .select(
+      "order_items.goods_id",
+      "order_items.qty",
+      "goods.category_id",
+      "orders.id as order_id",
+      "orders.paid_at"
+    );
   const since = new Date(Date.now() - 30 * 86400000);
   const clicks = await db("analytics_events")
     .where({ user_id: userId, event: "goods_click" })
     .where("ts", ">=", since)
-    .select("goods_id");
+    .select("goods_id", "ts");
 
   const catPay: Record<number, number> = {};
-  const catClick: Record<number, number> = {};
+  const lastPaidAt: Record<number, number> = {};
+  const buyCount: Record<number, number> = {};
   const bought = new Set<number>();
   let payTotal = 0;
   for (const r of paid) {
-    bought.add(Number(r.goods_id));
+    const gid = Number(r.goods_id);
     const cat = Number(r.category_id);
+    bought.add(gid);
     catPay[cat] = (catPay[cat] || 0) + Number(r.qty);
     payTotal += Number(r.qty);
+    buyCount[gid] = (buyCount[gid] || 0) + 1;
+    const ts = new Date(r.paid_at).getTime();
+    if (!lastPaidAt[gid] || ts > lastPaidAt[gid]) lastPaidAt[gid] = ts;
   }
+  const repeatCat: Record<number, number> = {};
+  for (const [cat, qty] of Object.entries(catPay)) {
+    if (Number(qty) >= 2) repeatCat[Number(cat)] = Number(qty);
+  }
+
+  const catClick: Record<number, number> = {};
+  const clickScore: Record<number, number> = {};
   const clickGoods = clicks.map((c) => Number(c.goods_id)).filter(Boolean);
   if (clickGoods.length) {
-    const gs = await db("goods").whereIn("id", clickGoods).select("id", "category_id");
-    for (const g of gs) {
-      const cat = Number(g.category_id);
-      catClick[cat] = (catClick[cat] || 0) + 1;
+    const gs = await db("goods").whereIn("id", Array.from(new Set(clickGoods))).select("id", "category_id");
+    const cmap: Record<number, number> = {};
+    for (const g of gs) cmap[Number(g.id)] = Number(g.category_id);
+    for (const c of clicks) {
+      const gid = Number(c.goods_id);
+      if (!gid) continue;
+      const cat = cmap[gid];
+      if (cat) catClick[cat] = (catClick[cat] || 0) + 1;
+      const daysAgo = Math.max(0, (Date.now() - new Date(c.ts).getTime()) / 86400000);
+      clickScore[gid] = (clickScore[gid] || 0) + decayWeight(daysAgo, 7);
     }
   }
   const clickTotal = Object.values(catClick).reduce((s, n) => s + n, 0) || 1;
@@ -46,7 +84,8 @@ async function userSignals(userId: number) {
   for (const cat of cats) {
     const p = payTotal ? (catPay[cat] || 0) / payTotal : 0;
     const c = (catClick[cat] || 0) / clickTotal;
-    affinity[cat] = 0.6 * p + 0.4 * c;
+    const repeatBoost = (repeatCat[cat] || 0) >= 3 ? 0.15 : (repeatCat[cat] || 0) >= 2 ? 0.08 : 0;
+    affinity[cat] = Math.min(1, 0.55 * p + 0.35 * c + repeatBoost);
   }
 
   const copurchase: Record<number, number> = {};
@@ -59,6 +98,7 @@ async function userSignals(userId: number) {
     const global = await db("order_items")
       .join("orders", "orders.id", "order_items.order_id")
       .whereNotNull("orders.paid_at")
+      .whereNot("orders.status", "CANCELLED")
       .whereIn("order_items.order_id", function () {
         this.select("order_id").from("order_items").whereIn("goods_id", Array.from(bought));
       })
@@ -68,31 +108,44 @@ async function userSignals(userId: number) {
     for (const r of global) copurchase[Number(r.goods_id)] = (copurchase[Number(r.goods_id)] || 0) + 1;
   }
   const maxCo = Math.max(1, ...Object.values(copurchase), 1);
-  return { affinity, copurchase, maxCo, bought };
+  const maxClick = Math.max(1, ...Object.values(clickScore), 1);
+  return { affinity, copurchase, maxCo, clickScore, maxClick, lastPaidAt, buyCount, repeatCat };
+}
+
+function recentBuyFactor(sig: Sig, goodsId: number) {
+  const last = sig.lastPaidAt[goodsId];
+  if (last && Date.now() - last < 3 * 86400000) return 0.35;
+  if ((sig.buyCount[goodsId] || 0) >= 2) return 1.22;
+  return 1;
 }
 
 function scoreGoods(
   g: { id: number; category_id: number; heat_score: number; manual_weight: number },
-  sig: { affinity: Record<number, number>; copurchase: Record<number, number>; maxCo: number } | null
+  sig: Sig | null
 ) {
   const heat = Number(g.heat_score || 0) / 100;
   const weight = (Number(g.manual_weight || 0) + 50) / 100;
   if (!sig) return 100 * (W_HEAT * heat + W_WEIGHT * weight + 0.4 * heat);
   const aff = sig.affinity[Number(g.category_id)] || 0;
   const co = (sig.copurchase[Number(g.id)] || 0) / sig.maxCo;
-  return 100 * (W_AFFINITY * aff + W_COPURCHASE * co + W_HEAT * heat + W_WEIGHT * weight);
+  const click = (sig.clickScore[Number(g.id)] || 0) / sig.maxClick;
+  const repeat = (sig.repeatCat[Number(g.category_id)] || 0) >= 2 ? 1 : 0;
+  const base =
+    100 *
+    (W_AFFINITY * aff + W_COPURCHASE * co + W_HEAT * heat + W_WEIGHT * weight + W_CLICK * click + W_REPEAT * repeat);
+  return base * recentBuyFactor(sig, Number(g.id));
 }
 
 export async function personalizedGoods(userId: number | null, limit = 8, exclude: number[] = []) {
   let q = db("goods").where({ on_sale: 1 }).whereNull("deleted_at").where("stock", ">", 0);
   if (exclude.length) q = q.whereNotIn("id", exclude);
-  const candidates = await q.limit(80);
+  const candidates = await q.orderBy("heat_score", "desc").orderBy("sold_count", "desc").orderBy("id", "desc").limit(80);
   const sig = userId ? await userSignals(userId) : null;
   const ranked = candidates
     .map((g) => ({ g, score: scoreGoods(g, sig) }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
-  return ranked.map((r, i) =>
+    .sort((a, b) => b.score - a.score);
+  const picked = pickDiverse(ranked, limit, limit <= 8 ? 2 : 3);
+  return picked.map((r, i) =>
     publicGoods({ ...r.g, slot_id: "for_you", position: i + 1, pin: false, personal_score: Math.round(r.score) })
   );
 }
