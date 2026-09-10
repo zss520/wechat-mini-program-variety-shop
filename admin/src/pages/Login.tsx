@@ -193,36 +193,38 @@ export default function Login() {
           </Box>
           <Typography sx={{ fontWeight: 600, fontSize: 16 }}>社区杂货铺</Typography>
         </Box>
-        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", px: 2 }}>
-          <Box sx={{ position: "relative", width: "100%", maxWidth: 360, textAlign: "center" }}>
-            <IconButton
-              onClick={() => setSlide((s) => (s + SLIDES.length - 1) % SLIDES.length)}
-              sx={{
-                position: "absolute",
-                left: -8,
-                top: "42%",
-                color: "#fff",
-                bgcolor: "rgba(255,255,255,0.12)",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.22)" },
-              }}
-              size="small"
-            >
-              <ChevronLeft />
-            </IconButton>
-            <IconButton
-              onClick={() => setSlide((s) => (s + 1) % SLIDES.length)}
-              sx={{
-                position: "absolute",
-                right: -8,
-                top: "42%",
-                color: "#fff",
-                bgcolor: "rgba(255,255,255,0.12)",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.22)" },
-              }}
-              size="small"
-            >
-              <ChevronRight />
-            </IconButton>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", position: "relative", px: 6 }}>
+          <IconButton
+            onClick={() => setSlide((s) => (s + SLIDES.length - 1) % SLIDES.length)}
+            sx={{
+              position: "absolute",
+              left: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#fff",
+              bgcolor: "rgba(255,255,255,0.12)",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.22)" },
+            }}
+            size="small"
+          >
+            <ChevronLeft />
+          </IconButton>
+          <IconButton
+            onClick={() => setSlide((s) => (s + 1) % SLIDES.length)}
+            sx={{
+              position: "absolute",
+              right: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#fff",
+              bgcolor: "rgba(255,255,255,0.12)",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.22)" },
+            }}
+            size="small"
+          >
+            <ChevronRight />
+          </IconButton>
+          <Box sx={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
             <Typography sx={{ fontSize: 20, fontWeight: 600, mb: 1 }}>{current.title}</Typography>
             <Typography sx={{ opacity: 0.78, fontSize: 13, lineHeight: 1.7, mb: 3, minHeight: 44 }}>{current.desc}</Typography>
             <Box sx={{ display: "flex", justifyContent: "center" }}>{current.art}</Box>
@@ -267,9 +269,9 @@ export default function Login() {
               }}
               onBlur={() => validateUser()}
               error={!!userError}
-              helperText={userError || " "}
+              helperText={userError || undefined}
               autoComplete="username"
-              sx={{ ...fieldSx, mb: 0.5 }}
+              sx={{ ...fieldSx, mb: 2 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -290,9 +292,9 @@ export default function Login() {
               }}
               onBlur={() => validatePwd()}
               error={!!pwdError}
-              helperText={pwdError || " "}
+              helperText={pwdError || undefined}
               autoComplete="current-password"
-              sx={{ ...fieldSx, mb: 0.5 }}
+              sx={{ ...fieldSx, mb: 2 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
