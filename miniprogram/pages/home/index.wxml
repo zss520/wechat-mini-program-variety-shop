@@ -52,10 +52,10 @@
   </view>
   <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
     <view class="hitem" wx:for="{{groups}}" wx:key="id" data-id="{{item.id}}" bindtap="openGroup">
-      <t-image src="{{disp.thumb(item.goods.thumbUrl, item.goods.coverUrl)}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
+      <t-image src="{{disp.thumb(item.coverUrl, item.goods.thumbUrl)}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
       <view class="t">{{disp.text(item.title)}}</view>
       <view class="price">{{disp.money(item.group_price_cent)}}</view>
-      <t-tag theme="primary" variant="light" size="small">{{disp.num(item.required_count)}}人团</t-tag>
+      <t-tag theme="primary" variant="light" size="small">{{item.goodsCount > 1 ? (disp.num(item.goodsCount) + '件组合') : (disp.num(item.required_count) + '人团')}}</t-tag>
     </view>
   </scroll-view>
 </view>

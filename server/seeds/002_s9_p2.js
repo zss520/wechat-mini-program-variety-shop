@@ -61,7 +61,7 @@ exports.seed = async function seed(knex) {
   }
 
   if (nuts && !(await knex("group_buy_activities").first())) {
-    await knex("group_buy_activities").insert({
+    const [aid] = await knex("group_buy_activities").insert({
       goods_id: nuts.id,
       title: "坚果 2 人团",
       required_count: 2,
@@ -71,6 +71,12 @@ exports.seed = async function seed(knex) {
       start_at: knex.raw("DATE_SUB(NOW(), INTERVAL 1 DAY)"),
       end_at: knex.raw("DATE_ADD(NOW(), INTERVAL 21 DAY)"),
       enabled: 1,
+    });
+    await knex("group_buy_activity_goods").insert({
+      activity_id: aid,
+      goods_id: nuts.id,
+      group_price_cent: 3290,
+      sort: 0,
     });
   }
   if (water && !(await knex("seckill_activities").first())) {

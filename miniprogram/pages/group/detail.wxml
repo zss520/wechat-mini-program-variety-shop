@@ -29,6 +29,7 @@
       <t-tag theme="primary" variant="light" size="small">{{disp.num(view.required)}}人成团</t-tag>
       <t-tag theme="warning" variant="light" size="small">限购{{disp.num(view.perUserLimit)}}{{view.goodsUnit}}</t-tag>
       <t-tag theme="success" variant="light" size="small">人满发货</t-tag>
+      <t-tag wx:if="{{view.multiGoods}}" theme="primary" variant="outline" size="small">{{disp.num(view.goodsList.length)}}件组合</t-tag>
     </view>
 
     <view class="urge">
@@ -47,18 +48,42 @@
     </view>
   </view>
 
+  <view class="card" wx:if="{{view.goodsList.length}}">
+    <view class="card-h">
+      <text class="card-t">团内商品</text>
+      <text class="card-e">{{view.multiGoods ? '点选要买的商品' : '本场商品'}}</text>
+    </view>
+    <view
+      class="combo {{item.selected ? 'on' : ''}}"
+      wx:for="{{view.goodsList}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="pickGoods"
+    >
+      <t-image src="{{disp.thumb(item.thumbUrl, item.coverUrl)}}" width="96rpx" height="96rpx" shape="round" mode="aspectFill" />
+      <view class="combo-info">
+        <view class="combo-n">{{disp.text(item.name)}}</view>
+        <view class="combo-p">
+          <text class="combo-now">{{disp.money(item.groupPriceCent)}}</text>
+          <text class="origin" wx:if="{{disp.gt0(item.originCent)}}">{{disp.money(item.originCent)}}</text>
+        </view>
+      </view>
+      <t-tag wx:if="{{item.selected}}" theme="primary" size="small">已选</t-tag>
+    </view>
+  </view>
+
   <view class="card">
     <view class="card-h">
       <text class="card-t">成团进度</text>
-      <text class="card-e">{{teamId ? (disp.num(view.paid) + '/' + disp.num(view.required) + '人') : '待发起'}}</text>
+      <text class="card-e">{{teamId ? (disp.num(view.paid) + '/' + disp.num(view.required) + '人已支付') : '待发起'}}</text>
     </view>
     <view class="track">
       <view class="fill" style="width: {{view.progress}}%;"></view>
     </view>
     <view class="hint" wx:if="{{teamId}}">
-      已有 {{disp.num(view.paid)}} 人，还差 {{disp.num(view.remain)}} 人成团
+      已支付 {{disp.num(view.paid)}} 人，团内 {{disp.num(view.memberCount)}} 人，还差 {{disp.num(view.remain)}} 人成团
     </view>
-    <view class="hint" wx:else>邀请邻居一起买，满员即按团价结算</view>
+    <view class="hint" wx:else>邀请邻居一起买，支付后占用名额，满员即按团价结算</view>
     <view class="slots">
       <view class="slot" wx:for="{{view.slots}}" wx:key="id">
         <t-avatar wx:if="{{item.filled && item.avatar}}" image="{{item.avatar}}" size="small" />
@@ -68,6 +93,26 @@
         </view>
         <view class="slot-name">{{item.leader ? '团长' : (item.filled ? disp.text(item.name) : '待参团')}}</view>
       </view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{view.openTeams.length && !teamId}}">
+    <view class="card-h">
+      <text class="card-t">可参加的团</text>
+    </view>
+    <view class="team" wx:for="{{view.openTeams}}" wx:key="teamId" data-id="{{item.teamId}}" bindtap="pickTeam">
+      <view class="team-t">已支付 {{disp.num(item.paidCount)}}/{{disp.num(item.required)}} 人</view>
+      <view class="team-s">还差 {{disp.num(item.remain)}} 人 · 点此参加</view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{view.logs.length}}">
+    <view class="card-h">
+      <text class="card-t">进度记录</text>
+    </view>
+    <view class="log" wx:for="{{view.logs}}" wx:key="id">
+      <view class="log-l">{{disp.text(item.label)}}</view>
+      <view class="log-r">{{disp.text(item.counts)}} 人<text wx:if="{{item.note}}"> · {{disp.text(item.note)}}</text></view>
     </view>
   </view>
 
@@ -92,17 +137,6 @@
       <text class="r">每人限购 {{disp.num(view.perUserLimit)}} {{view.goodsUnit}}，数量以提交订单为准</text>
     </view>
   </view>
-
-  <t-cell-group theme="card" wx:if="{{view.goodsId}}">
-    <t-cell
-      title="{{disp.text(view.goodsName, '商品详情')}}"
-      description="查看原价、库存与图文介绍"
-      image="{{disp.thumb(view.thumb, view.cover)}}"
-      arrow
-      hover
-      bind:click="goGoods"
-    />
-  </t-cell-group>
 </view>
 
 <t-empty wx:else icon="usergroup" description="活动不存在或已结束" />

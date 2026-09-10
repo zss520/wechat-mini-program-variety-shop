@@ -1,10 +1,32 @@
 <wxs src="../../utils/display.wxs" module="disp" />
-<view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
-  <t-image src="{{disp.thumb(item.goods.thumbUrl, item.goods.coverUrl)}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
+<view class="card" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" data-team-id="{{item.teamId}}" bindtap="open">
+  <t-image src="{{disp.cover(item.cover)}}" width="176rpx" height="176rpx" shape="round" mode="aspectFill" />
   <view class="info">
     <view class="name">{{disp.text(item.title)}}</view>
-    <view class="price">{{disp.money(item.group_price_cent)}}</view>
-    <t-tag theme="primary" variant="light" size="small">{{disp.num(item.required_count)}}人成团</t-tag>
+    <view class="goods" wx:if="{{item.goodsList.length}}">
+      <t-image
+        wx:for="{{item.goodsList}}"
+        wx:for-item="g"
+        wx:key="id"
+        src="{{disp.thumb(g.thumbUrl, g.coverUrl)}}"
+        width="56rpx"
+        height="56rpx"
+        shape="round"
+        mode="aspectFill"
+      />
+    </view>
+    <view class="meta">
+      <text class="price">{{disp.money(item.minGroupPriceCent)}}</text>
+      <text class="from" wx:if="{{item.goodsCount > 1}}">起 · {{disp.num(item.goodsCount)}}件组合</text>
+      <t-tag theme="primary" variant="light" size="small">{{disp.num(item.required_count)}}人成团</t-tag>
+    </view>
+    <view class="prog" wx:if="{{item.hasProgress}}">
+      <view class="track">
+        <view class="fill" style="width: {{item.progressPct}}%;"></view>
+      </view>
+      <view class="prog-t">已支付 {{disp.num(item.paid)}}/{{disp.num(item.required)}} 人，还差 {{disp.num(item.remain)}} 人</view>
+    </view>
+    <view class="prog-t wait" wx:else>暂无进行中的团，去发起</view>
   </view>
   <t-icon name="chevron-right" size="40rpx" color="#c5b8aa" />
 </view>

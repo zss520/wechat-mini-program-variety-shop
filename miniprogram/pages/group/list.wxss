@@ -1,6 +1,6 @@
 .card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   background: #fff;
   margin: 24rpx 24rpx;
   padding: 16rpx;
@@ -14,4 +14,48 @@
 .name {
   font-weight: 700;
   margin-bottom: 8rpx;
+  color: #3f2e22;
+}
+.goods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+}
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+.price {
+  color: #c2410c;
+  font-weight: 700;
+  font-size: 32rpx;
+}
+.from {
+  font-size: 22rpx;
+  color: #8a6a4a;
+}
+.prog {
+  margin-top: 10rpx;
+}
+.track {
+  height: 10rpx;
+  border-radius: 999rpx;
+  background: #f3e8dc;
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #fb923c, #c2410c);
+}
+.prog-t {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #c2410c;
+}
+.prog-t.wait {
+  color: #8a6a4a;
 }

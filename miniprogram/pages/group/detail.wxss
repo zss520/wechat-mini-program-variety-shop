@@ -357,3 +357,100 @@ page {
 .bar-actions t-button {
   width: 100%;
 }
+
+.combo {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f3e8dc;
+}
+
+.combo:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.combo.on {
+  background: #fff7ed;
+  margin: 0 -16rpx;
+  padding-left: 16rpx;
+  padding-right: 16rpx;
+  border-radius: 12rpx;
+  border-bottom-color: transparent;
+}
+
+.combo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.combo-n {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #3f2e22;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.combo-p {
+  margin-top: 6rpx;
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+}
+
+.combo-now {
+  color: #c2410c;
+  font-weight: 700;
+}
+
+.team {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f3e8dc;
+}
+
+.team:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.team-t {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #3f2e22;
+}
+
+.team-s {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: #c2410c;
+}
+
+.log {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #f3e8dc;
+}
+
+.log:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.log-l {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #3f2e22;
+}
+
+.log-r {
+  flex: 1;
+  text-align: right;
+  font-size: 22rpx;
+  color: #8a6a4a;
+}

@@ -3,7 +3,7 @@ import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrder
 import { claimCoupon } from "../marketing";
 import { couponDiscount, pointsRedeem } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
-import { campaignBody, loadTeam } from "../campaigns";
+import { campaignBody, loadTeam, listActiveGroupBuys, refreshTeamProgress, replaceActivityGoods, saveCampaignPayload } from "../campaigns";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -189,6 +189,10 @@ async function run() {
   assert(loadedTeam && loadedTeam.members.length >= 2, "loadTeam should expose members");
   assert(typeof loadedTeam.members[0].nickname === "string", "member should have nickname");
   assert("avatarUrl" in loadedTeam.members[0], "member should have avatarUrl");
+  assert(Array.isArray(loadedTeam.progressLog), "loadTeam should expose progress log");
+  assert(loadedTeam.progressLog.some((x: { event: string }) => x.event === "PAY"), "pay progress should be recorded");
+  assert(loadedTeam.progressLog.some((x: { event: string }) => x.event === "SUCCESS"), "success progress should be recorded");
+  assert(Number(loadedTeam.paidCount) >= 2, "paid count should persist on team");
 
   const gbBody = campaignBody("GROUP", {
     title: "限购团",
@@ -196,10 +200,13 @@ async function run() {
     requiredCount: 2,
     groupPriceCent: 1100,
     perUserLimit: 3,
+    coverUrl: "/static/placeholders/empty.png",
     startAt: "2026-09-01T00:00",
     endAt: "2026-09-10T00:00",
   });
   assert(gbBody.per_user_limit === 3, "group body keeps per-user limit");
+  assert(gbBody.cover_url === "/static/placeholders/empty.png", "group body keeps cover");
+  assert(gbBody.goods_id === ggid, "single goods still maps to goods_id");
 
   const [ggidLimit] = await db("goods").insert({
     category_id: cat.id,
@@ -249,6 +256,77 @@ async function run() {
     groupLimited = String(e.message || "").includes("限购");
   }
   assert(groupLimited, "group per-user limit should block second order");
+
+  const [ggidCombo] = await db("goods").insert({
+    category_id: cat.id,
+    name: `__gbc_${Date.now()}`,
+    price_cent: 1600,
+    unit: "件",
+    stock: 10,
+    on_sale: 1,
+    cover_url: "/static/placeholders/empty.png",
+  });
+  const savedCombo = await saveCampaignPayload("GROUP", {
+    title: "坚果组合团",
+    coverUrl: "/static/placeholders/empty.png",
+    requiredCount: 2,
+    perUserLimit: 2,
+    goodsItems: [
+      { goodsId: ggid, groupPriceCent: 1100 },
+      { goodsId: ggidCombo, groupPriceCent: 700 },
+    ],
+    startAt: new Date(Date.now() - 86400000).toISOString().slice(0, 16),
+    endAt: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+  });
+  assert(savedCombo.items.length === 2, "saveCampaignPayload keeps combo items");
+  assert(Number(savedCombo.payload.group_price_cent) === 700, "activity price is min combo price");
+  const [comboAid] = await db("group_buy_activities").insert(savedCombo.payload);
+  await replaceActivityGoods(Number(comboAid), savedCombo.items);
+  const listed = await listActiveGroupBuys();
+  const found = listed.find((x: { id: number }) => Number(x.id) === Number(comboAid));
+  assert(found && Array.isArray(found.goodsList) && found.goodsList.length === 2, "active list exposes combo goods");
+  assert(found.coverUrl, "active list exposes cover url");
+  const previewCombo = await previewOrder(uid, [{ goodsId: ggidCombo, qty: 1 }], "PICKUP", null, {
+    activityType: "GROUP_BUY",
+    activityId: Number(comboAid),
+  });
+  assert(previewCombo.goodsAmountCent === 700, `combo goods should use its group price, got ${previewCombo.goodsAmountCent}`);
+  let wrongGoods = false;
+  try {
+    await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, {
+      activityType: "GROUP_BUY",
+      activityId: Number(comboAid),
+    });
+  } catch (e: any) {
+    wrongGoods = String(e.message || "").includes("活动商品");
+  }
+  assert(wrongGoods, "goods outside combo should be rejected");
+  const [comboTeam] = await db("group_buy_teams").insert({
+    activity_id: comboAid,
+    leader_user_id: uid,
+    status: "OPEN",
+    expire_at: expire,
+    required_count: 2,
+  });
+  const comboOrder = await createOrder({
+    userId: uid,
+    items: [{ goodsId: ggidCombo, qty: 1 }],
+    fulfillType: "PICKUP",
+    activityType: "GROUP_BUY",
+    activityId: Number(comboAid),
+    teamId: Number(comboTeam),
+  });
+  await db("group_buy_members").insert({
+    team_id: comboTeam,
+    user_id: uid,
+    order_id: comboOrder.id,
+    joined_at: new Date(),
+  });
+  await refreshTeamProgress(Number(comboTeam), "OPEN", { userId: uid, orderId: comboOrder.id, note: "发起拼团" });
+  const comboTeamLoaded = await loadTeam(Number(comboTeam));
+  assert(comboTeamLoaded && comboTeamLoaded.goodsList.length === 2, "team exposes combo goods");
+  assert(comboTeamLoaded.progressLog.some((x: { event: string }) => x.event === "OPEN"), "open event recorded");
+  assert(Number(comboTeamLoaded.memberCount) === 1, "member count persisted");
 
   const rec = await personalizedGoods(uid, 4);
   assert(Array.isArray(rec), "personalized should return list");

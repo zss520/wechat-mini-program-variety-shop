@@ -22,7 +22,7 @@ import path from "path";
 import { cancelOrder, createOrder, loadOrderDetail, markPaid, previewOrder, ST } from "./orderService";
 import { config, publicUrl } from "./config";
 import { claimCoupon, listClaimableCoupons } from "./marketing";
-import { activityWindowOk, listActiveGroupBuys, listActiveSeckills, loadTeam } from "./campaigns";
+import { activityWindowOk, getGroupBuy, listActiveGroupBuys, listActiveSeckills, loadGroupGoodsRows, loadTeam, refreshTeamProgress } from "./campaigns";
 import { cartUpsell, relatedGoods } from "./personalize";
 import { listNotifyLogs, setSubscribe } from "./notify";
 import { salePriceOf } from "./pricing";
@@ -648,11 +648,22 @@ appRouter.get("/group-buys/teams/:id", async (req, res, next) => {
   }
 });
 
+appRouter.get("/group-buys/:id", async (req, res, next) => {
+  try {
+    const act = await getGroupBuy(Number(req.params.id));
+    if (!act) throw new HttpError(404, "拼团活动不存在");
+    ok(res, act);
+  } catch (e) {
+    next(e);
+  }
+});
+
 appRouter.post("/group-buys/:id/open", requireRole("user"), requireBoundPhone, async (req, res, next) => {
   try {
     const body = z
       .object({
         qty: z.number().int().min(1).default(1),
+        goodsId: z.number().int().positive().optional(),
         fulfillType: z.enum(["PICKUP", "DELIVERY"]),
         addressId: z.number().nullable().optional(),
         remark: z.string().max(80).optional(),
@@ -663,16 +674,22 @@ appRouter.post("/group-buys/:id/open", requireRole("user"), requireBoundPhone, a
       .parse(req.body);
     const act = await db("group_buy_activities").where({ id: Number(req.params.id) }).whereNull("deleted_at").first();
     if (!act || !act.enabled || !activityWindowOk(act)) throw new HttpError(409, "拼团活动未开始或已结束");
+    const combo = await loadGroupGoodsRows(act.id);
+    const goodsId = Number(body.goodsId || combo[0]?.goods_id || act.goods_id);
+    if (!combo.some((g) => Number(g.goods_id || g.id) === goodsId)) throw new HttpError(400, "请选择活动中的商品");
     const expire = new Date(Date.now() + Number(act.expire_hours || 24) * 3600 * 1000);
     const [teamId] = await db("group_buy_teams").insert({
       activity_id: act.id,
       leader_user_id: req.auth!.id,
       status: "OPEN",
       expire_at: expire,
+      member_count: 0,
+      paid_count: 0,
+      required_count: Number(act.required_count || 2),
     });
     const order = await createOrder({
       userId: req.auth!.id,
-      items: [{ goodsId: act.goods_id, qty: body.qty }],
+      items: [{ goodsId, qty: body.qty }],
       fulfillType: body.fulfillType,
       addressId: body.addressId,
       remark: body.remark,
@@ -689,6 +706,7 @@ appRouter.post("/group-buys/:id/open", requireRole("user"), requireBoundPhone, a
       order_id: order.id,
       joined_at: db.fn.now(),
     });
+    await refreshTeamProgress(teamId, "OPEN", { userId: req.auth!.id, orderId: order.id, note: "发起拼团" });
     ok(res, { teamId, order });
   } catch (e) {
     next(e);
@@ -700,6 +718,7 @@ appRouter.post("/group-buys/teams/:id/join", requireRole("user"), requireBoundPh
     const body = z
       .object({
         qty: z.number().int().min(1).default(1),
+        goodsId: z.number().int().positive().optional(),
         fulfillType: z.enum(["PICKUP", "DELIVERY"]),
         addressId: z.number().nullable().optional(),
         remark: z.string().max(80).optional(),
@@ -715,9 +734,12 @@ appRouter.post("/group-buys/teams/:id/join", requireRole("user"), requireBoundPh
     if (exist) throw new HttpError(409, "你已在该团中");
     const act = await db("group_buy_activities").where({ id: team.activity_id }).first();
     if (!act || !activityWindowOk(act)) throw new HttpError(409, "拼团活动已结束");
+    const combo = await loadGroupGoodsRows(act.id);
+    const goodsId = Number(body.goodsId || combo[0]?.goods_id || act.goods_id);
+    if (!combo.some((g) => Number(g.goods_id || g.id) === goodsId)) throw new HttpError(400, "请选择活动中的商品");
     const order = await createOrder({
       userId: req.auth!.id,
-      items: [{ goodsId: act.goods_id, qty: body.qty }],
+      items: [{ goodsId, qty: body.qty }],
       fulfillType: body.fulfillType,
       addressId: body.addressId,
       remark: body.remark,
@@ -734,6 +756,7 @@ appRouter.post("/group-buys/teams/:id/join", requireRole("user"), requireBoundPh
       order_id: order.id,
       joined_at: db.fn.now(),
     });
+    await refreshTeamProgress(team.id, "JOIN", { userId: req.auth!.id, orderId: order.id, note: "参加拼团" });
     ok(res, { teamId: team.id, order });
   } catch (e) {
     next(e);

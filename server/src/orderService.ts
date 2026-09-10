@@ -4,7 +4,7 @@ import { HttpError } from "./http";
 import { getSettings } from "./settings";
 import { bumpPayStats } from "./analytics";
 import { changePoints, loadUsableCoupon } from "./marketing";
-import { activityWindowOk } from "./campaigns";
+import { activityWindowOk, loadGroupGoodsRows, refreshTeamProgress } from "./campaigns";
 import { notifyPackReady } from "./notify";
 import { POINTS_REDEEM_STEP, pointsRedeem, salePriceOf, type LineInput, type PricedLine } from "./pricing";
 
@@ -137,13 +137,16 @@ async function resolveActivity(extras: OrderExtras, items: LineInput[]) {
   if (type === "GROUP_BUY") {
     const act = await db("group_buy_activities").where({ id: extras.activityId || 0 }).whereNull("deleted_at").first();
     if (!act || !act.enabled || !activityWindowOk(act)) throw new HttpError(409, "拼团活动未开始或已结束");
-    if (items.length !== 1 || items[0].goodsId !== act.goods_id) throw new HttpError(400, "拼团订单只能包含活动商品");
+    if (items.length !== 1) throw new HttpError(400, "拼团订单只能包含活动商品");
+    const combo = await loadGroupGoodsRows(act.id);
+    const hit = combo.find((g) => Number(g.goods_id || g.id) === Number(items[0].goodsId));
+    if (!hit) throw new HttpError(400, "拼团订单只能包含活动商品");
     if (extras.teamId) {
       const team = await db("group_buy_teams").where({ id: extras.teamId }).first();
       if (!team || team.status !== "OPEN") throw new HttpError(409, "该团不可加入");
       if (new Date(team.expire_at).getTime() < Date.now()) throw new HttpError(409, "该团已过期");
     }
-    return { type, group: act, seckill: null as any };
+    return { type, group: { ...act, group_price_cent: Number(hit.group_price_cent) }, seckill: null as any };
   }
   const act = await db("seckill_activities").where({ id: extras.activityId || 0 }).whereNull("deleted_at").first();
   if (!act || !act.enabled || !activityWindowOk(act)) throw new HttpError(409, "秒杀活动未开始或已结束");
@@ -394,6 +397,7 @@ export async function promoteGroupIfReady(teamId: number) {
       await logStatus(trx, o.id, ST.GROUPING, ST.PENDING_PACK, "SYSTEM", null, "拼团成功");
     }
   });
+  await refreshTeamProgress(teamId, "SUCCESS", { note: "满员成团" });
   return db("group_buy_teams").where({ id: teamId }).first();
 }
 
@@ -408,6 +412,7 @@ export async function expireGroupTeams() {
       continue;
     }
     await db("group_buy_teams").where({ id: team.id }).update({ status: "FAILED" });
+    await refreshTeamProgress(team.id, "FAIL", { note: "超时未成团" });
     const orders = await db("orders").where({ team_id: team.id }).whereIn("status", [ST.PENDING_PAY, ST.GROUPING]);
     for (const o of orders) {
       try {
@@ -457,6 +462,7 @@ export async function markPaid(orderId: number, txId: string, raw?: unknown) {
     return trx("orders").where({ id: orderId }).first();
   });
   if (paid?.activity_type === "GROUP_BUY" && paid.team_id) {
+    await refreshTeamProgress(Number(paid.team_id), "PAY", { userId: paid.user_id, orderId: paid.id, note: "完成支付" });
     await promoteGroupIfReady(Number(paid.team_id));
     return db("orders").where({ id: orderId }).first();
   }
@@ -469,7 +475,9 @@ export async function cancelOrder(opts: {
   operatorId?: number;
   reason?: string;
 }) {
-  return db.transaction(async (trx) => {
+  let logTeamId = 0;
+  let logUserId = 0;
+  const cancelled = await db.transaction(async (trx) => {
     const order = await trx("orders").where({ id: opts.orderId }).forUpdate().first();
     if (!order) throw new HttpError(404, "订单不存在");
     if (order.status === ST.CANCELLED) return order;
@@ -497,9 +505,22 @@ export async function cancelOrder(opts: {
       cancelled_at: trx.fn.now(),
       cancel_reason: (opts.reason || "取消").slice(0, 80),
     });
+    if (order.activity_type === "GROUP_BUY" && order.team_id && (from === ST.PENDING_PAY || from === ST.GROUPING)) {
+      await trx("group_buy_members").where({ team_id: order.team_id, order_id: order.id }).delete();
+      logTeamId = Number(order.team_id);
+      logUserId = Number(order.user_id);
+    }
     await logStatus(trx, order.id, from, ST.CANCELLED, opts.operatorType, opts.operatorId, opts.reason);
     return trx("orders").where({ id: order.id }).first();
   });
+  if (logTeamId) {
+    await refreshTeamProgress(logTeamId, "CANCEL", {
+      userId: logUserId,
+      orderId: opts.orderId,
+      note: opts.reason || "取消订单",
+    });
+  }
+  return cancelled;
 }
 
 export async function closeExpiredOrders() {
