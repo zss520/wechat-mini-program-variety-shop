@@ -8,16 +8,18 @@
 </t-tabs>
 
 <view class="order-list">
-  <t-cell-group theme="card" wx:for="{{list}}" wx:key="id">
-    <t-cell
-      title="{{disp.text(item.order_no)}}"
-      description="{{disp.text(item.statusText)}}"
-      note="{{disp.money(item.pay_amount_cent)}}"
-      hover
-      arrow
-      data-id="{{item.id}}"
-      bind:click="open"
-    />
-  </t-cell-group>
+  <view class="order-item" wx:for="{{list}}" wx:key="id">
+    <t-cell-group theme="card">
+      <t-cell
+        title="{{disp.text(item.order_no)}}"
+        description="{{disp.text(item.statusText)}}"
+        note="{{disp.money(item.pay_amount_cent)}}"
+        hover
+        arrow
+        data-id="{{item.id}}"
+        bind:click="open"
+      />
+    </t-cell-group>
+  </view>
   <t-empty wx:if="{{!list.length}}" icon="file" description="暂无订单" />
 </view>

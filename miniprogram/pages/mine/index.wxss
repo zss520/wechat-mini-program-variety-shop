@@ -22,10 +22,13 @@
   margin-top: -32rpx;
   padding: 0 0 24rpx;
 }
+.mine-block {
+  display: block;
+}
+.mine-block + .mine-block {
+  margin-top: 40rpx;
+}
 .mine-groups t-cell-group {
   display: block;
   margin-top: 0;
-}
-.mine-groups t-cell-group + t-cell-group {
-  margin-top: 40rpx;
 }

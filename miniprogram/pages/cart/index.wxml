@@ -5,34 +5,36 @@
 </view>
 <t-empty wx:elif="{{!list.length}}" icon="cart" description="购物车是空的" />
 
-<t-swipe-cell wx:for="{{list}}" wx:key="id">
-  <view class="row">
-    <t-checkbox
-      wx:if="{{!item.invalid}}"
-      value="{{item.id}}"
-      checked="{{item.selected}}"
-      data-id="{{item.id}}"
-      bind:change="onToggle"
-    />
-    <t-image src="{{disp.thumb(item.thumbUrl, item.coverUrl)}}" width="140rpx" height="140rpx" shape="round" mode="aspectFill" />
-    <view class="info">
-      <view class="name">
-        {{disp.text(item.name)}}
-        <t-tag wx:if="{{item.invalid}}" theme="danger" variant="light" size="small">已失效</t-tag>
-      </view>
-      <view class="price">{{disp.money(item.priceCent)}}</view>
-      <t-stepper
+<view class="cart-list" wx:else>
+  <t-swipe-cell wx:for="{{list}}" wx:key="id">
+    <view class="row {{index === list.length - 1 ? 'is-last' : ''}}">
+      <t-checkbox
         wx:if="{{!item.invalid}}"
-        value="{{item.qty}}"
-        min="{{1}}"
-        theme="filled"
+        value="{{item.id}}"
+        checked="{{item.selected}}"
         data-id="{{item.id}}"
-        bind:change="onQtyChange"
+        bind:change="onToggle"
       />
+      <t-image src="{{disp.thumb(item.thumbUrl, item.coverUrl)}}" width="140rpx" height="140rpx" shape="round" mode="aspectFill" />
+      <view class="info">
+        <view class="name">
+          {{disp.text(item.name)}}
+          <t-tag wx:if="{{item.invalid}}" theme="danger" variant="light" size="small">已失效</t-tag>
+        </view>
+        <view class="price">{{disp.money(item.priceCent)}}</view>
+        <t-stepper
+          wx:if="{{!item.invalid}}"
+          value="{{item.qty}}"
+          min="{{1}}"
+          theme="filled"
+          data-id="{{item.id}}"
+          bind:change="onQtyChange"
+        />
+      </view>
     </view>
-  </view>
-  <view slot="right" class="swipe-del" data-id="{{item.id}}" bindtap="del">删除</view>
-</t-swipe-cell>
+    <view slot="right" class="swipe-del" data-id="{{item.id}}" bindtap="del">删除</view>
+  </t-swipe-cell>
+</view>
 
 <view class="upsell" wx:if="{{upsell.suggestions.length}}">
   <view class="uh">凑单：{{disp.text(upsell.target.reason)}} 还差 {{disp.money(upsell.target.remainCent)}}</view>

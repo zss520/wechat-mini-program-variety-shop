@@ -5,14 +5,24 @@
 .need-login t-button {
   margin-top: 24rpx;
 }
+.cart-list {
+  margin: 16rpx 16rpx 24rpx;
+  background: #fff;
+  border-radius: 16rpx;
+}
+.cart-list t-swipe-cell {
+  display: block;
+}
 .row {
   display: flex;
   align-items: center;
   background: #fff;
-  margin: 24rpx 16rpx;
   padding: 16rpx;
-  border-radius: 16rpx;
   gap: 12rpx;
+  border-bottom: 1rpx solid #f3e8dc;
+}
+.row.is-last {
+  border-bottom: 0;
 }
 .info {
   flex: 1;
