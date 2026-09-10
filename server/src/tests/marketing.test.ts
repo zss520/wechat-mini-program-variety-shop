@@ -3,7 +3,7 @@ import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrder
 import { claimCoupon } from "../marketing";
 import { couponDiscount, pointsRedeem } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
-import { campaignBody } from "../campaigns";
+import { campaignBody, loadTeam } from "../campaigns";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -173,6 +173,10 @@ async function run() {
     activityId: aid,
     teamId,
   });
+  await db("group_buy_members").insert([
+    { team_id: teamId, user_id: uid, order_id: o1.id, joined_at: new Date() },
+    { team_id: teamId, user_id: uid2, order_id: o2.id, joined_at: new Date() },
+  ]);
   await markPaid(o1.id, "m1");
   let t1 = await db("orders").where({ id: o1.id }).first();
   assert(t1.status === ST.GROUPING, `first pay should GROUPING got ${t1.status}`);
@@ -181,6 +185,10 @@ async function run() {
   t1 = await db("orders").where({ id: o1.id }).first();
   const t2 = await db("orders").where({ id: o2.id }).first();
   assert(t1.status === ST.PENDING_PACK && t2.status === ST.PENDING_PACK, "group success should pack both");
+  const loadedTeam = await loadTeam(teamId);
+  assert(loadedTeam && loadedTeam.members.length >= 2, "loadTeam should expose members");
+  assert(typeof loadedTeam.members[0].nickname === "string", "member should have nickname");
+  assert("avatarUrl" in loadedTeam.members[0], "member should have avatarUrl");
 
   const gbBody = campaignBody("GROUP", {
     title: "限购团",

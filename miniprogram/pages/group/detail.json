@@ -1,1 +1,4 @@
-{ "navigationBarTitleText": "拼团详情" }
+{
+  "navigationBarTitleText": "拼团详情",
+  "backgroundColor": "#F8F4F0"
+}

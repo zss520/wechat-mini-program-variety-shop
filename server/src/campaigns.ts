@@ -1,3 +1,4 @@
+import { publicUrl } from "./config";
 import { db } from "./db";
 import { HttpError } from "./http";
 import { publicGoods } from "./recommend";
@@ -45,8 +46,19 @@ export async function loadTeam(teamId: number) {
   const team = await db("group_buy_teams").where({ id: teamId }).first();
   if (!team) return null;
   const act = await db("group_buy_activities").where({ id: team.activity_id }).first();
-  const members = await db("group_buy_members").where({ team_id: teamId }).orderBy("id", "asc");
+  const rows = await db("group_buy_members as m")
+    .leftJoin("users as u", "u.id", "m.user_id")
+    .where("m.team_id", teamId)
+    .select("m.id", "m.user_id", "m.order_id", "m.joined_at", "u.nickname", "u.avatar_url")
+    .orderBy("m.id", "asc");
   const goods = act ? await db("goods").where({ id: act.goods_id }).first() : null;
+  const members = rows.map((m: { id: number; user_id: number; nickname?: string; avatar_url?: string }) => ({
+    id: m.id,
+    userId: m.user_id,
+    nickname: String(m.nickname || "").trim() || "邻居",
+    avatarUrl: publicUrl(m.avatar_url) || "",
+    leader: Number(m.user_id) === Number(team.leader_user_id),
+  }));
   return {
     ...team,
     activity: act,
