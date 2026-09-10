@@ -3,7 +3,7 @@ page {
 }
 
 .page {
-  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
 }
 
 .hero {
@@ -82,11 +82,17 @@ page {
   align-items: flex-end;
 }
 
-.price-now .yen,
-.bar-now .yen {
+.price-now .yen {
   font-size: 28rpx;
   line-height: 1.15;
   margin-right: 4rpx;
+  font-weight: 700;
+}
+
+.bar-now .yen {
+  font-size: 22rpx;
+  line-height: 1.15;
+  margin-right: 2rpx;
   font-weight: 700;
 }
 
@@ -313,18 +319,24 @@ page {
   align-items: center;
   gap: 20rpx;
   background: #fff;
-  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -8rpx 24rpx rgba(63, 46, 34, 0.06);
+  --td-button-medium-height: 72rpx;
+  --td-button-medium-font: 600 28rpx / 40rpx PingFang SC, Microsoft YaHei, Arial Regular;
+  --td-button-medium-padding-horizontal: 36rpx;
 }
 
 .bar-price {
   flex: none;
-  min-width: 140rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 72rpx;
 }
 
 .bar-now {
   color: #c2410c;
-  font-size: 40rpx;
+  font-size: 36rpx;
   font-weight: 700;
   line-height: 1.1;
   display: flex;
@@ -337,7 +349,11 @@ page {
   color: #8a6a4a;
 }
 
-.bar t-button {
+.bar-actions {
   flex: 1;
   min-width: 0;
+}
+
+.bar-actions t-button {
+  width: 100%;
 }

@@ -113,12 +113,14 @@
       <text class="yen">¥</text>
       <text>{{disp.yuan(view.groupCent)}}</text>
     </view>
-    <view class="bar-tip">{{teamId ? '参加该团' : '发起新团'}}</view>
+    <view class="bar-tip">团价</view>
   </view>
-  <t-button wx:if="{{teamId}}" theme="primary" size="large" shape="round" block disabled="{{!remainMs}}" bind:tap="join">
-    {{remainMs ? '参加该团' : '已结束'}}
-  </t-button>
-  <t-button wx:else theme="primary" size="large" shape="round" block disabled="{{!remainMs}}" bind:tap="open">
-    {{remainMs ? '发起拼团' : '已结束'}}
-  </t-button>
+  <view class="bar-actions">
+    <t-button wx:if="{{teamId}}" theme="primary" size="medium" shape="round" block disabled="{{!remainMs}}" bind:tap="join">
+      {{remainMs ? '参加该团' : '已结束'}}
+    </t-button>
+    <t-button wx:else theme="primary" size="medium" shape="round" block disabled="{{!remainMs}}" bind:tap="open">
+      {{remainMs ? '发起拼团' : '已结束'}}
+    </t-button>
+  </view>
 </view>

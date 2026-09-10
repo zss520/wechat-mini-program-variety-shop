@@ -30,7 +30,7 @@
 .rel {
   background: #fff;
   margin-top: 24rpx;
-  padding: 24rpx 0 180rpx;
+  padding: 24rpx 0;
 }
 .rel .sec-title {
   padding: 0 24rpx 12rpx;
@@ -40,34 +40,49 @@
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   background: #fff;
-  padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom));
+  padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));
   gap: 16rpx;
+  box-shadow: 0 -8rpx 24rpx rgba(63, 46, 34, 0.06);
+  --td-button-medium-height: 72rpx;
+  --td-button-medium-font: 600 28rpx / 40rpx PingFang SC, Microsoft YaHei, Arial Regular;
+  --td-button-medium-padding-horizontal: 24rpx;
 }
 .cart-entry {
   flex: none;
-  width: 88rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 36rpx;
+  background: #fff7ed;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4rpx;
+  gap: 2rpx;
 }
 .cart-entry-txt {
-  font-size: 20rpx;
-  color: #7a6a5a;
-  line-height: 1.2;
+  font-size: 18rpx;
+  color: #c2410c;
+  line-height: 1.1;
 }
 .cart-entry-hover {
   opacity: 0.7;
 }
-.bar t-button {
+.bar-actions {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.bar-actions t-button {
   flex: 1;
   min-width: 0;
 }
 page {
   padding-top: 24rpx;
-  padding-bottom: 40rpx;
+  padding-bottom: calc(140rpx + env(safe-area-inset-bottom));
 }

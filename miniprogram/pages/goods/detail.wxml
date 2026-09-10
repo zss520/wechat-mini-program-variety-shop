@@ -39,9 +39,11 @@
 
 <view class="bar">
   <view class="cart-entry" hover-class="cart-entry-hover" bindtap="goCart">
-    <t-icon name="cart" size="44rpx" color="#C2410C" />
+    <t-icon name="cart" size="40rpx" color="#C2410C" />
     <text class="cart-entry-txt">购物车</text>
   </view>
-  <t-button theme="light" size="large" shape="round" block disabled="{{item.soldOut}}" bind:tap="addCart">加入购物车</t-button>
-  <t-button theme="primary" size="large" shape="round" block disabled="{{item.soldOut}}" bind:tap="buy">立即购买</t-button>
+  <view class="bar-actions">
+    <t-button theme="light" size="medium" shape="round" block disabled="{{item.soldOut}}" bind:tap="addCart">加入购物车</t-button>
+    <t-button theme="primary" size="medium" shape="round" block disabled="{{item.soldOut}}" bind:tap="buy">立即购买</t-button>
+  </view>
 </view>
