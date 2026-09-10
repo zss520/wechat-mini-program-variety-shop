@@ -41,7 +41,7 @@ export default function Dashboard() {
           </Grid>
         ))}
       </Grid>
-      <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, mt: 2.5 }}>
+      <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 2, mt: 2.5 }}>
         <Typography variant="h6" sx={{ mb: 0.5 }}>
           库存预警
         </Typography>

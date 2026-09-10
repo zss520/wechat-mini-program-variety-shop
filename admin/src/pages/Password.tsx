@@ -34,7 +34,7 @@ export default function Password() {
   return (
     <PageContainer title="修改密码">
       <form onSubmit={submit} noValidate>
-        <Stack spacing={2} sx={{ maxWidth: 360 }}>
+        <Stack spacing={2} sx={{ maxWidth: 360, width: "100%" }}>
           <TextField required type="password" label="原密码" value={oldPassword} onChange={(e) => setOld(e.target.value)} helperText="必填" autoComplete="current-password" />
           <TextField required type="password" label="新密码" value={newPassword} onChange={(e) => setNew(e.target.value)} helperText="必填，至少 8 位" autoComplete="new-password" />
           <Button type="submit" variant="contained">

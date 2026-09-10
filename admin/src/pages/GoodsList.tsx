@@ -95,7 +95,7 @@ export default function GoodsList() {
           查询
         </Button>
       </InlineForm>
-      <DataTable>
+      <DataTable minWidth={800}>
         <TableHead>
           <TableRow>
             <TableCell>商品</TableCell>

@@ -5,6 +5,7 @@ import {
   Box,
   Breadcrumbs,
   Divider,
+  Drawer,
   IconButton,
   Link as MLink,
   List,
@@ -15,7 +16,9 @@ import {
   MenuItem,
   Tooltip,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import DashboardOutlined from "@mui/icons-material/DashboardOutlined";
 import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
@@ -102,14 +105,142 @@ function crumbs(pathname: string): { label: string; to?: string }[] {
   return [home];
 }
 
+function SideNav({
+  collapsed,
+  badge,
+  pathname,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  badge: number;
+  pathname: string;
+  onNavigate: (to: string) => void;
+}) {
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box
+        onClick={() => onNavigate("/")}
+        sx={{
+          height: 56,
+          px: collapsed ? 1 : 2,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.25,
+          cursor: "pointer",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          flexShrink: 0,
+        }}
+      >
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: 1,
+            bgcolor: "primary.main",
+            color: "#fff",
+            display: "grid",
+            placeItems: "center",
+            fontWeight: 700,
+            flexShrink: 0,
+          }}
+        >
+          铺
+        </Box>
+        {!collapsed && (
+          <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 15, whiteSpace: "nowrap" }}>
+            杂货铺后台
+          </Typography>
+        )}
+      </Box>
+      <Box sx={{ flex: 1, overflowY: "auto", py: 1 }}>
+        {groups.map((g) => (
+          <Box key={g.title} sx={{ mb: 0.5 }}>
+            {!collapsed && (
+              <Typography
+                sx={{
+                  px: 2.5,
+                  py: 0.75,
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.35)",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {g.title}
+              </Typography>
+            )}
+            <List disablePadding>
+              {g.items.map((m) => {
+                const selected = matchPath(pathname, m.to);
+                const icon = <m.icon sx={{ fontSize: 18, color: selected ? "#fff" : "inherit" }} />;
+                const button = (
+                  <ListItemButton
+                    key={m.to}
+                    selected={selected}
+                    onClick={() => onNavigate(m.to)}
+                    sx={{
+                      mx: 1,
+                      mb: 0.25,
+                      minHeight: 40,
+                      justifyContent: collapsed ? "center" : "flex-start",
+                      px: collapsed ? 1 : 1.5,
+                      "&.Mui-selected": {
+                        bgcolor: "primary.main",
+                        color: "#fff",
+                        "&:hover": { bgcolor: "primary.light" },
+                      },
+                      "&:hover": { bgcolor: "rgba(255,255,255,0.08)", color: "#fff" },
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: collapsed ? 0 : 32, color: "inherit", justifyContent: "center" }}>
+                      {m.badge ? (
+                        <Badge color="error" badgeContent={badge} max={99} sx={{ "& .MuiBadge-badge": { fontSize: 10, height: 16, minWidth: 16 } }}>
+                          {icon}
+                        </Badge>
+                      ) : (
+                        icon
+                      )}
+                    </ListItemIcon>
+                    {!collapsed && <ListItemText primary={m.label} primaryTypographyProps={{ fontSize: 14 }} />}
+                  </ListItemButton>
+                );
+                return collapsed ? (
+                  <Tooltip key={m.to} title={m.label} placement="right">
+                    {button}
+                  </Tooltip>
+                ) : (
+                  button
+                );
+              })}
+            </List>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+const drawerPaper = {
+  bgcolor: "#001529",
+  color: "rgba(255,255,255,0.65)",
+  border: "none",
+  backgroundImage: "none",
+};
+
 export default function AdminLayout({ children }: PropsWithChildren) {
   const nav = useNavigate();
   const loc = useLocation();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"), { noSsr: true });
   const [badge, setBadge] = useState(0);
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
   const width = collapsed ? COLLAPSED : EXPANDED;
   const trail = useMemo(() => crumbs(loc.pathname), [loc.pathname]);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [loc.pathname]);
 
   useEffect(() => {
     api
@@ -125,124 +256,44 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     nav("/login");
   };
 
+  const go = (to: string) => {
+    setMobileOpen(false);
+    nav(to);
+  };
+
+  const navBody = (
+    <SideNav collapsed={isDesktop && collapsed} badge={badge} pathname={loc.pathname} onNavigate={go} />
+  );
+
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default", overflowX: "hidden" }}>
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        ModalProps={{ keepMounted: true }}
+        sx={{ display: { xs: "block", md: "none" } }}
+        PaperProps={{ sx: { ...drawerPaper, width: EXPANDED } }}
+      >
+        {navBody}
+      </Drawer>
+      <Drawer
+        variant="permanent"
+        open
+        sx={{ display: { xs: "none", md: "block" }, width, flexShrink: 0, "& .MuiDrawer-paper": { ...drawerPaper, width, overflowX: "hidden", transition: "width 0.2s ease" } }}
+      >
+        {navBody}
+      </Drawer>
+
       <Box
-        component="aside"
         sx={{
-          width,
-          flexShrink: 0,
-          bgcolor: "#001529",
-          color: "rgba(255,255,255,0.65)",
+          flex: 1,
           display: "flex",
           flexDirection: "column",
-          position: "fixed",
-          inset: "0 auto 0 0",
-          zIndex: 1200,
-          transition: "width 0.2s ease",
+          minWidth: 0,
+          width: "100%",
         }}
       >
-        <Box
-          onClick={() => nav("/")}
-          sx={{
-            height: 56,
-            px: collapsed ? 1 : 2,
-            display: "flex",
-            alignItems: "center",
-            gap: 1.25,
-            cursor: "pointer",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: 1,
-              bgcolor: "primary.main",
-              color: "#fff",
-              display: "grid",
-              placeItems: "center",
-              fontWeight: 700,
-              flexShrink: 0,
-            }}
-          >
-            铺
-          </Box>
-          {!collapsed && (
-            <Typography sx={{ color: "#fff", fontWeight: 600, fontSize: 15, whiteSpace: "nowrap" }}>
-              杂货铺后台
-            </Typography>
-          )}
-        </Box>
-        <Box sx={{ flex: 1, overflowY: "auto", py: 1 }}>
-          {groups.map((g) => (
-            <Box key={g.title} sx={{ mb: 0.5 }}>
-              {!collapsed && (
-                <Typography
-                  sx={{
-                    px: 2.5,
-                    py: 0.75,
-                    fontSize: 12,
-                    color: "rgba(255,255,255,0.35)",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  {g.title}
-                </Typography>
-              )}
-              <List disablePadding>
-                {g.items.map((m) => {
-                  const selected = matchPath(loc.pathname, m.to);
-                  const icon = (
-                    <m.icon sx={{ fontSize: 18, color: selected ? "#fff" : "inherit" }} />
-                  );
-                  const button = (
-                    <ListItemButton
-                      key={m.to}
-                      selected={selected}
-                      onClick={() => nav(m.to)}
-                      sx={{
-                        mx: 1,
-                        mb: 0.25,
-                        minHeight: 40,
-                        justifyContent: collapsed ? "center" : "flex-start",
-                        px: collapsed ? 1 : 1.5,
-                        "&.Mui-selected": {
-                          bgcolor: "primary.main",
-                          color: "#fff",
-                          "&:hover": { bgcolor: "primary.light" },
-                        },
-                        "&:hover": { bgcolor: "rgba(255,255,255,0.08)", color: "#fff" },
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: collapsed ? 0 : 32, color: "inherit", justifyContent: "center" }}>
-                        {m.badge ? (
-                          <Badge color="error" badgeContent={badge} max={99} sx={{ "& .MuiBadge-badge": { fontSize: 10, height: 16, minWidth: 16 } }}>
-                            {icon}
-                          </Badge>
-                        ) : (
-                          icon
-                        )}
-                      </ListItemIcon>
-                      {!collapsed && <ListItemText primary={m.label} primaryTypographyProps={{ fontSize: 14 }} />}
-                    </ListItemButton>
-                  );
-                  return collapsed ? (
-                    <Tooltip key={m.to} title={m.label} placement="right">
-                      {button}
-                    </Tooltip>
-                  ) : (
-                    button
-                  );
-                })}
-              </List>
-            </Box>
-          ))}
-        </Box>
-      </Box>
-
-      <Box sx={{ flex: 1, ml: `${width}px`, display: "flex", flexDirection: "column", minWidth: 0, transition: "margin 0.2s ease" }}>
         <Box
           component="header"
           sx={{
@@ -250,25 +301,37 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             top: 0,
             zIndex: 1100,
             height: 56,
-            px: 2,
+            px: { xs: 1, sm: 2 },
             bgcolor: "#fff",
             borderBottom: "1px solid #f0f0f0",
             display: "flex",
             alignItems: "center",
-            gap: 1,
+            gap: { xs: 0.5, sm: 1 },
           }}
         >
-          <IconButton size="small" onClick={() => setCollapsed((v) => !v)}>
-            {collapsed ? <MenuOutlined /> : <MenuOpenOutlined />}
+          <IconButton
+            size="small"
+            onClick={() => (isDesktop ? setCollapsed((v) => !v) : setMobileOpen(true))}
+            aria-label={isDesktop ? "折叠菜单" : "打开菜单"}
+          >
+            {isDesktop && !collapsed ? <MenuOpenOutlined /> : <MenuOutlined />}
           </IconButton>
-          <Breadcrumbs sx={{ flex: 1, "& .MuiBreadcrumbs-separator": { mx: 0.75 } }}>
+          <Breadcrumbs
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              "& .MuiBreadcrumbs-ol": { flexWrap: "nowrap" },
+              "& .MuiBreadcrumbs-li": { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+              "& .MuiBreadcrumbs-separator": { mx: { xs: 0.5, sm: 0.75 } },
+            }}
+          >
             {trail.map((c, i) =>
               c.to && i < trail.length - 1 ? (
                 <MLink key={c.label} underline="hover" color="inherit" sx={{ cursor: "pointer", fontSize: 14 }} onClick={() => nav(c.to!)}>
                   {c.label}
                 </MLink>
               ) : (
-                <Typography key={c.label} color="text.primary" sx={{ fontSize: 14 }}>
+                <Typography key={c.label} color="text.primary" sx={{ fontSize: 14 }} noWrap>
                   {c.label}
                 </Typography>
               )
@@ -276,10 +339,10 @@ export default function AdminLayout({ children }: PropsWithChildren) {
           </Breadcrumbs>
           <Box
             onClick={(e) => setAnchor(e.currentTarget)}
-            sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", px: 1, py: 0.5, borderRadius: 1, "&:hover": { bgcolor: "action.hover" } }}
+            sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer", px: 1, py: 0.5, borderRadius: 1, flexShrink: 0, "&:hover": { bgcolor: "action.hover" } }}
           >
             <Avatar sx={{ width: 28, height: 28, bgcolor: "primary.main", fontSize: 13 }}>店</Avatar>
-            <Typography sx={{ fontSize: 14 }}>店主</Typography>
+            <Typography sx={{ fontSize: 14, display: { xs: "none", sm: "block" } }}>店主</Typography>
           </Box>
           <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
             <MenuItem
@@ -296,7 +359,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             </MenuItem>
           </Menu>
         </Box>
-        <Box component="main" sx={{ flex: 1, p: 3 }}>
+        <Box component="main" sx={{ flex: 1, p: { xs: 1.5, sm: 2, md: 3 }, minWidth: 0, width: "100%", boxSizing: "border-box" }}>
           {children}
         </Box>
       </Box>

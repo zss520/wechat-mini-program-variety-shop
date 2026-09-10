@@ -18,6 +18,7 @@ export default function InlineForm({ children, sx, ...rest }: StackProps) {
       alignItems="center"
       sx={{
         mb: 2,
+        width: "100%",
         "& .MuiOutlinedInput-root": {
           height: h,
           boxSizing: "border-box",
@@ -33,8 +34,8 @@ export default function InlineForm({ children, sx, ...rest }: StackProps) {
           minHeight: 0,
           lineHeight: "normal",
         },
-        "& .MuiFormControl-root:has(input[type='datetime-local'])": { minWidth: 210 },
-        "& .MuiFormControl-root:has(input[type='date'])": { minWidth: 160 },
+        "& .MuiFormControl-root:has(input[type='datetime-local'])": { minWidth: { xs: 0, sm: 210 } },
+        "& .MuiFormControl-root:has(input[type='date'])": { minWidth: { xs: 0, sm: 160 } },
         "& .MuiButton-root": {
           height: h,
           minHeight: h,
@@ -44,6 +45,16 @@ export default function InlineForm({ children, sx, ...rest }: StackProps) {
           m: 0,
           height: h,
           alignItems: "center",
+        },
+        "& .MuiTextField-root, & .MuiFormControl-root": {
+          maxWidth: "100%",
+        },
+        "@media (max-width:599.95px)": {
+          "& .MuiTextField-root, & .MuiFormControl-root": {
+            width: "100% !important",
+            minWidth: "0 !important",
+            flex: "1 1 100%",
+          },
         },
         ...sx,
       }}

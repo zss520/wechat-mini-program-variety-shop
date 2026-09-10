@@ -111,7 +111,7 @@ export default function Reports() {
       <Typography variant="subtitle1" sx={{ mt: 1, mb: 1.5 }}>
         商品分析
       </Typography>
-      <DataTable>
+      <DataTable minWidth={880}>
         <TableHead>
           <TableRow>
             <TableCell>商品</TableCell>

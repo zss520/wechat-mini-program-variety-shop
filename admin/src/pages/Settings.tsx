@@ -46,7 +46,7 @@ export default function Settings() {
   return (
     <PageContainer title="店铺设置" description="带 * 为必填。金额类字段单位是「分」，100 分 = ¥1。">
       <form onSubmit={submit} noValidate>
-        <Stack spacing={2} sx={{ maxWidth: 560 }}>
+        <Stack spacing={2} sx={{ maxWidth: 560, width: "100%" }}>
           <TextField required label="店铺名称" value={form.shop_name || ""} onChange={(e) => set("shop_name", e.target.value)} helperText="必填，顾客端导航栏标题" />
           <TextField label="店铺简介" value={form.intro || ""} onChange={(e) => set("intro", e.target.value)} helperText="选填" />
           <TextField label="电话" value={form.phone || ""} onChange={(e) => set("phone", e.target.value)} helperText="选填，11 位手机号，用于顾客联系店主" inputProps={{ maxLength: 11 }} />

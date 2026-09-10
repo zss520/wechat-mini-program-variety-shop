@@ -56,7 +56,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function MetaGrid({ items }: { items: { k: string; v: string }[] }) {
   return (
-    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 2 }}>
+    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))", gap: 2 }}>
       {items.map((m) => (
         <Box key={m.k}>
           <Typography color="text.secondary" sx={{ fontSize: 13, mb: 0.5 }}>

@@ -131,7 +131,7 @@ export default function Members() {
           查询
         </Button>
       </InlineForm>
-      <DataTable>
+      <DataTable minWidth={760}>
         <TableHead>
           <TableRow>
             <TableCell>昵称</TableCell>

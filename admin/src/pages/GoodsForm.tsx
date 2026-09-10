@@ -189,7 +189,7 @@ export default function GoodsForm() {
       }
     >
       <form onSubmit={submit} noValidate>
-        <Stack spacing={2} sx={{ maxWidth: 640 }}>
+        <Stack spacing={2} sx={{ maxWidth: 640, width: "100%" }}>
           <TextField
             required
             label="名称"
@@ -338,7 +338,7 @@ export default function GoodsForm() {
                 </Button>
               )}
             </Box>
-            <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: 1.5 }} alignItems={{ sm: "flex-start" }}>
               <TextField
                 size="small"
                 fullWidth
@@ -353,7 +353,7 @@ export default function GoodsForm() {
                 }}
                 helperText="选填，可粘贴已有图片 URL"
               />
-              <Button variant="outlined" onClick={addImageUrl} sx={{ whiteSpace: "nowrap", height: 40, mt: "1px" }}>
+              <Button variant="outlined" onClick={addImageUrl} sx={{ whiteSpace: "nowrap", height: 40, mt: { sm: "1px" }, width: { xs: "100%", sm: "auto" } }}>
                 添加
               </Button>
             </Stack>

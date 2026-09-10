@@ -44,7 +44,7 @@ export default function Orders() {
           查询
         </Button>
       </InlineForm>
-      <DataTable>
+      <DataTable minWidth={880}>
         <TableHead>
           <TableRow>
             <TableCell>单号</TableCell>

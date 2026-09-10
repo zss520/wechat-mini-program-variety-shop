@@ -33,7 +33,8 @@ export const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: { backgroundColor: "#f5f5f5" },
+        body: { backgroundColor: "#f5f5f5", overflowX: "hidden" },
+        "#root": { minWidth: 0, maxWidth: "100%" },
         "*::-webkit-scrollbar": { width: 8, height: 8 },
         "*::-webkit-scrollbar-thumb": { background: "#d9d9d9", borderRadius: 4 },
       },
@@ -120,6 +121,7 @@ export const theme = createTheme({
           borderColor: "#f0f0f0",
           padding: "12px 16px",
           fontSize: 14,
+          "@media (max-width:600px)": { padding: "8px 12px" },
         },
       },
     },
@@ -164,7 +166,7 @@ export const theme = createTheme({
     },
     MuiDialogActions: {
       styleOverrides: {
-        root: { padding: "8px 24px 20px", justifyContent: "center" },
+        root: { padding: "8px 16px 16px", justifyContent: "center", flexWrap: "wrap", gap: 8 },
       },
     },
     MuiTooltip: {

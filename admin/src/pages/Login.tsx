@@ -166,8 +166,8 @@ export default function Login() {
       <Box
         sx={{
           display: { xs: "none", md: "flex" },
-          width: "40%",
-          minWidth: 360,
+          width: { md: "40%" },
+          flexShrink: 0,
           background: "linear-gradient(180deg, #9A3412 0%, #7C2D12 46%, #431407 100%)",
           color: "#fff",
           flexDirection: "column",
@@ -247,7 +247,7 @@ export default function Login() {
         </Box>
       </Box>
 
-      <Box sx={{ flex: 1, display: "grid", placeItems: "center", position: "relative", p: 3 }}>
+      <Box sx={{ flex: 1, display: "grid", placeItems: "center", position: "relative", p: { xs: 2, sm: 3 }, minWidth: 0 }}>
         <Box sx={{ width: "100%", maxWidth: 360 }}>
           <Box sx={{ display: { xs: "flex", md: "none" }, alignItems: "center", gap: 1, mb: 3 }}>
             <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: "#C2410C", color: "#fff", display: "grid", placeItems: "center", fontWeight: 700 }}>
@@ -332,7 +332,7 @@ export default function Login() {
           </form>
           <Typography sx={{ mt: 2, textAlign: "center", color: "rgba(0,0,0,0.45)", fontSize: 13 }}>仅店主账号可登录</Typography>
         </Box>
-        <Typography sx={{ position: "absolute", right: 24, bottom: 20, color: "#C9CDD4", fontSize: 12 }}>社区杂货铺</Typography>
+        <Typography sx={{ position: "absolute", right: { xs: 16, sm: 24 }, bottom: { xs: 12, sm: 20 }, color: "#C9CDD4", fontSize: 12 }}>社区杂货铺</Typography>
       </Box>
 
       <Dialog open={forgotOpen} onClose={() => setForgotOpen(false)}>
