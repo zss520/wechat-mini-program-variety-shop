@@ -39,7 +39,7 @@
 
 <view class="bar">
   <view class="cart-entry" hover-class="cart-entry-hover" bindtap="goCart">
-    <t-icon name="cart" size="40rpx" color="#C2410C" />
+    <t-icon name="cart" size="32rpx" color="#C2410C" />
     <text class="cart-entry-txt">购物车</text>
   </view>
   <view class="bar-actions">

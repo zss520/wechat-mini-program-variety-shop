@@ -47,15 +47,15 @@
   padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));
   gap: 16rpx;
   box-shadow: 0 -8rpx 24rpx rgba(63, 46, 34, 0.06);
-  --td-button-medium-height: 72rpx;
+  --td-button-medium-height: 80rpx;
   --td-button-medium-font: 600 28rpx / 40rpx PingFang SC, Microsoft YaHei, Arial Regular;
   --td-button-medium-padding-horizontal: 24rpx;
 }
 .cart-entry {
   flex: none;
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 36rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
   background: #fff7ed;
   display: flex;
   flex-direction: column;
