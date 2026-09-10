@@ -27,5 +27,5 @@
   margin-top: 0;
 }
 .mine-groups t-cell-group + t-cell-group {
-  margin-top: 24rpx;
+  margin-top: 40rpx;
 }

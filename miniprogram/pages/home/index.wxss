@@ -36,6 +36,7 @@
   border: 1rpx solid #ffedd5;
   border-radius: 20rpx;
   padding: 20rpx 0 12rpx;
+  overflow: hidden;
 }
 
 .group-sec .sec-head {
@@ -51,15 +52,22 @@
 }
 
 .group-scroll {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.group-row {
+  display: inline-block;
   white-space: nowrap;
-  padding: 0 20rpx 4rpx;
+  padding: 0 20rpx 8rpx;
+  box-sizing: border-box;
 }
 
 .gcard {
   display: inline-block;
-  width: 520rpx;
-  margin-right: 16rpx;
   vertical-align: top;
+  width: 460rpx;
+  margin-right: 16rpx;
   white-space: normal;
   background: #fff;
   border-radius: 20rpx;
@@ -68,11 +76,22 @@
   box-sizing: border-box;
 }
 
+.gcard:last-child {
+  margin-right: 0;
+}
+
 .gcard-cover {
   position: relative;
-  height: 240rpx;
+  width: 100%;
+  height: 200rpx;
   background: #fff7ed;
   overflow: hidden;
+}
+
+.gcard-img {
+  display: block;
+  width: 100%;
+  height: 200rpx;
 }
 
 .gcard-badge {
@@ -92,16 +111,20 @@
 
 .gcard-cd {
   position: absolute;
-  right: 12rpx;
-  bottom: 12rpx;
+  right: 8rpx;
+  bottom: 8rpx;
   z-index: 1;
+  max-width: calc(100% - 16rpx);
+  overflow: hidden;
   --td-countdown-bg-color: #c2410c;
   --td-error-color: #c2410c;
   --td-countdown-round-color: #ffffff;
 }
 
 .gcard-body {
-  padding: 16rpx 16rpx 18rpx;
+  padding: 12rpx 16rpx 16rpx;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .gcard-title {
@@ -117,27 +140,27 @@
   display: flex;
   align-items: center;
   gap: 8rpx;
-  margin-top: 12rpx;
+  margin-top: 10rpx;
+  overflow: hidden;
 }
 
-.gthumb {
-  width: 72rpx;
-  height: 72rpx;
+.gthumb-img {
+  width: 64rpx;
+  height: 64rpx;
   flex: none;
   border-radius: 12rpx;
-  overflow: hidden;
   border: 1rpx solid #ffedd5;
   box-sizing: border-box;
 }
 
 .gmore {
-  width: 72rpx;
-  height: 72rpx;
+  width: 64rpx;
+  height: 64rpx;
   flex: none;
   border-radius: 12rpx;
   background: #fff7ed;
   color: #c2410c;
-  font-size: 22rpx;
+  font-size: 20rpx;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -147,9 +170,11 @@
 .gcard-price {
   display: flex;
   align-items: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8rpx;
-  margin-top: 12rpx;
+  margin-top: 10rpx;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .gnow {
@@ -158,6 +183,7 @@
   display: flex;
   align-items: flex-end;
   line-height: 1;
+  flex: none;
 }
 
 .gnow .yen {
@@ -167,7 +193,7 @@
 }
 
 .gnow .num {
-  font-size: 44rpx;
+  font-size: 40rpx;
   letter-spacing: -1rpx;
 }
 
@@ -175,17 +201,27 @@
   color: #b8a99a;
   font-size: 22rpx;
   text-decoration: line-through;
-  padding-bottom: 6rpx;
+  padding-bottom: 4rpx;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .gtag {
+  display: inline-block;
+  margin-top: 8rpx;
   font-size: 20rpx;
   color: #c2410c;
   background: #fff7ed;
   padding: 0 8rpx;
   line-height: 32rpx;
   border-radius: 6rpx;
-  margin-bottom: 4rpx;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .gcard-prog {
@@ -209,16 +245,16 @@
   margin-top: 6rpx;
   font-size: 20rpx;
   color: #c2410c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .gcard-wait {
-  margin-top: 10rpx;
+  margin-top: 8rpx;
   font-size: 22rpx;
   color: #8a6a4a;
-}
-
-.gcard-end {
-  display: inline-block;
-  width: 4rpx;
-  height: 1rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

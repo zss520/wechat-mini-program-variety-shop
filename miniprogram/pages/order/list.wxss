@@ -3,10 +3,11 @@ t-tabs {
 }
 
 .order-list {
-  padding: 40rpx 0 48rpx;
+  padding: 24rpx 0 48rpx;
 }
 
-t-cell-group {
+.order-list t-cell-group {
   display: block;
-  margin-top: 24rpx;
+  margin-top: 0;
+  margin-bottom: 40rpx;
 }
