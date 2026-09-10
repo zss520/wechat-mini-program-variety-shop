@@ -64,6 +64,7 @@ async function run() {
   });
   const couponDetail = await loadOrderDetail(couponOrder.id);
   assert(couponDetail && couponDetail.coupon_name === "满10减2", "order detail should expose coupon name");
+  assert(couponDetail.coupon_type === "FULL_REDUCE", "order detail should expose coupon type");
   assert(Number(couponDetail.coupon_discount_cent) === 200, "order detail should keep coupon discount");
   assert(Number(couponDetail.goods_amount_cent) === 1500, "order detail should keep goods amount");
 

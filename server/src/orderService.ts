@@ -517,13 +517,15 @@ export async function loadOrderDetail(orderId: number) {
     }
   }
   let coupon_name = "";
+  let coupon_type = "";
   if (order.user_coupon_id) {
     const row = await db("user_coupons")
       .leftJoin("coupons", "coupons.id", "user_coupons.coupon_id")
       .where("user_coupons.id", order.user_coupon_id)
-      .select("coupons.name as coupon_name")
+      .select("coupons.name as coupon_name", "coupons.type as coupon_type")
       .first();
     coupon_name = String(row?.coupon_name || "");
+    coupon_type = String(row?.coupon_type || "");
   }
-  return { ...order, items, logs, user, coupon_name };
+  return { ...order, items, logs, user, coupon_name, coupon_type };
 }

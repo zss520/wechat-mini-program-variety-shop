@@ -71,6 +71,34 @@ export function displayFulfillType(v: unknown): string {
   return displayText(v);
 }
 
+export function displayMinusYuan(cent: unknown, unused = "未使用"): string {
+  const n = toFiniteNumber(cent);
+  if (n == null || n <= 0) return unused;
+  return `-¥${(n / 100).toFixed(2)}`;
+}
+
+export function displayCouponUsed(name: unknown, cent: unknown): string {
+  const amount = displayMinusYuan(cent);
+  if (amount === "未使用") return "未使用";
+  const title = displayText(name, "");
+  return title ? `${title} ${amount}` : amount;
+}
+
+export function displayPointsUsed(used: unknown, cent: unknown): string {
+  const pts = toFiniteNumber(used);
+  const amount = displayMinusYuan(cent);
+  if (amount === "未使用" && (pts == null || pts <= 0)) return "未使用";
+  const ptsPart = pts != null && pts > 0 ? `抵扣${pts}积分` : "积分抵扣";
+  return amount === "未使用" ? ptsPart : `${ptsPart} ${amount}`;
+}
+
+export function displayActivityType(v: unknown): string {
+  if (v === "GROUP_BUY") return "拼团";
+  if (v === "SECKILL") return "秒杀";
+  if (!v || v === "NORMAL") return "普通";
+  return displayText(v);
+}
+
 export function displayCouponRule(c: {
   type?: string;
   min_amount_cent?: unknown;

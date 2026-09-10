@@ -398,7 +398,18 @@ adminRouter.get("/orders/:id", async (req, res, next) => {
   try {
     const detail = await loadOrderDetail(Number(req.params.id));
     if (!detail) throw new HttpError(404, "订单不存在");
-    ok(res, { ...detail, user: detail.user ? { ...detail.user, phone: maskPhone(detail.user.phone), openid: undefined } : null });
+    ok(res, {
+      ...detail,
+      user: detail.user
+        ? {
+            id: detail.user.id,
+            nickname: detail.user.nickname || "",
+            phone: detail.user.phone || "",
+            points_balance: Number(detail.user.points_balance || 0),
+            created_at: detail.user.created_at,
+          }
+        : null,
+    });
   } catch (e) {
     next(e);
   }
