@@ -1,19 +1,19 @@
 <wxs src="../../utils/display.wxs" module="disp" />
-<t-cell-group theme="card">
-  <t-cell
-    wx:for="{{list}}"
-    wx:key="id"
-    title="{{disp.join(item.contact_name, item.phone)}}"
-    description="{{disp.text(item.detail)}}"
-    left-icon="location"
-    arrow
-    hover
-    data-id="{{item.id}}"
-    bind:click="edit"
-  >
-    <t-tag wx:if="{{item.is_default}}" slot="note" theme="primary" variant="light" size="small">默认</t-tag>
-  </t-cell>
-</t-cell-group>
+<view class="addr-list">
+  <t-cell-group theme="card" wx:for="{{list}}" wx:key="id">
+    <t-cell
+      title="{{disp.join(item.contact_name, item.phone)}}"
+      description="{{disp.text(item.detail)}}"
+      left-icon="location"
+      arrow
+      hover
+      data-id="{{item.id}}"
+      bind:click="edit"
+    >
+      <t-tag wx:if="{{item.is_default}}" slot="note" theme="primary" variant="light" size="small">默认</t-tag>
+    </t-cell>
+  </t-cell-group>
+</view>
 <t-empty wx:if="{{!list.length}}" icon="location" description="还没有收货地址" />
 <view class="safe-bottom">
   <t-button theme="primary" size="large" shape="round" block bind:tap="add">新增地址</t-button>

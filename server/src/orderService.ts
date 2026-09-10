@@ -486,7 +486,7 @@ export async function startDeliver(orderId: number, adminId: number) {
     const order = await trx("orders").where({ id: orderId }).forUpdate().first();
     if (!order) throw new HttpError(404, "订单不存在");
     if (order.status !== ST.WAIT_DELIVER) throw new HttpError(409, "订单状态不允许配送", 10003);
-    await trx("orders").where({ id: orderId }).update({ status: ST.DELIVERING });
+    await trx("orders").where({ id: orderId }).update({ status: ST.DELIVERING, delivered_at: trx.fn.now() });
     await logStatus(trx, orderId, ST.WAIT_DELIVER, ST.DELIVERING, "ADMIN", adminId, "开始配送");
     return trx("orders").where({ id: orderId }).first();
   });
@@ -501,6 +501,50 @@ export async function completeDeliver(orderId: number, adminId: number) {
     await logStatus(trx, orderId, ST.DELIVERING, ST.COMPLETED, "ADMIN", adminId, "确认送达");
     return trx("orders").where({ id: orderId }).first();
   });
+}
+
+function asAddressSnap(v: unknown): Record<string, any> {
+  if (!v) return {};
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof v === "object" && !Array.isArray(v)) return v as Record<string, any>;
+  return {};
+}
+
+export function formatOrderAddress(order: Record<string, any>): string {
+  const snap = asAddressSnap(order.address_snapshot);
+  if (order.fulfill_type === "DELIVERY") {
+    return [snap.contact_name, snap.phone, snap.province, snap.city, snap.district, snap.detail].filter(Boolean).join(" ");
+  }
+  return [snap.pickup_address, snap.hours, snap.phone].filter(Boolean).join(" · ");
+}
+
+export function orderTimePoints(order: Record<string, any>) {
+  return [
+    { key: "created_at", label: "下单时间", at: order.created_at || null },
+    { key: "paid_at", label: "支付时间", at: order.paid_at || null },
+    { key: "packed_at", label: "备货完成时间", at: order.packed_at || null },
+    { key: "delivered_at", label: "开始配送时间", at: order.delivered_at || null },
+    { key: "completed_at", label: "完成时间", at: order.completed_at || null },
+    { key: "cancelled_at", label: "取消时间", at: order.cancelled_at || null },
+  ].filter((x) => x.at);
+}
+
+export function orderTimeline(logs: Record<string, any>[]) {
+  return (logs || []).map((l) => ({
+    id: l.id,
+    note: l.note || "",
+    from_status: l.from_status || "",
+    to_status: l.to_status || "",
+    operator_type: l.operator_type || "",
+    created_at: l.created_at,
+  }));
 }
 
 export async function loadOrderDetail(orderId: number) {
@@ -527,5 +571,15 @@ export async function loadOrderDetail(orderId: number) {
     coupon_name = String(row?.coupon_name || "");
     coupon_type = String(row?.coupon_type || "");
   }
-  return { ...order, items, logs, user, coupon_name, coupon_type };
+  return {
+    ...order,
+    items,
+    logs,
+    user,
+    coupon_name,
+    coupon_type,
+    fulfill_text: formatOrderAddress(order),
+    time_points: orderTimePoints(order),
+    timeline: orderTimeline(logs),
+  };
 }

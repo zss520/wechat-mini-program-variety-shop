@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrderDetail } from "../orderService";
+import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrderDetail, orderTimePoints } from "../orderService";
 import { claimCoupon } from "../marketing";
 import { couponDiscount } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
@@ -67,6 +67,10 @@ async function run() {
   assert(couponDetail.coupon_type === "FULL_REDUCE", "order detail should expose coupon type");
   assert(Number(couponDetail.coupon_discount_cent) === 200, "order detail should keep coupon discount");
   assert(Number(couponDetail.goods_amount_cent) === 1500, "order detail should keep goods amount");
+  const pts = orderTimePoints({ created_at: "t0", packed_at: "t1", delivered_at: null, completed_at: "" });
+  assert(pts.map((p) => p.key).join(",") === "created_at,packed_at", "time points should skip empty timestamps");
+  assert(Array.isArray(couponDetail.time_points) && couponDetail.time_points[0]?.key === "created_at", "detail exposes time points");
+  assert(Array.isArray(couponDetail.timeline) && couponDetail.timeline.length > 0, "detail exposes timeline");
 
   const previewPts = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { usePoints: true });
   assert(previewPts.pointsUsed === 200 && previewPts.payAmountCent === 1300, "200 points should offset 2 yuan on 15 yuan special");

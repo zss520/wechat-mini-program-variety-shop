@@ -99,13 +99,20 @@ export default function OrderDetail() {
 
   if (!o) return null;
   const user = asRecord(o.user);
-  const address = formatAddress(o);
+  const address = displayText(o.fulfill_text, "") || formatAddress(o);
   const discountCent = toFiniteNumber(o.discount_cent) || 0;
+  const timePoints = asArray(o.time_points).map((p: Record<string, any>) => ({
+    k: displayText(p.label),
+    v: formatDateTime(p.at, true),
+  }));
+  const timeline = asArray(o.timeline);
   const overview = [
     { k: "状态", v: STATUS[o.status] || displayText(o.status) },
     { k: "履约", v: displayFulfillType(o.fulfill_type) },
     { k: "提货码", v: displayText(o.pickup_code) },
-    { k: "下单时间", v: formatDateTime(o.created_at, true) },
+    { k: "活动", v: displayActivityType(o.activity_type) },
+    { k: "支付单号", v: displayText(o.wx_transaction_id) },
+    ...(o.cancel_reason ? [{ k: "取消原因", v: displayText(o.cancel_reason) }] : []),
   ];
   const userMeta = [
     { k: "昵称", v: displayText(user.nickname) },
@@ -122,8 +129,6 @@ export default function OrderDetail() {
     { k: "积分抵扣", v: displayPointsUsed(o.points_used, o.points_discount_cent) },
     ...(discountCent > 0 ? [{ k: "优惠合计", v: displayMinusYuan(o.discount_cent) }] : []),
     { k: "实付", v: displayYuan(o.pay_amount_cent) },
-    { k: "活动", v: displayActivityType(o.activity_type) },
-    { k: "支付单号", v: displayText(o.wx_transaction_id) },
   ];
   return (
     <PageContainer
@@ -150,6 +155,31 @@ export default function OrderDetail() {
       </Section>
       <Section title="优惠与金额">
         <MetaGrid items={amountMeta} />
+      </Section>
+      <Section title="履约时间">
+        {timePoints.length ? <MetaGrid items={timePoints} /> : <Typography color="text.secondary">暂无时间记录</Typography>}
+      </Section>
+      <Section title="状态记录">
+        {timeline.length ? (
+          <DataTable>
+            <TableHead>
+              <TableRow>
+                <TableCell>时间</TableCell>
+                <TableCell>记录</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {timeline.map((l: Record<string, any>) => (
+                <TableRow key={l.id || `${l.to_status}-${l.created_at}`}>
+                  <TableCell>{formatDateTime(l.created_at, true)}</TableCell>
+                  <TableCell>{displayText(l.note || STATUS[l.to_status])}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </DataTable>
+        ) : (
+          <Typography color="text.secondary">暂无状态记录</Typography>
+        )}
       </Section>
       <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
         商品明细
