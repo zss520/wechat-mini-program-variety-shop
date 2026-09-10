@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrderDetail, orderTimePoints } from "../orderService";
+import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrderDetail, orderTimePoints, applyOrderListFilters } from "../orderService";
 import { claimCoupon } from "../marketing";
 import { couponDiscount, pointsRedeem } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
@@ -25,7 +25,7 @@ async function run() {
   });
   const [uid] = await db("users").insert({
     openid: `mkt_${Date.now()}`,
-    nickname: "m",
+    nickname: `__buyer_${Date.now()}`,
     phone: "13900000001",
     points_balance: 200,
   });
@@ -71,6 +71,18 @@ async function run() {
   assert(pts.map((p) => p.key).join(",") === "created_at,packed_at", "time points should skip empty timestamps");
   assert(Array.isArray(couponDetail.time_points) && couponDetail.time_points[0]?.key === "created_at", "detail exposes time points");
   assert(Array.isArray(couponDetail.timeline) && couponDetail.timeline.length > 0, "detail exposes timeline");
+
+  const listBase = () => db("orders").leftJoin("users", "users.id", "orders.user_id").where("orders.id", couponOrder.id);
+  const byNo = await listBase().modify((b) => applyOrderListFilters(b, { orderNo: String(couponOrder.order_no).slice(-4) })).first();
+  assert(byNo, "order list can filter by order no");
+  const byNick = await listBase().modify((b) => applyOrderListFilters(b, { customer: String(couponDetail.user.nickname).slice(0, 8) })).first();
+  assert(byNick, "order list can filter by nickname");
+  const byPhone = await listBase().modify((b) => applyOrderListFilters(b, { customer: "1390000" })).first();
+  assert(byPhone, "order list can filter by phone fragment");
+  const byCode = await listBase().modify((b) => applyOrderListFilters(b, { pickupCode: String(couponOrder.pickup_code) })).first();
+  assert(byCode, "order list can filter by pickup code");
+  const miss = await listBase().modify((b) => applyOrderListFilters(b, { customer: "NO_SUCH_USER_XYZ" })).first();
+  assert(!miss, "unknown customer should not match");
 
   const previewPts = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { usePoints: true });
   assert(previewPts.pointsUsed === 200 && previewPts.payAmountCent === 1300, "200 points should offset 2 yuan on 15 yuan special");

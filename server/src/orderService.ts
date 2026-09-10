@@ -21,6 +21,24 @@ export const ST = {
 
 export type OrderStatus = (typeof ST)[keyof typeof ST];
 
+function likeContains(raw: unknown) {
+  const s = String(raw || "").trim().slice(0, 64);
+  return s ? `%${s}%` : "";
+}
+
+export function applyOrderListFilters(b: Knex.QueryBuilder, query: Record<string, unknown>) {
+  const status = String(query.status || "").trim();
+  const orderNo = likeContains(query.orderNo);
+  const pickupCode = likeContains(query.pickupCode);
+  const customer = likeContains(query.customer || query.phone);
+  if (status) b.where("orders.status", status);
+  if (orderNo) b.where("orders.order_no", "like", orderNo);
+  if (pickupCode) b.where("orders.pickup_code", "like", pickupCode);
+  if (customer) {
+    b.where((w) => w.where("users.nickname", "like", customer).orWhere("users.phone", "like", customer));
+  }
+}
+
 export type OrderExtras = {
   userCouponId?: number | null;
   usePoints?: boolean;

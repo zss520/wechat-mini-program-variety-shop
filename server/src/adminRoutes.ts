@@ -17,6 +17,7 @@ import {
   packOrder,
   pickupOrder,
   startDeliver,
+  applyOrderListFilters,
   ST,
 } from "./orderService";
 import { markPaid } from "./orderService";
@@ -372,11 +373,7 @@ adminRouter.get("/orders", async (req, res, next) => {
     const { page, pageSize, offset } = parsePage(req.query as Record<string, unknown>);
     const q = db("orders")
       .leftJoin("users", "users.id", "orders.user_id")
-      .modify((b) => {
-        if (req.query.status) b.where("orders.status", String(req.query.status));
-        if (req.query.orderNo) b.where("orders.order_no", "like", `%${String(req.query.orderNo)}%`);
-        if (req.query.phone) b.where("users.phone", "like", `%${String(req.query.phone)}%`);
-      });
+      .modify((b) => applyOrderListFilters(b, req.query as Record<string, unknown>));
     const total = await q.clone().clearSelect().clearOrder().count({ c: "*" }).first();
     const list = await q
       .select("orders.*", "users.nickname", "users.phone")

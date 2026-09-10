@@ -1,12 +1,13 @@
 import { Button, MenuItem, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
+import { KeyboardEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { formatDateTime } from "../utils/datetime";
-import { asArray, asRecord, displayFulfillType, displayJoin, displayText, displayYuan } from "../utils/display";
+import { asArray, asRecord, displayFulfillType, displayJoin, displayNumber, displayText, displayYuan } from "../utils/display";
+import { useFeedback } from "../components/FeedbackProvider";
 
 const STATUS: Record<string, string> = {
   PENDING_PAY: "待付款",
@@ -23,15 +24,53 @@ type Row = { id: number; order_no: string; status: string; pay_amount_cent: numb
 
 export default function Orders() {
   const nav = useNavigate();
+  const fb = useFeedback();
   const [status, setStatus] = useState("");
+  const [orderNo, setOrderNo] = useState("");
+  const [customer, setCustomer] = useState("");
+  const [pickupCode, setPickupCode] = useState("");
   const [list, setList] = useState<Row[]>([]);
-  const load = () => api.get("/orders", { params: { status, pageSize: 50 } }).then((d: { list: Row[] }) => setList(asArray(asRecord(d).list)));
+  const [total, setTotal] = useState(0);
+  const load = () =>
+    api
+      .get("/orders", {
+        params: {
+          status: status || undefined,
+          orderNo: orderNo.trim() || undefined,
+          customer: customer.trim() || undefined,
+          pickupCode: pickupCode.trim() || undefined,
+          pageSize: 50,
+        },
+      })
+      .then((d: { list: Row[]; total: number }) => {
+        const data = asRecord(d);
+        setList(asArray(data.list));
+        setTotal(Number(data.total || 0));
+      })
+      .catch((e) => fb.error(e, "订单加载失败"));
   useEffect(() => {
     load();
   }, []);
+  const onEnter = (e: KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      load();
+    }
+  };
   return (
-    <PageContainer title="订单" description="履约与售后从详情页操作">
+    <PageContainer title="订单" description={`履约与售后从详情页操作。共 ${displayNumber(total, "0")} 单。`}>
       <InlineForm>
+        <TextField size="small" label="单号" placeholder="支持模糊" value={orderNo} onChange={(e) => setOrderNo(e.target.value)} onKeyDown={onEnter} sx={{ minWidth: 180 }} />
+        <TextField
+          size="small"
+          label="顾客"
+          placeholder="用户名或手机号"
+          value={customer}
+          onChange={(e) => setCustomer(e.target.value)}
+          onKeyDown={onEnter}
+          sx={{ minWidth: 180 }}
+        />
+        <TextField size="small" label="取货码" placeholder="支持模糊" value={pickupCode} onChange={(e) => setPickupCode(e.target.value)} onKeyDown={onEnter} sx={{ minWidth: 140 }} />
         <TextField select size="small" label="状态" value={status} onChange={(e) => setStatus(e.target.value)} sx={{ minWidth: 160 }}>
           <MenuItem value="">全部</MenuItem>
           {Object.entries(STATUS).map(([k, v]) => (
