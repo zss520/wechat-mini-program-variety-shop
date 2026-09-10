@@ -22,7 +22,7 @@ import path from "path";
 import { cancelOrder, createOrder, loadOrderDetail, markPaid, previewOrder, ST } from "./orderService";
 import { config, publicUrl } from "./config";
 import { claimCoupon, listClaimableCoupons } from "./marketing";
-import { activityWindowOk, getGroupBuy, listActiveGroupBuys, listActiveSeckills, loadGroupGoodsRows, loadTeam, refreshTeamProgress } from "./campaigns";
+import { activityWindowOk, getGroupBuy, listActiveGroupBuys, listActiveSeckills, loadGroupGoodsRows, comboLineItems, loadTeam, refreshTeamProgress } from "./campaigns";
 import { cartUpsell, relatedGoods } from "./personalize";
 import { listNotifyLogs, setSubscribe } from "./notify";
 import { salePriceOf } from "./pricing";
@@ -675,8 +675,7 @@ appRouter.post("/group-buys/:id/open", requireRole("user"), requireBoundPhone, a
     const act = await db("group_buy_activities").where({ id: Number(req.params.id) }).whereNull("deleted_at").first();
     if (!act || !act.enabled || !activityWindowOk(act)) throw new HttpError(409, "拼团活动未开始或已结束");
     const combo = await loadGroupGoodsRows(act.id);
-    const goodsId = Number(body.goodsId || combo[0]?.goods_id || act.goods_id);
-    if (!combo.some((g) => Number(g.goods_id || g.id) === goodsId)) throw new HttpError(400, "请选择活动中的商品");
+    if (!combo.length) throw new HttpError(400, "请选择活动中的商品");
     const expire = new Date(Date.now() + Number(act.expire_hours || 24) * 3600 * 1000);
     const [teamId] = await db("group_buy_teams").insert({
       activity_id: act.id,
@@ -689,7 +688,7 @@ appRouter.post("/group-buys/:id/open", requireRole("user"), requireBoundPhone, a
     });
     const order = await createOrder({
       userId: req.auth!.id,
-      items: [{ goodsId, qty: body.qty }],
+      items: comboLineItems(combo, body.qty),
       fulfillType: body.fulfillType,
       addressId: body.addressId,
       remark: body.remark,
@@ -735,11 +734,10 @@ appRouter.post("/group-buys/teams/:id/join", requireRole("user"), requireBoundPh
     const act = await db("group_buy_activities").where({ id: team.activity_id }).first();
     if (!act || !activityWindowOk(act)) throw new HttpError(409, "拼团活动已结束");
     const combo = await loadGroupGoodsRows(act.id);
-    const goodsId = Number(body.goodsId || combo[0]?.goods_id || act.goods_id);
-    if (!combo.some((g) => Number(g.goods_id || g.id) === goodsId)) throw new HttpError(400, "请选择活动中的商品");
+    if (!combo.length) throw new HttpError(400, "请选择活动中的商品");
     const order = await createOrder({
       userId: req.auth!.id,
-      items: [{ goodsId, qty: body.qty }],
+      items: comboLineItems(combo, body.qty),
       fulfillType: body.fulfillType,
       addressId: body.addressId,
       remark: body.remark,

@@ -38,7 +38,12 @@ export async function buildSeckillBlock() {
 }
 
 export async function buildGroupBlock() {
-  return block("group", "拼团", await listActiveGroupBuys());
+  const rows = await listActiveGroupBuys();
+  return block(
+    "group",
+    "拼团",
+    rows.map((x: { end_at?: string | Date }) => ({ ...x, remainMs: remainMs(x.end_at) }))
+  );
 }
 
 export async function buildDealBlock() {

@@ -98,6 +98,22 @@ export async function nextOrderNo(trx: Knex.Transaction) {
   return `${prefix}${String(seq).padStart(6, "0")}`;
 }
 
+async function userGroupBundleQty(
+  conn: Knex | Knex.Transaction,
+  userId: number,
+  activityId: number
+) {
+  const rows = await conn("order_items as oi")
+    .join("orders as o", "o.id", "oi.order_id")
+    .where("o.user_id", userId)
+    .where("o.activity_type", "GROUP_BUY")
+    .where("o.activity_id", activityId)
+    .whereNot("o.status", ST.CANCELLED)
+    .groupBy("o.id")
+    .min({ q: "oi.qty" });
+  return rows.reduce((s: number, r: { q?: number }) => s + Number(r.q || 0), 0);
+}
+
 async function userActivityQty(
   conn: Knex | Knex.Transaction,
   userId: number,
@@ -137,16 +153,24 @@ async function resolveActivity(extras: OrderExtras, items: LineInput[]) {
   if (type === "GROUP_BUY") {
     const act = await db("group_buy_activities").where({ id: extras.activityId || 0 }).whereNull("deleted_at").first();
     if (!act || !act.enabled || !activityWindowOk(act)) throw new HttpError(409, "拼团活动未开始或已结束");
-    if (items.length !== 1) throw new HttpError(400, "拼团订单只能包含活动商品");
     const combo = await loadGroupGoodsRows(act.id);
-    const hit = combo.find((g) => Number(g.goods_id || g.id) === Number(items[0].goodsId));
-    if (!hit) throw new HttpError(400, "拼团订单只能包含活动商品");
+    if (!combo.length) throw new HttpError(400, "拼团订单只能包含活动商品");
+    const comboIds = combo.map((g) => Number(g.goods_id || g.id));
+    const itemIds = items.map((it) => Number(it.goodsId));
+    if (itemIds.length !== comboIds.length) throw new HttpError(400, "拼团组合须整单购买");
+    const seen = new Set<number>();
+    for (const id of itemIds) {
+      if (!comboIds.includes(id) || seen.has(id)) throw new HttpError(400, "拼团订单只能包含活动商品");
+      seen.add(id);
+    }
+    const bundleQty = items[0]?.qty || 0;
+    if (items.some((it) => it.qty !== bundleQty)) throw new HttpError(400, "拼团组合数量须一致");
     if (extras.teamId) {
       const team = await db("group_buy_teams").where({ id: extras.teamId }).first();
       if (!team || team.status !== "OPEN") throw new HttpError(409, "该团不可加入");
       if (new Date(team.expire_at).getTime() < Date.now()) throw new HttpError(409, "该团已过期");
     }
-    return { type, group: { ...act, group_price_cent: Number(hit.group_price_cent) }, seckill: null as any };
+    return { type, group: { ...act, combo }, seckill: null as any };
   }
   const act = await db("seckill_activities").where({ id: extras.activityId || 0 }).whereNull("deleted_at").first();
   if (!act || !act.enabled || !activityWindowOk(act)) throw new HttpError(409, "秒杀活动未开始或已结束");
@@ -167,10 +191,15 @@ export async function previewOrder(
   if (!items.length) throw new HttpError(400, "请选择商品");
   if (fulfillType === "DELIVERY" && !settings.delivery_enabled) throw new HttpError(409, "本店暂不支持配送");
   const act = await resolveActivity(extras, items);
-  if ((act.seckill || act.group) && extras.activityId) {
+  if (act.seckill && extras.activityId) {
     const qty = items[0]?.qty || 0;
-    const limit = Math.max(1, Number((act.seckill || act.group).per_user_limit || 1));
+    const limit = Math.max(1, Number(act.seckill.per_user_limit || 1));
     const already = await userActivityQty(db, userId, act.type, extras.activityId);
+    if (qty > limit || already + qty > limit) throw new HttpError(409, limitExceededMessage(act.type));
+  } else if (act.group && extras.activityId) {
+    const qty = items[0]?.qty || 0;
+    const limit = Math.max(1, Number(act.group.per_user_limit || 1));
+    const already = await userGroupBundleQty(db, userId, extras.activityId);
     if (qty > limit || already + qty > limit) throw new HttpError(409, limitExceededMessage(act.type));
   }
 
@@ -191,7 +220,8 @@ export async function previewOrder(
       isSeckill = true;
       isSpecial = false;
     } else if (act.group) {
-      price = Number(act.group.group_price_cent);
+      const hit = (act.group.combo || []).find((g: { goods_id?: number; id?: number }) => Number(g.goods_id || g.id) === Number(it.goodsId));
+      price = Number(hit?.group_price_cent ?? act.group.group_price_cent);
       isGroup = true;
       isSpecial = false;
     }
@@ -290,7 +320,10 @@ export async function createOrder(params: {
       const act = await trx(table).where({ id: extras.activityId }).forUpdate().first();
       if (!act) throw new HttpError(409, extras.activityType === "SECKILL" ? "秒杀活动不存在" : "拼团活动不存在");
       const qty = preview.items[0].qty;
-      const already = await userActivityQty(trx, params.userId, extras.activityType, extras.activityId);
+      const already =
+        extras.activityType === "GROUP_BUY"
+          ? await userGroupBundleQty(trx, params.userId, extras.activityId)
+          : await userActivityQty(trx, params.userId, extras.activityType, extras.activityId);
       if (already + qty > Math.max(1, Number(act.per_user_limit || 1))) {
         throw new HttpError(409, limitExceededMessage(extras.activityType));
       }

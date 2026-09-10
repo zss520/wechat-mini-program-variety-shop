@@ -33,6 +33,11 @@
   font-weight: 700;
   font-size: 32rpx;
 }
+.origin {
+  color: #b8a99a;
+  font-size: 22rpx;
+  text-decoration: line-through;
+}
 .from {
   font-size: 22rpx;
   color: #8a6a4a;

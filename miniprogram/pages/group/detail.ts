@@ -2,7 +2,7 @@ import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord, toFiniteNumber } from "../../utils/display";
 
 type Slot = { id: number; filled: boolean; leader: boolean; name: string; avatar: string; paid: boolean };
-type GoodsPick = { id: number; name: string; coverUrl: string; thumbUrl: string; groupPriceCent: number; originCent: number; selected: boolean };
+type GoodsPick = { id: number; name: string; coverUrl: string; thumbUrl: string; groupPriceCent: number; originCent: number };
 type TeamPick = { teamId: number; paidCount: number; memberCount: number; required: number; remain: number };
 type LogItem = { id: number; label: string; note: string; counts: string };
 
@@ -15,36 +15,32 @@ const EVENT_LABEL: Record<string, string> = {
   CANCEL: "取消订单",
 };
 
-function buildView(act: any, team: any, selectedGoodsId: number) {
+function buildView(act: any, team: any) {
   const a = asRecord<any>(act);
   const goodsList = asArray<any>(a.goodsList || (team && team.goodsList));
   const fallbackGoods = asRecord<any>(a.goods || (team && team.goods));
   const picks: GoodsPick[] = (goodsList.length ? goodsList : fallbackGoods.id ? [fallbackGoods] : []).map((g: any) => {
     const row = asRecord<any>(g);
-    const id = toFiniteNumber(row.id) || 0;
     return {
-      id,
+      id: toFiniteNumber(row.id) || 0,
       name: String(row.name || ""),
       coverUrl: String(row.coverUrl || ""),
       thumbUrl: String(row.thumbUrl || row.coverUrl || ""),
-      groupPriceCent: toFiniteNumber(row.groupPriceCent) || toFiniteNumber(a.group_price_cent) || 0,
+      groupPriceCent: toFiniteNumber(row.groupPriceCent) || 0,
       originCent: toFiniteNumber(row.listPriceCent) || toFiniteNumber(row.originPriceCent) || 0,
-      selected: false,
     };
   });
-  const chosen = picks.find((g) => g.id === selectedGoodsId) || picks[0];
-  const selectedId = chosen ? chosen.id : 0;
-  const goods = chosen || asRecord<any>({});
-  picks.forEach((g) => {
-    g.selected = g.id === selectedId;
-  });
+  const goods = picks[0] || asRecord<any>({});
   const required = Math.max(2, toFiniteNumber(team && team.requiredCount) || toFiniteNumber(a.required_count) || 2);
   const members = asArray<any>(team && team.members);
   const paid = team ? Math.max(0, toFiniteNumber(team.paidCount) ?? members.filter((m) => asRecord(m).paid).length) : 0;
   const memberCount = team ? Math.max(0, toFiniteNumber(team.memberCount) ?? members.length) : 0;
   const remain = Math.max(0, required - paid);
-  const origin = toFiniteNumber(goods.originCent) || 0;
-  const group = toFiniteNumber(goods.groupPriceCent) || toFiniteNumber(a.minGroupPriceCent) || toFiniteNumber(a.group_price_cent) || 0;
+  const origin = toFiniteNumber(a.originTotalCent) || picks.reduce((s, g) => s + (g.originCent || 0), 0);
+  const group =
+    toFiniteNumber(a.totalGroupPriceCent) ||
+    toFiniteNumber(a.group_price_cent) ||
+    picks.reduce((s, g) => s + (g.groupPriceCent || 0), 0);
   const save = origin > group ? origin - group : 0;
   const showN = Math.min(required, 8);
   const slots: Slot[] = [];
@@ -81,16 +77,17 @@ function buildView(act: any, team: any, selectedGoodsId: number) {
       counts: `${toFiniteNumber(row.paidCount) || 0}/${toFiniteNumber(row.requiredCount) || required}`,
     };
   });
+  const multiGoods = picks.length > 1;
   return {
     cover,
     thumb: String(goods.thumbUrl || goods.coverUrl || ""),
     title: String(a.title || ""),
-    goodsId: selectedId,
-    goodsName: String(goods.name || ""),
-    goodsSubtitle: String(fallbackGoods.subtitle || ""),
-    goodsUnit: String(fallbackGoods.unit || goodsList[0]?.unit || "件"),
+    goodsId: toFiniteNumber(goods.id) || 0,
+    goodsName: multiGoods ? `${picks.length}件组合` : String(goods.name || ""),
+    goodsSubtitle: multiGoods ? "整单按组合总价结算" : String(fallbackGoods.subtitle || ""),
+    goodsUnit: multiGoods ? "份" : String(fallbackGoods.unit || "件"),
     goodsList: picks,
-    multiGoods: picks.length > 1,
+    multiGoods,
     groupCent: group,
     originCent: origin,
     saveCent: save,
@@ -111,13 +108,12 @@ Page({
   data: {
     activityId: 0,
     teamId: 0,
-    selectedGoodsId: 0,
     act: null as any,
     team: null as any,
     remainMs: 0,
-    view: buildView(null, null, 0),
+    view: buildView(null, null),
   },
-  async loadPage(activityId: number, teamId: number, selectedGoodsId: number) {
+  async loadPage(activityId: number, teamId: number) {
     let act: any = null;
     try {
       act = asRecord(await request(`/group-buys/${activityId}`));
@@ -131,42 +127,39 @@ Page({
         team = asRecord(await request(`/group-buys/teams/${teamId}`));
         const activity = asRecord<any>(team.activity);
         if (activity.id) {
-          act = { ...(act || {}), ...activity, goods: team.goods || (act && act.goods), goodsList: team.goodsList || (act && act.goodsList), coverUrl: team.coverUrl || (act && act.coverUrl) };
+          act = {
+            ...(act || {}),
+            ...activity,
+            goods: team.goods || (act && act.goods),
+            goodsList: team.goodsList || (act && act.goodsList),
+            coverUrl: team.coverUrl || (act && act.coverUrl),
+            totalGroupPriceCent: (act && act.totalGroupPriceCent) || activity.group_price_cent,
+            originTotalCent: act && act.originTotalCent,
+          };
         }
       } catch {
         team = null;
       }
     }
-    const goodsList = asArray<any>(act && act.goodsList);
-    const nextGoodsId = selectedGoodsId || toFiniteNumber(goodsList[0]?.id) || toFiniteNumber(act?.goods?.id) || 0;
     this.setData({
       act,
       team,
       activityId: act ? Number(act.id) : activityId,
       teamId: team ? Number(team.id) : teamId,
-      selectedGoodsId: nextGoodsId,
       remainMs: act?.end_at ? Math.max(0, new Date(act.end_at).getTime() - Date.now()) : 0,
-      view: buildView(act, team, nextGoodsId),
+      view: buildView(act, team),
     });
   },
   async onLoad(q: any) {
     const activityId = Number(q.activityId || 0);
     const teamId = Number(q.teamId || 0);
     this.setData({ activityId, teamId });
-    await this.loadPage(activityId, teamId, 0);
-  },
-  pickGoods(e: any) {
-    const id = Number(e.currentTarget.dataset.id || 0);
-    if (!id) return;
-    this.setData({
-      selectedGoodsId: id,
-      view: buildView(this.data.act, this.data.team, id),
-    });
+    await this.loadPage(activityId, teamId);
   },
   pickTeam(e: any) {
     const teamId = Number(e.currentTarget.dataset.id || 0);
     if (!teamId) return;
-    this.loadPage(this.data.activityId, teamId, this.data.selectedGoodsId);
+    this.loadPage(this.data.activityId, teamId);
   },
   goGoods(e: any) {
     const id = Number(e.currentTarget.dataset.id || this.data.view.goodsId);
@@ -195,13 +188,12 @@ Page({
         wx.showToast({ title: "活动已结束", icon: "none" });
         return;
       }
-      if (!this.data.view.goodsId) {
-        wx.showToast({ title: "请选择商品", icon: "none" });
+      if (!this.data.view.goodsList.length) {
+        wx.showToast({ title: "暂无拼团商品", icon: "none" });
         return;
       }
       const res = await request(`/group-buys/${this.data.activityId}/open`, "POST", {
         qty: 1,
-        goodsId: this.data.view.goodsId,
         fulfillType: "PICKUP",
       });
       await this.payAfter(res);
@@ -216,13 +208,12 @@ Page({
         wx.showToast({ title: "活动已结束", icon: "none" });
         return;
       }
-      if (!this.data.view.goodsId) {
-        wx.showToast({ title: "请选择商品", icon: "none" });
+      if (!this.data.view.goodsList.length) {
+        wx.showToast({ title: "暂无拼团商品", icon: "none" });
         return;
       }
       const res = await request(`/group-buys/teams/${this.data.teamId}/join`, "POST", {
         qty: 1,
-        goodsId: this.data.view.goodsId,
         fulfillType: "PICKUP",
       });
       await this.payAfter(res);

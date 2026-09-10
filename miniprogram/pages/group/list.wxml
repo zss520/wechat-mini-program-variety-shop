@@ -17,7 +17,8 @@
     </view>
     <view class="meta">
       <text class="price">{{disp.money(item.minGroupPriceCent)}}</text>
-      <text class="from" wx:if="{{item.goodsCount > 1}}">起 · {{disp.num(item.goodsCount)}}件组合</text>
+      <text class="origin" wx:if="{{disp.gt0(item.originTotalCent)}}">{{disp.money(item.originTotalCent)}}</text>
+      <text class="from" wx:if="{{item.goodsCount > 1}}">{{disp.num(item.goodsCount)}}件组合总价</text>
       <t-tag theme="primary" variant="light" size="small">{{disp.num(item.required_count)}}人成团</t-tag>
     </view>
     <view class="prog" wx:if="{{item.hasProgress}}">

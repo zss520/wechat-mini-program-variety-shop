@@ -23,6 +23,10 @@ function clampInt(v: unknown, fallback: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
 
+export function comboTotalCent(items: Array<{ group_price_cent?: number; groupPriceCent?: number }>) {
+  return items.reduce((s, x) => s + Number(x.group_price_cent ?? x.groupPriceCent ?? 0), 0);
+}
+
 export type GroupGoodsItem = { goods_id: number; group_price_cent: number; sort?: number };
 
 export function parseGroupGoodsItems(body: Record<string, unknown>): GroupGoodsItem[] {
@@ -58,6 +62,10 @@ export async function replaceActivityGoods(activityId: number, items: GroupGoods
       sort: it.sort ?? idx,
     }))
   );
+}
+
+export function comboLineItems(combo: Array<{ goods_id?: number; id?: number }>, qty: number) {
+  return combo.map((g) => ({ goodsId: Number(g.goods_id || g.id), qty }));
 }
 
 export async function loadGroupGoodsRows(activityId: number) {
@@ -126,8 +134,8 @@ function shapeActivity(
   openTeams: any[]
 ) {
   const goods = goodsList[0] || null;
-  const prices = goodsList.map((g) => Number(g.groupPriceCent || 0)).filter((n) => n > 0);
-  const minPrice = prices.length ? Math.min(...prices) : Number(act.group_price_cent || 0);
+  const total = comboTotalCent(goodsList);
+  const originTotal = goodsList.reduce((s, g) => s + Number(g.listPriceCent || g.originPriceCent || 0), 0);
   const progress = openTeams[0] || null;
   return {
     ...act,
@@ -136,8 +144,10 @@ function shapeActivity(
     goods,
     goodsList,
     goodsCount: goodsList.length,
-    minGroupPriceCent: minPrice,
-    group_price_cent: minPrice,
+    minGroupPriceCent: total,
+    totalGroupPriceCent: total,
+    originTotalCent: originTotal,
+    group_price_cent: total,
     openTeams,
     openTeamCount: openTeams.length,
     progress,
@@ -295,7 +305,7 @@ export function campaignBody(kind: "GROUP" | "SECKILL", body: Record<string, unk
       ...base,
       goods_id: items[0]?.goods_id || base.goods_id,
       required_count: clampInt(body.requiredCount ?? body.required_count ?? 2, 2, 2, 99),
-      group_price_cent: items.length ? Math.min(...items.map((x) => x.group_price_cent)) : asInt(body.groupPriceCent ?? body.group_price_cent, 0),
+      group_price_cent: items.length ? comboTotalCent(items) : asInt(body.groupPriceCent ?? body.group_price_cent, 0),
       expire_hours: clampInt(body.expireHours ?? body.expire_hours ?? 24, 24, 1, 168),
       cover_url: cover || null,
     };
@@ -318,7 +328,7 @@ export async function saveCampaignPayload(kind: "GROUP" | "SECKILL", body: Recor
       if (!goods) throw new HttpError(400, "商品不存在");
     }
     payload.goods_id = items[0].goods_id;
-    (payload as { group_price_cent: number }).group_price_cent = Math.min(...items.map((x) => x.group_price_cent));
+    (payload as { group_price_cent: number }).group_price_cent = comboTotalCent(items);
   } else if (!payload.goods_id) {
     throw new HttpError(400, "请选择商品");
   }
@@ -406,6 +416,8 @@ export async function attachGroupAdminExtras(rows: any[]) {
       cover_url: publicUrl(row.cover_url) || items[0]?.cover_url || "",
       goods_items: items,
       goods_names: items.map((x) => x.goods_name).filter(Boolean).join("、") || row.goods_name,
+      origin_total_cent: items.length ? items.reduce((s, x) => s + Number(x.origin_price_cent || 0), 0) : Number(row.origin_price_cent || 0),
+      group_total_cent: items.length ? comboTotalCent(items) : Number(row.group_price_cent || 0),
       open_team_count: stats.open,
       progress_paid: stats.bestPaid,
       progress_required: stats.bestRequired || Number(row.required_count || 0),

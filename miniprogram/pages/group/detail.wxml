@@ -29,7 +29,7 @@
       <t-tag theme="primary" variant="light" size="small">{{disp.num(view.required)}}人成团</t-tag>
       <t-tag theme="warning" variant="light" size="small">限购{{disp.num(view.perUserLimit)}}{{view.goodsUnit}}</t-tag>
       <t-tag theme="success" variant="light" size="small">人满发货</t-tag>
-      <t-tag wx:if="{{view.multiGoods}}" theme="primary" variant="outline" size="small">{{disp.num(view.goodsList.length)}}件组合</t-tag>
+      <t-tag wx:if="{{view.multiGoods}}" theme="primary" variant="outline" size="small">{{disp.num(view.goodsList.length)}}件组合总价</t-tag>
     </view>
 
     <view class="urge">
@@ -51,15 +51,9 @@
   <view class="card" wx:if="{{view.goodsList.length}}">
     <view class="card-h">
       <text class="card-t">团内商品</text>
-      <text class="card-e">{{view.multiGoods ? '点选要买的商品' : '本场商品'}}</text>
+      <text class="card-e">{{view.multiGoods ? '整单按组合总价结算' : '本场商品'}}</text>
     </view>
-    <view
-      class="combo {{item.selected ? 'on' : ''}}"
-      wx:for="{{view.goodsList}}"
-      wx:key="id"
-      data-id="{{item.id}}"
-      bindtap="pickGoods"
-    >
+    <view class="combo" wx:for="{{view.goodsList}}" wx:key="id" data-id="{{item.id}}" bindtap="goGoods">
       <t-image src="{{disp.thumb(item.thumbUrl, item.coverUrl)}}" width="96rpx" height="96rpx" shape="round" mode="aspectFill" />
       <view class="combo-info">
         <view class="combo-n">{{disp.text(item.name)}}</view>
@@ -68,7 +62,7 @@
           <text class="origin" wx:if="{{disp.gt0(item.originCent)}}">{{disp.money(item.originCent)}}</text>
         </view>
       </view>
-      <t-tag wx:if="{{item.selected}}" theme="primary" size="small">已选</t-tag>
+      <t-icon class="combo-go" name="chevron-right" size="36rpx" color="#c5b8aa" />
     </view>
   </view>
 
@@ -147,7 +141,7 @@
       <text class="yen">¥</text>
       <text>{{disp.yuan(view.groupCent)}}</text>
     </view>
-    <view class="bar-tip">团价</view>
+    <view class="bar-tip">{{view.multiGoods ? '组合总价' : '团价'}}</view>
   </view>
   <view class="bar-actions">
     <t-button wx:if="{{teamId}}" theme="primary" size="medium" shape="round" block disabled="{{!remainMs}}" bind:tap="join">

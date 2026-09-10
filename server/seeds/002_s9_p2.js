@@ -79,6 +79,31 @@ exports.seed = async function seed(knex) {
       sort: 0,
     });
   }
+  if (nuts && rice) {
+    const comboHit = await knex("group_buy_activity_goods")
+      .select("activity_id")
+      .groupBy("activity_id")
+      .having(knex.raw("COUNT(*) > 1"))
+      .first();
+    if (!comboHit) {
+      const [comboAid] = await knex("group_buy_activities").insert({
+        goods_id: rice.id,
+        title: "大米坚果组合团",
+        required_count: 3,
+        group_price_cent: 6180,
+        expire_hours: 48,
+        per_user_limit: 1,
+        cover_url: rice.cover_url || nuts.cover_url || null,
+        start_at: knex.raw("DATE_SUB(NOW(), INTERVAL 1 DAY)"),
+        end_at: knex.raw("DATE_ADD(NOW(), INTERVAL 21 DAY)"),
+        enabled: 1,
+      });
+      await knex("group_buy_activity_goods").insert([
+        { activity_id: comboAid, goods_id: rice.id, group_price_cent: 2890, sort: 0 },
+        { activity_id: comboAid, goods_id: nuts.id, group_price_cent: 3290, sort: 1 },
+      ]);
+    }
+  }
   if (water && !(await knex("seckill_activities").first())) {
     await knex("seckill_activities").insert({
       goods_id: water.id,

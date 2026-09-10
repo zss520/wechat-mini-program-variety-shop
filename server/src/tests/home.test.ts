@@ -35,6 +35,21 @@ async function run() {
     assert(Array.isArray(block.list), `${key} list`);
   }
   assert(recommend.slotId === "home_recommend", "recommend slotId");
+  for (const item of group.list as Array<{
+    remainMs?: number;
+    goodsCount?: number;
+    goodsList?: Array<{ groupPriceCent?: number }>;
+    group_price_cent?: number;
+    totalGroupPriceCent?: number;
+  }>) {
+    assert(typeof item.remainMs === "number", "group remainMs");
+    assert(Array.isArray(item.goodsList), "group goodsList");
+    if (Number(item.goodsCount) > 1) {
+      const sum = (item.goodsList || []).reduce((s, g) => s + Number(g.groupPriceCent || 0), 0);
+      assert(Number(item.totalGroupPriceCent) === sum, "home group combo uses total price");
+      assert(Number(item.group_price_cent) === sum, "home group_price_cent is combo total");
+    }
+  }
 
   await db.destroy();
   console.log("home block apis test passed", {

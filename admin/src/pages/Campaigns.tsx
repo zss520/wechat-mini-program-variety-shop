@@ -126,7 +126,7 @@ export default function Campaigns() {
         startAt: g.startAt,
         endAt: g.endAt,
         goodsId: combo[0].goodsId,
-        groupPriceCent: Math.min(...combo.map((x) => x.groupPriceCent)),
+        groupPriceCent: combo.reduce((s, x) => s + x.groupPriceCent, 0),
         goodsItems: combo.map((x) => ({ goodsId: x.goodsId, groupPriceCent: x.groupPriceCent })),
       });
       setG({ ...emptyGroup });
@@ -175,7 +175,7 @@ export default function Campaigns() {
   };
 
   return (
-    <PageContainer title="拼团秒杀" description="拼团可上传标题图、加入多件商品组合；每位商品单独填团价（单位「分」）。列表会显示团内商品和进行中团的支付进度。">
+    <PageContainer title="拼团秒杀" description="拼团可上传标题图、加入多件商品组合。多件时团价按组合总价结算（各件团价相加）。价格单位是「分」。">
       <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
         拼团
       </Typography>
@@ -243,7 +243,7 @@ export default function Campaigns() {
             新建拼团
           </Button>
         </InlineForm>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2, alignItems: "center" }}>
           {combo.map((item) => (
             <Chip
               key={item.goodsId}
@@ -251,9 +251,14 @@ export default function Campaigns() {
               onDelete={() => setCombo((list) => list.filter((x) => x.goodsId !== item.goodsId))}
             />
           ))}
+          {combo.length > 1 && (
+            <Typography variant="body2" sx={{ fontWeight: 700, color: "#c2410c" }}>
+              组合总价 {displayYuan(combo.reduce((s, x) => s + x.groupPriceCent, 0))}
+            </Typography>
+          )}
           {!combo.length && (
             <Typography variant="caption" color="text.secondary">
-              先选分类和商品，填该件团价后点「加入组合」，可加入多件
+              先选分类和商品，填该件团价后点「加入组合」。多件按各件团价相加作为组合总价。
             </Typography>
           )}
         </Box>
@@ -274,8 +279,12 @@ export default function Campaigns() {
           {groups.map((x) => {
             const items = asArray<{ goods_name?: string; origin_price_cent?: number; group_price_cent?: number }>(x.goods_items);
             const names = displayText(x.goods_names || items.map((i) => i.goods_name).join("、") || x.goods_name);
-            const origin = items.length ? Math.min(...items.map((i) => Number(i.origin_price_cent || 0))) : x.origin_price_cent;
-            const groupPrice = items.length ? Math.min(...items.map((i) => Number(i.group_price_cent || 0))) : x.group_price_cent;
+            const origin = items.length
+              ? items.reduce((s, i) => s + Number(i.origin_price_cent || 0), 0)
+              : x.origin_total_cent || x.origin_price_cent;
+            const groupPrice = items.length
+              ? items.reduce((s, i) => s + Number(i.group_price_cent || 0), 0)
+              : x.group_total_cent || x.group_price_cent;
             const openN = Number(x.open_team_count || 0);
             const paid = Number(x.progress_paid || 0);
             const need = Number(x.progress_required || x.required_count || 0);
@@ -292,7 +301,7 @@ export default function Campaigns() {
                 <TableCell>{names}</TableCell>
                 <TableCell>
                   {items.length > 1
-                    ? `${items.length}件 · 团价${displayYuan(groupPrice)}起`
+                    ? `${items.length}件合计 ${displayYuan(origin)} / ${displayYuan(groupPrice)}`
                     : `${displayYuan(origin)} / ${displayYuan(groupPrice)}`}
                 </TableCell>
                 <TableCell>

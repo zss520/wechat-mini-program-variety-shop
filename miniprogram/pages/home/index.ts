@@ -1,5 +1,5 @@
 import { request } from "../../utils/request";
-import { asArray, asRecord, displayText } from "../../utils/display";
+import { asArray, asRecord, displayText, toFiniteNumber } from "../../utils/display";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
@@ -81,7 +81,37 @@ Page({
   },
   async loadGroup() {
     const group = readBlock(await request("/home/group"), "拼团");
-    this.setData({ groupTitle: group.title, groups: group.list });
+    this.setData({
+      groupTitle: group.title,
+      groups: group.list.map((item: any) => {
+        const row = asRecord<any>(item);
+        const goodsList = asArray<any>(row.goodsList);
+        const progress = asRecord<any>(row.progress);
+        const required = toFiniteNumber(progress.required) || toFiniteNumber(row.required_count) || 0;
+        const paid = toFiniteNumber(progress.paidCount) || 0;
+        const endAt = row.end_at ? new Date(row.end_at).getTime() : 0;
+        return {
+          ...row,
+          cover: String(row.coverUrl || row.goods?.thumbUrl || row.goods?.coverUrl || ""),
+          goodsList,
+          goodsPreview: goodsList.slice(0, 4),
+          goodsMore: Math.max(0, goodsList.length - 4),
+          goodsCount: goodsList.length || toFiniteNumber(row.goodsCount) || 0,
+          totalCent:
+            toFiniteNumber(row.totalGroupPriceCent) ||
+            toFiniteNumber(row.minGroupPriceCent) ||
+            toFiniteNumber(row.group_price_cent) ||
+            0,
+          originCent: toFiniteNumber(row.originTotalCent) || 0,
+          remainMs: toFiniteNumber(row.remainMs) || (endAt ? Math.max(0, endAt - Date.now()) : 0),
+          hasProgress: Boolean(progress.teamId),
+          paid,
+          required,
+          remain: Math.max(0, required - paid),
+          progressPct: required && paid ? Math.max(8, Math.round((paid / required) * 100)) : 0,
+        };
+      }),
+    });
   },
   async loadDeal() {
     const deal = readBlock(await request("/home/deal"), "特价专区");
@@ -111,7 +141,9 @@ Page({
     wx.navigateTo({ url: "/pages/seckill/list" });
   },
   openGroup(e: any) {
-    wx.navigateTo({ url: `/pages/group/detail?activityId=${e.currentTarget.dataset.id}` });
+    const id = e.currentTarget.dataset.id;
+    track("group_click", { extra: { activity_id: id, from: "home" } });
+    wx.navigateTo({ url: `/pages/group/detail?activityId=${id}` });
   },
   openSeckill(e: any) {
     const item = e.currentTarget.dataset.item;

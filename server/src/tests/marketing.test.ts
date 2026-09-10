@@ -279,21 +279,38 @@ async function run() {
     endAt: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
   });
   assert(savedCombo.items.length === 2, "saveCampaignPayload keeps combo items");
-  assert(Number(savedCombo.payload.group_price_cent) === 700, "activity price is min combo price");
+  assert(Number(savedCombo.payload.group_price_cent) === 1800, "activity price is combo total");
   const [comboAid] = await db("group_buy_activities").insert(savedCombo.payload);
   await replaceActivityGoods(Number(comboAid), savedCombo.items);
   const listed = await listActiveGroupBuys();
   const found = listed.find((x: { id: number }) => Number(x.id) === Number(comboAid));
   assert(found && Array.isArray(found.goodsList) && found.goodsList.length === 2, "active list exposes combo goods");
   assert(found.coverUrl, "active list exposes cover url");
-  const previewCombo = await previewOrder(uid, [{ goodsId: ggidCombo, qty: 1 }], "PICKUP", null, {
+  assert(Number(found.totalGroupPriceCent) === 1800, "public combo price is sum of item group prices");
+  assert(Number(found.group_price_cent) === 1800, "group_price_cent is combo total");
+  const comboItems = [
+    { goodsId: ggid, qty: 1 },
+    { goodsId: ggidCombo, qty: 1 },
+  ];
+  let needAll = false;
+  try {
+    await previewOrder(uid, [{ goodsId: ggidCombo, qty: 1 }], "PICKUP", null, {
+      activityType: "GROUP_BUY",
+      activityId: Number(comboAid),
+    });
+  } catch (e: any) {
+    needAll = String(e.message || "").includes("整单购买");
+  }
+  assert(needAll, "partial combo should be rejected");
+  const previewCombo = await previewOrder(uid, comboItems, "PICKUP", null, {
     activityType: "GROUP_BUY",
     activityId: Number(comboAid),
   });
-  assert(previewCombo.goodsAmountCent === 700, `combo goods should use its group price, got ${previewCombo.goodsAmountCent}`);
+  assert(previewCombo.items.length === 2, "combo preview includes every item");
+  assert(previewCombo.goodsAmountCent === 1800, `combo total should be 1800, got ${previewCombo.goodsAmountCent}`);
   let wrongGoods = false;
   try {
-    await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, {
+    await previewOrder(uid, [{ goodsId: ggid, qty: 1 }, { goodsId: gid, qty: 1 }], "PICKUP", null, {
       activityType: "GROUP_BUY",
       activityId: Number(comboAid),
     });
@@ -301,6 +318,22 @@ async function run() {
     wrongGoods = String(e.message || "").includes("活动商品");
   }
   assert(wrongGoods, "goods outside combo should be rejected");
+  let qtyMismatch = false;
+  try {
+    await previewOrder(
+      uid,
+      [
+        { goodsId: ggid, qty: 1 },
+        { goodsId: ggidCombo, qty: 2 },
+      ],
+      "PICKUP",
+      null,
+      { activityType: "GROUP_BUY", activityId: Number(comboAid) }
+    );
+  } catch (e: any) {
+    qtyMismatch = String(e.message || "").includes("数量须一致");
+  }
+  assert(qtyMismatch, "combo qty mismatch should be rejected");
   const [comboTeam] = await db("group_buy_teams").insert({
     activity_id: comboAid,
     leader_user_id: uid,
@@ -310,12 +343,41 @@ async function run() {
   });
   const comboOrder = await createOrder({
     userId: uid,
-    items: [{ goodsId: ggidCombo, qty: 1 }],
+    items: comboItems,
     fulfillType: "PICKUP",
     activityType: "GROUP_BUY",
     activityId: Number(comboAid),
     teamId: Number(comboTeam),
   });
+  const comboLines = await db("order_items").where({ order_id: comboOrder.id });
+  assert(comboLines.length === 2, "combo order stores every goods line");
+  assert(
+    comboLines.reduce((s: number, l: { amount_cent: number }) => s + Number(l.amount_cent || 0), 0) === 1800,
+    "combo order amount is item totals"
+  );
+  const comboOrder2 = await createOrder({
+    userId: uid,
+    items: comboItems,
+    fulfillType: "PICKUP",
+    activityType: "GROUP_BUY",
+    activityId: Number(comboAid),
+    teamId: Number(comboTeam),
+  });
+  assert(comboOrder2 && comboOrder2.id, "bundle limit counts orders not summed line qty");
+  let comboLimited = false;
+  try {
+    await createOrder({
+      userId: uid,
+      items: comboItems,
+      fulfillType: "PICKUP",
+      activityType: "GROUP_BUY",
+      activityId: Number(comboAid),
+      teamId: Number(comboTeam),
+    });
+  } catch (e: any) {
+    comboLimited = String(e.message || "").includes("限购");
+  }
+  assert(comboLimited, "third combo bundle should hit per-user limit");
   await db("group_buy_members").insert({
     team_id: comboTeam,
     user_id: uid,

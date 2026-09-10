@@ -30,3 +30,195 @@
 .deal-item:last-child {
   margin-bottom: 8rpx;
 }
+
+.group-sec {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 78%);
+  border: 1rpx solid #ffedd5;
+  border-radius: 20rpx;
+  padding: 20rpx 0 12rpx;
+}
+
+.group-sec .sec-head {
+  padding: 0 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+}
+
+.group-scroll {
+  white-space: nowrap;
+  padding: 0 20rpx 4rpx;
+}
+
+.gcard {
+  display: inline-block;
+  width: 520rpx;
+  margin-right: 16rpx;
+  vertical-align: top;
+  white-space: normal;
+  background: #fff;
+  border-radius: 20rpx;
+  overflow: hidden;
+  border: 1rpx solid #ffedd5;
+  box-sizing: border-box;
+}
+
+.gcard-cover {
+  position: relative;
+  height: 240rpx;
+  background: #fff7ed;
+  overflow: hidden;
+}
+
+.gcard-badge {
+  position: absolute;
+  left: 16rpx;
+  top: 16rpx;
+  z-index: 1;
+  height: 40rpx;
+  padding: 0 14rpx;
+  line-height: 40rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(194, 65, 12, 0.92);
+  border-radius: 8rpx 20rpx 20rpx 8rpx;
+}
+
+.gcard-cd {
+  position: absolute;
+  right: 12rpx;
+  bottom: 12rpx;
+  z-index: 1;
+  --td-countdown-bg-color: #c2410c;
+  --td-error-color: #c2410c;
+  --td-countdown-round-color: #ffffff;
+}
+
+.gcard-body {
+  padding: 16rpx 16rpx 18rpx;
+}
+
+.gcard-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #3f2e22;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gcard-goods {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+
+.gthumb {
+  width: 72rpx;
+  height: 72rpx;
+  flex: none;
+  border-radius: 12rpx;
+  overflow: hidden;
+  border: 1rpx solid #ffedd5;
+  box-sizing: border-box;
+}
+
+.gmore {
+  width: 72rpx;
+  height: 72rpx;
+  flex: none;
+  border-radius: 12rpx;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 22rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gcard-price {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+
+.gnow {
+  color: #c2410c;
+  font-weight: 700;
+  display: flex;
+  align-items: flex-end;
+  line-height: 1;
+}
+
+.gnow .yen {
+  font-size: 22rpx;
+  line-height: 1.15;
+  margin-right: 2rpx;
+}
+
+.gnow .num {
+  font-size: 44rpx;
+  letter-spacing: -1rpx;
+}
+
+.gorigin {
+  color: #b8a99a;
+  font-size: 22rpx;
+  text-decoration: line-through;
+  padding-bottom: 6rpx;
+}
+
+.gtag {
+  font-size: 20rpx;
+  color: #c2410c;
+  background: #fff7ed;
+  padding: 0 8rpx;
+  line-height: 32rpx;
+  border-radius: 6rpx;
+  margin-bottom: 4rpx;
+}
+
+.gcard-prog {
+  margin-top: 12rpx;
+}
+
+.gtrack {
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: #f3e8dc;
+  overflow: hidden;
+}
+
+.gfill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #fb923c, #c2410c);
+}
+
+.gprog-t {
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: #c2410c;
+}
+
+.gcard-wait {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #8a6a4a;
+}
+
+.gcard-end {
+  display: inline-block;
+  width: 4rpx;
+  height: 1rpx;
+}

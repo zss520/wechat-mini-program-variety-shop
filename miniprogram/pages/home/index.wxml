@@ -45,18 +45,49 @@
   </scroll-view>
 </view>
 
-<view class="sec" wx:if="{{groups.length}}">
+<view class="sec group-sec" wx:if="{{groups.length}}">
   <view class="sec-head" bindtap="goGroups">
-    <view class="sec-title">{{disp.text(groupTitle, '拼团')}}</view>
-    <view class="sec-more">更多<t-icon name="chevron-right" size="32rpx" /></view>
-  </view>
-  <scroll-view scroll-x class="hscroll" enhanced show-scrollbar="{{false}}">
-    <view class="hitem" wx:for="{{groups}}" wx:key="id" data-id="{{item.id}}" bindtap="openGroup">
-      <t-image src="{{disp.thumb(item.coverUrl, item.goods.thumbUrl)}}" width="100%" height="160rpx" mode="aspectFill" shape="round" />
-      <view class="t">{{disp.text(item.title)}}</view>
-      <view class="price">{{disp.money(item.group_price_cent)}}</view>
-      <t-tag theme="primary" variant="light" size="small">{{item.goodsCount > 1 ? (disp.num(item.goodsCount) + '件组合') : (disp.num(item.required_count) + '人团')}}</t-tag>
+    <view class="group-head">
+      <view class="sec-title">{{disp.text(groupTitle, '拼团')}}</view>
+      <t-tag theme="primary" variant="light" size="small">人满发货</t-tag>
     </view>
+    <view class="sec-more">全部<t-icon name="chevron-right" size="32rpx" /></view>
+  </view>
+  <scroll-view scroll-x class="group-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="gcard" wx:for="{{groups}}" wx:key="id" data-id="{{item.id}}" bindtap="openGroup">
+      <view class="gcard-cover">
+        <t-image src="{{disp.cover(item.cover)}}" width="520rpx" height="240rpx" mode="aspectFill" />
+        <view class="gcard-badge">{{disp.num(item.required_count)}}人团</view>
+        <view class="gcard-cd" wx:if="{{item.remainMs}}">
+          <t-count-down time="{{item.remainMs}}" format="HH:mm:ss" size="small" theme="square" />
+        </view>
+      </view>
+      <view class="gcard-body">
+        <view class="gcard-title">{{disp.text(item.title)}}</view>
+        <view class="gcard-goods" wx:if="{{item.goodsPreview.length}}">
+          <view class="gthumb" wx:for="{{item.goodsPreview}}" wx:for-item="g" wx:key="id">
+            <t-image src="{{disp.thumb(g.thumbUrl, g.coverUrl)}}" width="72rpx" height="72rpx" shape="round" mode="aspectFill" />
+          </view>
+          <view class="gmore" wx:if="{{item.goodsMore}}">+{{item.goodsMore}}</view>
+        </view>
+        <view class="gcard-price">
+          <view class="gnow">
+            <text class="yen">¥</text>
+            <text class="num">{{disp.yuan(item.totalCent)}}</text>
+          </view>
+          <text class="gorigin" wx:if="{{disp.gt0(item.originCent)}}">{{disp.money(item.originCent)}}</text>
+          <text class="gtag">{{item.goodsCount > 1 ? (disp.num(item.goodsCount) + '件组合总价') : '团价'}}</text>
+        </view>
+        <view class="gcard-prog" wx:if="{{item.hasProgress}}">
+          <view class="gtrack">
+            <view class="gfill" style="width: {{item.progressPct}}%;"></view>
+          </view>
+          <view class="gprog-t">已支付 {{disp.num(item.paid)}}/{{disp.num(item.required)}} 人，还差 {{disp.num(item.remain)}} 人</view>
+        </view>
+        <view class="gcard-wait" wx:else>去开团 · {{disp.num(item.required_count)}}人成团</view>
+      </view>
+    </view>
+    <view class="gcard-end"></view>
   </scroll-view>
 </view>
 
