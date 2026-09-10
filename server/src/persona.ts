@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { HttpError, maskPhone } from "./http";
 import { ST } from "./orderService";
-import { buildPersonaTags, rfmScores } from "./scoring";
+import { buildPersonaTags, personaRadar, rfmScores } from "./scoring";
 
 function daysSince(d: Date | string | null | undefined) {
   if (!d) return null;
@@ -164,5 +164,15 @@ export async function memberPersona(userId: number) {
       lastActivityDays,
     },
     lastOrder: lastOrderOut,
+    radar: personaRadar({
+      recencyScore: rfm.recencyScore,
+      frequencyScore: rfm.frequencyScore,
+      monetaryScore: rfm.monetaryScore,
+      exposePv: ev.goods_expose || 0,
+      clickPv: last30ClickPv,
+      detailPv: ev.goods_detail_view || 0,
+      cartPv: ev.add_to_cart || 0,
+      payOrders: orders30.length,
+    }),
   };
 }

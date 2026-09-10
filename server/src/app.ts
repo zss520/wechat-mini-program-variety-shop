@@ -8,7 +8,7 @@ import { appRouter } from "./appRoutes";
 import { errorHandler } from "./auth";
 import { fail, HttpError } from "./http";
 import { config } from "./config";
-import { db } from "./db";
+import { db, pingDb } from "./db";
 import { markPaid } from "./orderService";
 
 export function createApp() {
@@ -24,7 +24,16 @@ export function createApp() {
 <h1>社区杂货铺隐私政策</h1>
 <p>我们仅收集提供购物服务所必需的信息（微信标识、手机号、收货地址、订单）。浏览与点击等行为数据用于改进商品展示与经营分析，不含手机号与 openid。</p>`);
   });
-  app.get("/api/health", (_req, res) => res.json({ code: 0, message: "ok", data: { ok: true } }));
+  app.get("/api/health", async (_req, res) => {
+    try {
+      await pingDb();
+      res.json({ code: 0, message: "ok", data: { ok: true, db: true } });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[health] db ping failed", e);
+      res.status(503).json({ code: 1, message: "db unavailable", data: { ok: false, db: false } });
+    }
+  });
   app.post("/api/pay/wechat/notify", async (req, res) => {
     try {
       const no = req.body?.out_trade_no || req.body?.order_no;

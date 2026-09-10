@@ -3,6 +3,7 @@ import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrder
 import { claimCoupon } from "../marketing";
 import { couponDiscount, pointsRedeem } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
+import { campaignBody } from "../campaigns";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -144,6 +145,7 @@ async function run() {
     required_count: 2,
     group_price_cent: 1200,
     expire_hours: 24,
+    per_user_limit: 2,
     start_at: new Date(Date.now() - 86400000),
     end_at: new Date(Date.now() + 86400000),
     enabled: 1,
@@ -179,6 +181,66 @@ async function run() {
   t1 = await db("orders").where({ id: o1.id }).first();
   const t2 = await db("orders").where({ id: o2.id }).first();
   assert(t1.status === ST.PENDING_PACK && t2.status === ST.PENDING_PACK, "group success should pack both");
+
+  const gbBody = campaignBody("GROUP", {
+    title: "限购团",
+    goodsId: ggid,
+    requiredCount: 2,
+    groupPriceCent: 1100,
+    perUserLimit: 3,
+    startAt: "2026-09-01T00:00",
+    endAt: "2026-09-10T00:00",
+  });
+  assert(gbBody.per_user_limit === 3, "group body keeps per-user limit");
+
+  const [ggidLimit] = await db("goods").insert({
+    category_id: cat.id,
+    name: `__gbl_${Date.now()}`,
+    price_cent: 1800,
+    unit: "件",
+    stock: 10,
+    on_sale: 1,
+    cover_url: "/static/placeholders/empty.png",
+  });
+  const [aidLimit] = await db("group_buy_activities").insert({
+    goods_id: ggidLimit,
+    title: "限购1件",
+    required_count: 2,
+    group_price_cent: 900,
+    expire_hours: 24,
+    per_user_limit: 1,
+    start_at: new Date(Date.now() - 86400000),
+    end_at: new Date(Date.now() + 86400000),
+    enabled: 1,
+  });
+  const [teamLimit] = await db("group_buy_teams").insert({
+    activity_id: aidLimit,
+    leader_user_id: uid,
+    status: "OPEN",
+    expire_at: expire,
+  });
+  await createOrder({
+    userId: uid,
+    items: [{ goodsId: ggidLimit, qty: 1 }],
+    fulfillType: "PICKUP",
+    activityType: "GROUP_BUY",
+    activityId: aidLimit,
+    teamId: teamLimit,
+  });
+  let groupLimited = false;
+  try {
+    await createOrder({
+      userId: uid,
+      items: [{ goodsId: ggidLimit, qty: 1 }],
+      fulfillType: "PICKUP",
+      activityType: "GROUP_BUY",
+      activityId: aidLimit,
+      teamId: teamLimit,
+    });
+  } catch (e: any) {
+    groupLimited = String(e.message || "").includes("限购");
+  }
+  assert(groupLimited, "group per-user limit should block second order");
 
   const rec = await personalizedGoods(uid, 4);
   assert(Array.isArray(rec), "personalized should return list");

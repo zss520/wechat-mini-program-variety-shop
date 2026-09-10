@@ -67,6 +67,7 @@ exports.seed = async function seed(knex) {
       required_count: 2,
       group_price_cent: 3290,
       expire_hours: 24,
+      per_user_limit: 1,
       start_at: knex.raw("DATE_SUB(NOW(), INTERVAL 1 DAY)"),
       end_at: knex.raw("DATE_ADD(NOW(), INTERVAL 21 DAY)"),
       enabled: 1,

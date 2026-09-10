@@ -25,7 +25,7 @@ import { funnelReport, goodsReport, recomputeHeat, signals } from "./analytics";
 import { memberPersona } from "./persona";
 import { fillRecommend } from "./recommend";
 import { config } from "./config";
-import { campaignBody } from "./campaigns";
+import { campaignAdminQuery, saveCampaignPayload } from "./campaigns";
 import { changePoints, couponPayload } from "./marketing";
 import { listNotifyLogs } from "./notify";
 import { toSqlDateTime } from "./pricing";
@@ -843,8 +843,7 @@ adminRouter.delete("/coupons/:id", async (req, res, next) => {
 
 adminRouter.get("/group-buys", async (_req, res, next) => {
   try {
-    const list = await db("group_buy_activities").whereNull("deleted_at").orderBy("id", "desc");
-    ok(res, list);
+    ok(res, await campaignAdminQuery("GROUP"));
   } catch (e) {
     next(e);
   }
@@ -852,7 +851,7 @@ adminRouter.get("/group-buys", async (_req, res, next) => {
 
 adminRouter.post("/group-buys", async (req, res, next) => {
   try {
-    const payload = campaignBody("GROUP", req.body || {});
+    const { payload } = await saveCampaignPayload("GROUP", req.body || {});
     const [id] = await db("group_buy_activities").insert(payload);
     ok(res, await db("group_buy_activities").where({ id }).first());
   } catch (e) {
@@ -862,7 +861,7 @@ adminRouter.post("/group-buys", async (req, res, next) => {
 
 adminRouter.put("/group-buys/:id", async (req, res, next) => {
   try {
-    const payload = campaignBody("GROUP", req.body || {});
+    const { payload } = await saveCampaignPayload("GROUP", req.body || {});
     await db("group_buy_activities").where({ id: Number(req.params.id) }).update(payload);
     ok(res, await db("group_buy_activities").where({ id: Number(req.params.id) }).first());
   } catch (e) {
@@ -881,7 +880,7 @@ adminRouter.delete("/group-buys/:id", async (req, res, next) => {
 
 adminRouter.get("/seckills", async (_req, res, next) => {
   try {
-    ok(res, await db("seckill_activities").whereNull("deleted_at").orderBy("id", "desc"));
+    ok(res, await campaignAdminQuery("SECKILL"));
   } catch (e) {
     next(e);
   }
@@ -889,7 +888,7 @@ adminRouter.get("/seckills", async (_req, res, next) => {
 
 adminRouter.post("/seckills", async (req, res, next) => {
   try {
-    const payload = campaignBody("SECKILL", req.body || {});
+    const { payload } = await saveCampaignPayload("SECKILL", req.body || {});
     const [id] = await db("seckill_activities").insert(payload);
     ok(res, await db("seckill_activities").where({ id }).first());
   } catch (e) {
@@ -899,7 +898,7 @@ adminRouter.post("/seckills", async (req, res, next) => {
 
 adminRouter.put("/seckills/:id", async (req, res, next) => {
   try {
-    const payload = campaignBody("SECKILL", req.body || {});
+    const { payload } = await saveCampaignPayload("SECKILL", req.body || {});
     await db("seckill_activities").where({ id: Number(req.params.id) }).update(payload);
     ok(res, await db("seckill_activities").where({ id: Number(req.params.id) }).first());
   } catch (e) {

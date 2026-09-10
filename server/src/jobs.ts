@@ -2,12 +2,21 @@ import cron from "node-cron";
 import { closeExpiredOrders, expireGroupTeams } from "./orderService";
 import { recomputeHeat } from "./analytics";
 
+function safe(name: string, fn: () => Promise<unknown>) {
+  return () => {
+    Promise.resolve()
+      .then(fn)
+      .catch((e) => {
+        // eslint-disable-next-line no-console
+        console.error(name, e);
+      });
+  };
+}
+
 export function startJobs() {
   cron.schedule("* * * * *", () => {
-    closeExpiredOrders().catch((e) => console.error("closeExpiredOrders", e));
-    expireGroupTeams().catch((e) => console.error("expireGroupTeams", e));
+    safe("closeExpiredOrders", closeExpiredOrders)();
+    safe("expireGroupTeams", expireGroupTeams)();
   });
-  cron.schedule("20 0 * * *", () => {
-    recomputeHeat().catch((e) => console.error("recomputeHeat", e));
-  });
+  cron.schedule("20 0 * * *", safe("recomputeHeat", recomputeHeat));
 }

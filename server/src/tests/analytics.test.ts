@@ -114,6 +114,8 @@ async function run() {
   assert(!(persona as any).member.openid, "no openid");
   assert(persona.summary.orderCount === 1, "one paid order");
   assert(persona.tags.some((t) => t.key === "new"), "new customer tag");
+  assert(Array.isArray(persona.radar?.indicators) && persona.radar.indicators.length === 5, "persona radar");
+  assert(persona.radar.values.length === 5, "persona radar values");
 
   await db("analytics_events").where({ user_id: uid }).delete();
   await db("analytics_events").whereIn("anonymous_id", [`a_${stamp}`, `a2_${stamp}`]).delete();

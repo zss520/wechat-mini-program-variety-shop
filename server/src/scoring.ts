@@ -150,6 +150,62 @@ export function rfmScores(recencyDays: number | null, frequency90: number, monet
   return { recencyScore, frequencyScore, monetaryScore };
 }
 
+export type RadarAxis = { key: string; name: string; max: number };
+
+export function clampScore(n: number, min = 1, max = 5) {
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, Math.round(n)));
+}
+
+export function activityRadarScore(input: {
+  exposePv: number;
+  clickPv: number;
+  detailPv: number;
+  cartPv: number;
+  payOrders: number;
+}) {
+  const hits = [input.exposePv > 0, input.clickPv > 0, input.detailPv > 0, input.cartPv > 0, input.payOrders > 0].filter(Boolean)
+    .length;
+  return clampScore(hits || 1);
+}
+
+export function conversionRadarScore(clickPv: number, payOrders: number) {
+  if (payOrders <= 0) return clickPv > 0 ? 2 : 1;
+  if (clickPv <= 0) return 4;
+  const r = payOrders / Math.max(1, clickPv);
+  if (r >= 0.4) return 5;
+  if (r >= 0.2) return 4;
+  if (r >= 0.08) return 3;
+  return 2;
+}
+
+export function personaRadar(input: {
+  recencyScore: number;
+  frequencyScore: number;
+  monetaryScore: number;
+  exposePv: number;
+  clickPv: number;
+  detailPv: number;
+  cartPv: number;
+  payOrders: number;
+}) {
+  const indicators: RadarAxis[] = [
+    { key: "recency", name: "近度", max: 5 },
+    { key: "frequency", name: "频次", max: 5 },
+    { key: "monetary", name: "金额", max: 5 },
+    { key: "activity", name: "活跃", max: 5 },
+    { key: "conversion", name: "转化", max: 5 },
+  ];
+  const values = [
+    clampScore(input.recencyScore),
+    clampScore(input.frequencyScore),
+    clampScore(input.monetaryScore),
+    activityRadarScore(input),
+    conversionRadarScore(input.clickPv, input.payOrders),
+  ];
+  return { indicators, values };
+}
+
 export function buildPersonaTags(input: {
   registeredDays: number;
   orderCount: number;

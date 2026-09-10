@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { HttpError } from "./http";
 import { publicGoods } from "./recommend";
 import { toSqlDateTime } from "./pricing";
 
@@ -56,26 +57,72 @@ export async function loadTeam(teamId: number) {
   };
 }
 
+function asInt(v: unknown, fallback: number) {
+  const n = Number(v);
+  return Number.isInteger(n) ? n : fallback;
+}
+
+function clampInt(v: unknown, fallback: number, min: number, max: number) {
+  const n = asInt(v, fallback);
+  return Math.min(max, Math.max(min, n));
+}
+
 export function campaignBody(kind: "GROUP" | "SECKILL", body: Record<string, unknown>) {
   const base = {
-    goods_id: Number(body.goodsId ?? body.goods_id),
-    title: String(body.title || "").slice(0, 40),
-    start_at: toSqlDateTime(String(body.startAt ?? body.start_at)),
-    end_at: toSqlDateTime(String(body.endAt ?? body.end_at)),
+    goods_id: asInt(body.goodsId ?? body.goods_id, 0),
+    title: String(body.title || "").trim().slice(0, 40),
+    start_at: toSqlDateTime(String(body.startAt ?? body.start_at ?? "")),
+    end_at: toSqlDateTime(String(body.endAt ?? body.end_at ?? "")),
     enabled: body.enabled === false || body.enabled === 0 ? 0 : 1,
+    per_user_limit: clampInt(body.perUserLimit ?? body.per_user_limit ?? 1, 1, 1, 99),
   };
   if (kind === "GROUP") {
     return {
       ...base,
-      required_count: Math.max(2, Number(body.requiredCount ?? body.required_count ?? 2)),
-      group_price_cent: Number(body.groupPriceCent ?? body.group_price_cent),
-      expire_hours: Math.max(1, Number(body.expireHours ?? body.expire_hours ?? 24)),
+      required_count: clampInt(body.requiredCount ?? body.required_count ?? 2, 2, 2, 99),
+      group_price_cent: asInt(body.groupPriceCent ?? body.group_price_cent, 0),
+      expire_hours: clampInt(body.expireHours ?? body.expire_hours ?? 24, 24, 1, 168),
     };
   }
   return {
     ...base,
-    seckill_price_cent: Number(body.seckillPriceCent ?? body.seckill_price_cent),
-    seckill_stock: Math.max(0, Number(body.seckillStock ?? body.seckill_stock ?? 0)),
-    per_user_limit: Math.max(1, Number(body.perUserLimit ?? body.per_user_limit ?? 1)),
+    seckill_price_cent: asInt(body.seckillPriceCent ?? body.seckill_price_cent, 0),
+    seckill_stock: clampInt(body.seckillStock ?? body.seckill_stock ?? 0, 0, 0, 999999),
   };
+}
+
+export async function saveCampaignPayload(kind: "GROUP" | "SECKILL", body: Record<string, unknown>) {
+  const payload = campaignBody(kind, body);
+  if (!payload.title) throw new HttpError(400, "请填写标题");
+  if (!payload.goods_id) throw new HttpError(400, "请选择商品");
+  const goods = await db("goods").where({ id: payload.goods_id }).whereNull("deleted_at").first();
+  if (!goods) throw new HttpError(400, "商品不存在");
+  if (!payload.start_at || !payload.end_at) throw new HttpError(400, "请填写开始和结束时间");
+  if (String(payload.start_at) >= String(payload.end_at)) throw new HttpError(400, "结束时间须晚于开始时间");
+  if (kind === "GROUP") {
+    const row = payload as typeof payload & { required_count: number; group_price_cent: number };
+    if (row.required_count < 2) throw new HttpError(400, "成团人数须为不小于 2 的整数");
+    if (row.group_price_cent < 1) throw new HttpError(400, "团价须为大于 0 的整数，单位是分");
+  } else {
+    const row = payload as typeof payload & { seckill_price_cent: number; seckill_stock: number };
+    if (row.seckill_price_cent < 1) throw new HttpError(400, "秒杀价须为大于 0 的整数，单位是分");
+    if (row.seckill_stock < 1) throw new HttpError(400, "秒杀库存须为大于 0 的整数");
+  }
+  return { payload, goods };
+}
+
+export function campaignAdminQuery(kind: "GROUP" | "SECKILL") {
+  const table = kind === "GROUP" ? "group_buy_activities" : "seckill_activities";
+  return db(`${table} as a`)
+    .leftJoin("goods as g", "g.id", "a.goods_id")
+    .leftJoin("categories as c", "c.id", "g.category_id")
+    .whereNull("a.deleted_at")
+    .select(
+      "a.*",
+      "g.name as goods_name",
+      "g.price_cent as origin_price_cent",
+      "g.category_id as goods_category_id",
+      "c.name as category_name"
+    )
+    .orderBy("a.id", "desc");
 }

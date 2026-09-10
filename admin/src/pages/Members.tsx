@@ -17,6 +17,7 @@ import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import { useFeedback } from "../components/FeedbackProvider";
+import PersonaRadar from "../components/PersonaRadar";
 import { asArray, asRecord, displayNumber, displayText, displayYuan } from "../utils/display";
 
 type Row = { id: number; nickname: string; phone: string; points_balance: number; orderCount: number; payAmountCent: number };
@@ -29,6 +30,7 @@ type Persona = {
   last30d: { exposePv: number; clickPv: number; detailPv: number; cartPv: number; payOrders: number; payAmountCent: number };
   summary: { orderCount: number; payAmountCent: number; avgOrderCent: number; lastActivityDays: number };
   lastOrder: { id: number; paidAt: string; amountCent: number; itemQty: number; fulfillType: string } | null;
+  radar?: { indicators: { key: string; name: string; max: number }[]; values: number[] };
 };
 
 const TAG_COLOR: Record<string, "default" | "primary" | "success" | "warning" | "info"> = {
@@ -117,7 +119,7 @@ export default function Members() {
   };
 
   return (
-    <PageContainer title="会员" description="人物画像为聚合标签（RFM、偏好分类、近 30 日活跃），不展示浏览轨迹和 openid。">
+    <PageContainer title="会员" description="人物画像含 RFM 雷达图与聚合标签（偏好分类、近 30 日活跃），不展示浏览轨迹和 openid。">
       <InlineForm>
         <TextField
           size="small"
@@ -164,7 +166,7 @@ export default function Members() {
         </TableBody>
       </DataTable>
 
-      <Dialog open={loadingPersona || !!persona} onClose={closePersona} fullWidth maxWidth="sm">
+      <Dialog open={loadingPersona || !!persona} onClose={closePersona} fullWidth maxWidth="md">
         <DialogTitle>人物画像 · {displayText(personaTitle)}</DialogTitle>
         <DialogContent>
           {loadingPersona && (
@@ -196,6 +198,8 @@ export default function Members() {
                 <Metric label="累计实付" value={displayYuan(persona.summary.payAmountCent)} />
                 <Metric label="客单价" value={displayYuan(persona.summary.avgOrderCent)} />
               </Grid>
+              <Typography variant="subtitle2">能力雷达</Typography>
+              <PersonaRadar data={persona.radar} />
               <Typography variant="subtitle2">近 30 日行为</Typography>
               <Grid container spacing={1.5}>
                 <Metric label="曝光次数" value={displayNumber(persona.last30d.exposePv)} />

@@ -1,9 +1,12 @@
 import {
   asIsoDate,
+  activityRadarScore,
   buildPersonaTags,
+  conversionRadarScore,
   decayWeight,
   heatRaw,
   mixHeat,
+  personaRadar,
   pickDiverse,
   rateMetrics,
   scaleByP95,
@@ -11,6 +14,7 @@ import {
   smoothCtr,
   smoothCvr,
 } from "../scoring";
+import { isRecoverableRuntimeError } from "../process";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -96,6 +100,23 @@ async function run() {
   const picked = pickDiverse(ranked, 3, 2);
   const c1 = picked.filter((p) => p.g.category_id === 1).length;
   assert(c1 === 2 && picked.some((p) => p.g.category_id === 2), "diversity then backfill");
+
+  const radar = personaRadar({
+    recencyScore: 5,
+    frequencyScore: 4,
+    monetaryScore: 3,
+    exposePv: 10,
+    clickPv: 4,
+    detailPv: 2,
+    cartPv: 1,
+    payOrders: 1,
+  });
+  assert(radar.indicators.length === 5 && radar.values.length === 5, "radar shape");
+  assert(radar.values[0] === 5 && radar.values[1] === 4 && radar.values[2] === 3, "rfm axes");
+  assert(activityRadarScore({ exposePv: 0, clickPv: 0, detailPv: 0, cartPv: 0, payOrders: 0 }) === 1, "quiet activity");
+  assert(conversionRadarScore(0, 0) === 1 && conversionRadarScore(8, 0) === 2, "conversion scores");
+  assert(isRecoverableRuntimeError({ code: "PROTOCOL_CONNECTION_LOST" }), "mysql disconnect recoverable");
+  assert(!isRecoverableRuntimeError(new Error("boom")), "programming error not recoverable");
 
   console.log("scoring tests passed");
 }

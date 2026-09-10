@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS group_buy_activities (
   required_count INT NOT NULL DEFAULT 2,
   group_price_cent INT NOT NULL,
   expire_hours INT NOT NULL DEFAULT 24,
+  per_user_limit INT NOT NULL DEFAULT 1,
   start_at DATETIME NOT NULL,
   end_at DATETIME NOT NULL,
   enabled TINYINT NOT NULL DEFAULT 1,

@@ -98,6 +98,27 @@ export async function nextOrderNo(trx: Knex.Transaction) {
   return `${prefix}${String(seq).padStart(6, "0")}`;
 }
 
+async function userActivityQty(
+  conn: Knex | Knex.Transaction,
+  userId: number,
+  activityType: string,
+  activityId: number
+) {
+  const used = await conn("order_items")
+    .join("orders", "orders.id", "order_items.order_id")
+    .where("orders.user_id", userId)
+    .where("orders.activity_type", activityType)
+    .where("orders.activity_id", activityId)
+    .whereNot("orders.status", ST.CANCELLED)
+    .sum({ q: "order_items.qty" })
+    .first();
+  return Number(used?.q || 0);
+}
+
+function limitExceededMessage(type: string) {
+  return type === "SECKILL" ? "超出秒杀限购" : "超出拼团限购";
+}
+
 async function uniquePickupCode(trx: Knex.Transaction) {
   for (let i = 0; i < 20; i++) {
     const code = String(100000 + Math.floor(Math.random() * 900000));
@@ -143,6 +164,12 @@ export async function previewOrder(
   if (!items.length) throw new HttpError(400, "请选择商品");
   if (fulfillType === "DELIVERY" && !settings.delivery_enabled) throw new HttpError(409, "本店暂不支持配送");
   const act = await resolveActivity(extras, items);
+  if ((act.seckill || act.group) && extras.activityId) {
+    const qty = items[0]?.qty || 0;
+    const limit = Math.max(1, Number((act.seckill || act.group).per_user_limit || 1));
+    const already = await userActivityQty(db, userId, act.type, extras.activityId);
+    if (qty > limit || already + qty > limit) throw new HttpError(409, limitExceededMessage(act.type));
+  }
 
   const lines: PricedLine[] = [];
   let goodsAmount = 0;
@@ -255,25 +282,22 @@ export async function createOrder(params: {
   if (!user?.phone) throw new HttpError(401, "请先微信授权登录", 10010);
 
   return db.transaction(async (trx) => {
-    if (extras.activityType === "SECKILL" && extras.activityId) {
-      const used = await trx("order_items")
-        .join("orders", "orders.id", "order_items.order_id")
-        .where("orders.user_id", params.userId)
-        .where("orders.activity_type", "SECKILL")
-        .where("orders.activity_id", extras.activityId)
-        .whereNot("orders.status", ST.CANCELLED)
-        .sum({ q: "order_items.qty" })
-        .first();
-      const act = await trx("seckill_activities").where({ id: extras.activityId }).forUpdate().first();
-      if (!act) throw new HttpError(409, "秒杀活动不存在");
-      const already = Number(used?.q || 0);
+    if ((extras.activityType === "SECKILL" || extras.activityType === "GROUP_BUY") && extras.activityId) {
+      const table = extras.activityType === "SECKILL" ? "seckill_activities" : "group_buy_activities";
+      const act = await trx(table).where({ id: extras.activityId }).forUpdate().first();
+      if (!act) throw new HttpError(409, extras.activityType === "SECKILL" ? "秒杀活动不存在" : "拼团活动不存在");
       const qty = preview.items[0].qty;
-      if (already + qty > Number(act.per_user_limit)) throw new HttpError(409, "超出秒杀限购");
-      const n = await trx("seckill_activities")
-        .where({ id: extras.activityId })
-        .where("seckill_stock", ">=", qty)
-        .decrement("seckill_stock", qty);
-      if (!n) throw new HttpError(409, "秒杀库存不足", 10001);
+      const already = await userActivityQty(trx, params.userId, extras.activityType, extras.activityId);
+      if (already + qty > Math.max(1, Number(act.per_user_limit || 1))) {
+        throw new HttpError(409, limitExceededMessage(extras.activityType));
+      }
+      if (extras.activityType === "SECKILL") {
+        const n = await trx("seckill_activities")
+          .where({ id: extras.activityId })
+          .where("seckill_stock", ">=", qty)
+          .decrement("seckill_stock", qty);
+        if (!n) throw new HttpError(409, "秒杀库存不足", 10001);
+      }
     }
 
     for (const line of preview.items) {

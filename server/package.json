@@ -7,7 +7,8 @@
     "npm": ">=8.15.0"
   },
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev": "node scripts/supervise.js node ./node_modules/ts-node-dev/lib/bin.js --respawn --transpile-only --exit-child --debounce 800 --ignore-watch=uploads|static|thumbs src/index.ts",
+    "dev:once": "ts-node --transpile-only src/index.ts",
     "build": "tsc --noEmit",
     "start": "node dist/index.js",
     "compile": "tsc",

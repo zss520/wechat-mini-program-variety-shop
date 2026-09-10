@@ -13,8 +13,31 @@ function make(database) {
       charset: "utf8mb4",
       timezone: "+08:00",
       supportBigNumbers: true,
+      connectTimeout: 10000,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000,
     },
-    pool: { min: 0, max: 10 },
+    pool: {
+      min: 0,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      acquireTimeoutMillis: 15000,
+      createTimeoutMillis: 15000,
+      propagateCreateError: false,
+      afterCreate(conn, done) {
+        if (conn && typeof conn.on === "function") {
+          conn.on("error", (err) => {
+            // eslint-disable-next-line no-console
+            console.error("[mysql connection]", (err && (err.code || err.message)) || err);
+          });
+        }
+        if (conn && typeof conn.query === "function") {
+          conn.query("SELECT 1", (err) => done(err, conn));
+          return;
+        }
+        done(null, conn);
+      },
+    },
     migrations: { directory: "./migrations" },
     seeds: { directory: "./seeds" },
   };
