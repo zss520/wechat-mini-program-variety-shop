@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   background: #fff;
-  margin: 16rpx;
+  margin: 24rpx 16rpx;
   padding: 16rpx;
   border-radius: 16rpx;
   gap: 12rpx;
@@ -54,7 +54,7 @@ page {
 }
 .upsell {
   background: #fff;
-  margin: 16rpx;
+  margin: 24rpx 16rpx;
   padding: 16rpx;
   border-radius: 16rpx;
 }

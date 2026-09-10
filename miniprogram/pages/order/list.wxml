@@ -8,10 +8,8 @@
 </t-tabs>
 
 <view class="order-list">
-  <t-cell-group theme="card">
+  <t-cell-group theme="card" wx:for="{{list}}" wx:key="id">
     <t-cell
-      wx:for="{{list}}"
-      wx:key="id"
       title="{{disp.text(item.order_no)}}"
       description="{{disp.text(item.statusText)}}"
       note="{{disp.money(item.pay_amount_cent)}}"

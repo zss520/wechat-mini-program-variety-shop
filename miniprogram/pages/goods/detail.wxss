@@ -29,7 +29,7 @@
 }
 .rel {
   background: #fff;
-  margin-top: 16rpx;
+  margin-top: 24rpx;
   padding: 24rpx 0 180rpx;
 }
 .rel .sec-title {

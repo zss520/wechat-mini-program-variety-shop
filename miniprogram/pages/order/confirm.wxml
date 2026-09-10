@@ -40,9 +40,24 @@
       arrow
     />
   </picker>
-  <t-cell title="积分抵扣" description="可用 {{disp.num(preview.pointsBalance, '0')}}" left-icon="gift">
-    <t-switch slot="note" value="{{usePoints}}" bind:change="onPoints" />
-  </t-cell>
+  <block wx:if="{{settings.points_enabled !== false}}">
+    <t-cell title="积分抵扣" description="{{pointsHint}}" left-icon="gift">
+      <t-switch slot="note" value="{{usePoints}}" disabled="{{!canUsePoints}}" bind:change="onPoints" />
+    </t-cell>
+    <t-cell wx:if="{{usePoints}}" title="使用数量" description="最少100，且为100的倍数">
+      <t-stepper
+        slot="note"
+        value="{{pointsToUse}}"
+        min="{{100}}"
+        max="{{pointsMax}}"
+        step="{{100}}"
+        theme="filled"
+        integer
+        disable-input
+        bind:change="onPointsQty"
+      />
+    </t-cell>
+  </block>
   <t-cell title="运费" note="{{disp.money(preview.freightCent, '¥0')}}" />
   <t-cell title="优惠" note="{{disp.minusMoney(preview.discountCent)}}" />
   <t-cell title="应付" note="{{disp.money(preview.payAmountCent, '¥0')}}" />

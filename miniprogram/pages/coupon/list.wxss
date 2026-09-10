@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  margin: 16rpx 24rpx;
+  margin: 24rpx 24rpx;
   padding: 28rpx 24rpx;
   border-radius: 16rpx;
   border-left: 8rpx solid #c2410c;

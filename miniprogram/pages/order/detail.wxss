@@ -22,7 +22,7 @@
   padding-bottom: 12rpx;
 }
 .detail-body {
-  padding-top: 16rpx;
+  padding-top: 24rpx;
   padding-bottom: 24rpx;
 }
 .detail-body.below-code {
@@ -36,7 +36,7 @@
 }
 t-cell-group {
   display: block;
-  margin-top: 16rpx;
+  margin-top: 24rpx;
 }
 .detail-body t-cell-group:first-child {
   margin-top: 0;

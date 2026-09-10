@@ -89,3 +89,8 @@ page {
   box-sizing: border-box;
   padding-bottom: var(--tab-bar-space);
 }
+
+t-cell-group {
+  display: block;
+  margin-top: 24rpx;
+}

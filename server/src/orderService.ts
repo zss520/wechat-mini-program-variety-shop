@@ -6,7 +6,7 @@ import { bumpPayStats } from "./analytics";
 import { changePoints, loadUsableCoupon } from "./marketing";
 import { activityWindowOk } from "./campaigns";
 import { notifyPackReady } from "./notify";
-import { pointsRedeem, salePriceOf, type LineInput, type PricedLine } from "./pricing";
+import { POINTS_REDEEM_STEP, pointsRedeem, salePriceOf, type LineInput, type PricedLine } from "./pricing";
 
 export const ST = {
   PENDING_PAY: "PENDING_PAY",
@@ -24,10 +24,23 @@ export type OrderStatus = (typeof ST)[keyof typeof ST];
 export type OrderExtras = {
   userCouponId?: number | null;
   usePoints?: boolean;
+  pointsToUse?: number | null;
   activityType?: "NORMAL" | "GROUP_BUY" | "SECKILL";
   activityId?: number | null;
   teamId?: number | null;
 };
+
+function requestedPointsOf(extras: OrderExtras): number | null {
+  if (!extras.usePoints) return 0;
+  if (extras.pointsToUse == null) return null;
+  const n = Number(extras.pointsToUse);
+  if (!Number.isInteger(n) || n < 0) throw new HttpError(400, "积分数量不合法");
+  if (n === 0) return 0;
+  if (n < POINTS_REDEEM_STEP || n % POINTS_REDEEM_STEP !== 0) {
+    throw new HttpError(400, "最少使用100积分，且须为100的整数倍");
+  }
+  return n;
+}
 
 async function logStatus(
   trx: Knex | Knex.Transaction,
@@ -172,9 +185,13 @@ export async function previewOrder(
 
   const afterCoupon = Math.max(0, goodsAmount + freight - couponDiscountCent);
   const user = await db("users").where({ id: userId }).first();
-  const redeem = extras.usePoints
-    ? pointsRedeem(Number(user?.points_balance || 0), settings.points_redeem_rate, afterCoupon)
-    : { usePoints: 0, useCent: 0 };
+  const requested = requestedPointsOf(extras);
+  const redeem = settings.points_enabled
+    ? pointsRedeem(Number(user?.points_balance || 0), settings.points_redeem_rate, afterCoupon, requested)
+    : { usePoints: 0, useCent: 0, maxPoints: 0, step: POINTS_REDEEM_STEP };
+  if (requested && requested > 0 && redeem.usePoints === 0) {
+    throw new HttpError(409, "积分不足或本单不可抵扣", 10006);
+  }
   const payAmount = Math.max(0, afterCoupon - redeem.useCent);
 
   return {
@@ -187,6 +204,9 @@ export async function previewOrder(
     pointsDiscountCent: redeem.useCent,
     pointsUsed: redeem.usePoints,
     pointsBalance: Number(user?.points_balance || 0),
+    pointsMax: redeem.maxPoints,
+    pointsStep: redeem.step,
+    pointsCanUse: settings.points_enabled && redeem.maxPoints >= POINTS_REDEEM_STEP,
     couponName,
     payAmountCent: payAmount,
     address,
@@ -207,6 +227,7 @@ export async function createOrder(params: {
   const extras: OrderExtras = {
     userCouponId: params.userCouponId,
     usePoints: params.usePoints,
+    pointsToUse: params.pointsToUse,
     activityType: params.activityType,
     activityId: params.activityId,
     teamId: params.teamId,

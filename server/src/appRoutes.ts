@@ -424,6 +424,7 @@ appRouter.post("/orders/preview", requireRole("user"), requireBoundPhone, async 
         items: z.array(z.object({ goodsId: z.number(), qty: z.number().int().min(1) })).min(1),
         userCouponId: z.number().nullable().optional(),
         usePoints: z.boolean().optional(),
+        pointsToUse: z.number().int().nonnegative().nullable().optional(),
         activityType: z.enum(["NORMAL", "GROUP_BUY", "SECKILL"]).optional(),
         activityId: z.number().nullable().optional(),
         teamId: z.number().nullable().optional(),
@@ -434,6 +435,7 @@ appRouter.post("/orders/preview", requireRole("user"), requireBoundPhone, async 
       await previewOrder(req.auth!.id, body.items, body.fulfillType, body.addressId, {
         userCouponId: body.userCouponId,
         usePoints: body.usePoints,
+        pointsToUse: body.pointsToUse,
         activityType: body.activityType,
         activityId: body.activityId,
         teamId: body.teamId,
@@ -455,6 +457,7 @@ appRouter.post("/orders", requireRole("user"), requireBoundPhone, async (req, re
         from: z.string().optional(),
         userCouponId: z.number().nullable().optional(),
         usePoints: z.boolean().optional(),
+        pointsToUse: z.number().int().nonnegative().nullable().optional(),
         activityType: z.enum(["NORMAL", "GROUP_BUY", "SECKILL"]).optional(),
         activityId: z.number().nullable().optional(),
         teamId: z.number().nullable().optional(),
@@ -469,6 +472,7 @@ appRouter.post("/orders", requireRole("user"), requireBoundPhone, async (req, re
       from: body.from,
       userCouponId: body.userCouponId,
       usePoints: body.usePoints,
+      pointsToUse: body.pointsToUse,
       activityType: body.activityType,
       activityId: body.activityId,
       teamId: body.teamId,
@@ -654,6 +658,7 @@ appRouter.post("/group-buys/:id/open", requireRole("user"), requireBoundPhone, a
         remark: z.string().max(80).optional(),
         userCouponId: z.number().nullable().optional(),
         usePoints: z.boolean().optional(),
+        pointsToUse: z.number().int().nonnegative().nullable().optional(),
       })
       .parse(req.body);
     const act = await db("group_buy_activities").where({ id: Number(req.params.id) }).whereNull("deleted_at").first();
@@ -673,6 +678,7 @@ appRouter.post("/group-buys/:id/open", requireRole("user"), requireBoundPhone, a
       remark: body.remark,
       userCouponId: body.userCouponId,
       usePoints: body.usePoints,
+      pointsToUse: body.pointsToUse,
       activityType: "GROUP_BUY",
       activityId: act.id,
       teamId,
@@ -699,6 +705,7 @@ appRouter.post("/group-buys/teams/:id/join", requireRole("user"), requireBoundPh
         remark: z.string().max(80).optional(),
         userCouponId: z.number().nullable().optional(),
         usePoints: z.boolean().optional(),
+        pointsToUse: z.number().int().nonnegative().nullable().optional(),
       })
       .parse(req.body);
     const team = await db("group_buy_teams").where({ id: Number(req.params.id) }).first();
@@ -716,6 +723,7 @@ appRouter.post("/group-buys/teams/:id/join", requireRole("user"), requireBoundPh
       remark: body.remark,
       userCouponId: body.userCouponId,
       usePoints: body.usePoints,
+      pointsToUse: body.pointsToUse,
       activityType: "GROUP_BUY",
       activityId: act.id,
       teamId: team.id,

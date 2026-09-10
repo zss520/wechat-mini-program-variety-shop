@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrderDetail, orderTimePoints } from "../orderService";
 import { claimCoupon } from "../marketing";
-import { couponDiscount } from "../pricing";
+import { couponDiscount, pointsRedeem } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
 
 function assert(cond: unknown, msg: string) {
@@ -74,6 +74,20 @@ async function run() {
 
   const previewPts = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { usePoints: true });
   assert(previewPts.pointsUsed === 200 && previewPts.payAmountCent === 1300, "200 points should offset 2 yuan on 15 yuan special");
+  assert(previewPts.pointsMax === 200 && previewPts.pointsStep === 100 && previewPts.pointsCanUse, "preview should expose redeem limits");
+  const previewPts100 = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { usePoints: true, pointsToUse: 100 });
+  assert(previewPts100.pointsUsed === 100 && previewPts100.payAmountCent === 1400, "100 points should offset 1 yuan");
+  let badPts = false;
+  try {
+    await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { usePoints: true, pointsToUse: 50 });
+  } catch (e: any) {
+    badPts = String(e.message || "").includes("100");
+  }
+  assert(badPts, "less than 100 points should be rejected");
+  const low = pointsRedeem(80, 100, 1500);
+  assert(low.usePoints === 0 && low.maxPoints === 0, "below 100 balance cannot redeem");
+  const snap = pointsRedeem(350, 100, 1500, 150);
+  assert(snap.usePoints === 100 && snap.maxPoints === 300, "requested points should snap down to 100 step and cap by max");
 
   const [sgid] = await db("goods").insert({
     category_id: cat.id,

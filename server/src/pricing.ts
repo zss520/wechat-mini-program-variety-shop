@@ -83,10 +83,35 @@ export function couponDiscount(
   return { ok: false, reason: "不支持的券类型", discount: 0 };
 }
 
-export function pointsRedeem(balance: number, redeemRate: number, payableCent: number) {
+export const POINTS_REDEEM_STEP = 100;
+
+export function pointsRedeemMax(balance: number, redeemRate: number, payableCent: number) {
   const rate = Math.max(1, Number(redeemRate || 100));
-  const maxByBalance = Math.floor(Number(balance || 0) / rate) * 100;
-  const useCent = Math.min(maxByBalance, Math.max(0, payableCent));
-  const usePoints = Math.round((useCent / 100) * rate);
-  return { usePoints, useCent };
+  const step = POINTS_REDEEM_STEP;
+  const maxByBalance = Math.floor(Math.max(0, Number(balance || 0)) / step) * step;
+  const maxByPayable = Math.floor((Math.max(0, Number(payableCent || 0)) * rate) / 100 / step) * step;
+  return Math.min(maxByBalance, maxByPayable);
+}
+
+export function pointsRedeem(
+  balance: number,
+  redeemRate: number,
+  payableCent: number,
+  requestedPoints?: number | null
+) {
+  const rate = Math.max(1, Number(redeemRate || 100));
+  const step = POINTS_REDEEM_STEP;
+  const maxPoints = pointsRedeemMax(balance, rate, payableCent);
+  const empty = { usePoints: 0, useCent: 0, maxPoints, step };
+  if (maxPoints < step) return empty;
+  let usePoints: number;
+  if (requestedPoints == null) usePoints = maxPoints;
+  else if (requestedPoints === 0) return empty;
+  else {
+    usePoints = Math.floor(Number(requestedPoints) / step) * step;
+    usePoints = Math.min(maxPoints, Math.max(0, usePoints));
+  }
+  if (usePoints < step) return empty;
+  const useCent = Math.round((usePoints / rate) * 100);
+  return { usePoints, useCent, maxPoints, step };
 }

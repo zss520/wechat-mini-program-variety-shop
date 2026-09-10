@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   background: #fff;
-  margin: 16rpx 24rpx;
+  margin: 24rpx 24rpx;
   padding: 16rpx;
   border-radius: 16rpx;
   gap: 16rpx;
