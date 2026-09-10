@@ -4,7 +4,7 @@
   </t-side-bar>
   <view class="content">
     <view class="sorts">
-      <t-segmented value="{{sort}}" options="{{sortOptions}}" bind:change="onSort" />
+      <t-segmented value="{{sort}}" options="{{sortOptions}}" block bind:change="onSort" />
     </view>
     <scroll-view scroll-y class="goods" enhanced show-scrollbar="{{false}}">
       <view class="goods-grid" wx:if="{{list.length}}">

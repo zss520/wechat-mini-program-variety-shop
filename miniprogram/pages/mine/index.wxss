@@ -1,7 +1,7 @@
 .head {
   background: linear-gradient(180deg, #c2410c 0%, #ea580c 100%);
   color: #fff;
-  padding: 48rpx 32rpx 56rpx;
+  padding: 48rpx 32rpx 72rpx;
   display: flex;
   align-items: center;
   gap: 24rpx;
@@ -18,7 +18,14 @@
   font-size: 24rpx;
   opacity: 0.85;
 }
-t-cell-group {
+.mine-groups {
+  margin-top: -32rpx;
+  padding: 0 0 24rpx;
+}
+.mine-groups t-cell-group {
   display: block;
-  margin-top: 32rpx;
+  margin-top: 0;
+}
+.mine-groups t-cell-group + t-cell-group {
+  margin-top: 24rpx;
 }

@@ -9,24 +9,26 @@
   <t-icon name="chevron-right" size="40rpx" color="#fff" />
 </view>
 
-<t-cell-group theme="card">
-  <t-cell title="我的订单" left-icon="order" arrow hover bind:click="orders" />
-  <t-cell title="优惠券" left-icon="coupon" arrow hover bind:click="coupons" />
-  <t-cell title="我的积分" left-icon="gift" arrow hover bind:click="points" />
-</t-cell-group>
+<view class="mine-groups">
+  <t-cell-group theme="card">
+    <t-cell title="我的订单" left-icon="order" arrow hover bind:click="orders" />
+    <t-cell title="优惠券" left-icon="coupon" arrow hover bind:click="coupons" />
+    <t-cell title="我的积分" left-icon="gift" arrow hover bind:click="points" />
+  </t-cell-group>
 
-<t-cell-group theme="card">
-  <t-cell title="拼团活动" left-icon="usergroup" arrow hover bind:click="groups" />
-  <t-cell title="限时秒杀" left-icon="time" arrow hover bind:click="seckill" />
-  <t-cell title="收货地址" left-icon="location" arrow hover bind:click="addr" />
-</t-cell-group>
+  <t-cell-group theme="card">
+    <t-cell title="拼团活动" left-icon="usergroup" arrow hover bind:click="groups" />
+    <t-cell title="限时秒杀" left-icon="time" arrow hover bind:click="seckill" />
+    <t-cell title="收货地址" left-icon="location" arrow hover bind:click="addr" />
+  </t-cell-group>
 
-<t-cell-group theme="card">
-  <t-cell title="备货通知" left-icon="notification" hover bind:click="sub">
-    <t-switch slot="note" value="{{subscribed}}" />
-  </t-cell>
-  <t-cell title="联系店主" left-icon="service" note="{{settings.phone || ''}}" arrow hover bind:click="call" />
-  <t-cell title="隐私政策" left-icon="info-circle" arrow hover bind:click="privacy" />
-  <t-cell wx:if="{{logged}}" title="退出登录" left-icon="close" hover bind:click="logout" />
-</t-cell-group>
+  <t-cell-group theme="card">
+    <t-cell title="备货通知" left-icon="notification" hover bind:click="sub">
+      <t-switch slot="note" value="{{subscribed}}" />
+    </t-cell>
+    <t-cell title="联系店主" left-icon="service" note="{{settings.phone || ''}}" arrow hover bind:click="call" />
+    <t-cell title="隐私政策" left-icon="info-circle" arrow hover bind:click="privacy" />
+    <t-cell wx:if="{{logged}}" title="退出登录" left-icon="close" hover bind:click="logout" />
+  </t-cell-group>
+</view>
 </view>
