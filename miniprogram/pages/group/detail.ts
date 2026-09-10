@@ -3,8 +3,53 @@ import { asArray, asRecord, toFiniteNumber } from "../../utils/display";
 
 type Slot = { id: number; filled: boolean; leader: boolean; name: string; avatar: string; paid: boolean };
 type GoodsPick = { id: number; name: string; coverUrl: string; thumbUrl: string; groupPriceCent: number; originCent: number };
-type TeamPick = { teamId: number; paidCount: number; memberCount: number; required: number; remain: number };
+type TeamPick = {
+  teamId: number;
+  paidCount: number;
+  memberCount: number;
+  required: number;
+  remain: number;
+  progressPct: number;
+};
 type LogItem = { id: number; label: string; note: string; counts: string };
+function joinableTeams(raw: unknown[], fallbackRequired: number): TeamPick[] {
+  return asArray<any>(raw)
+    .map((t: any) => {
+      const row = asRecord<any>(t);
+      const required = Math.max(2, toFiniteNumber(row.required) || fallbackRequired);
+      const paidCount = Math.max(0, toFiniteNumber(row.paidCount) ?? 0);
+      const remain = Math.max(0, required - paidCount);
+      return {
+        teamId: toFiniteNumber(row.teamId) || 0,
+        paidCount,
+        memberCount: Math.max(0, toFiniteNumber(row.memberCount) ?? 0),
+        required,
+        remain,
+        progressPct: required && paidCount ? Math.max(8, Math.min(100, Math.round((paidCount / required) * 100))) : 0,
+      };
+    })
+    .filter((t) => t.teamId && t.paidCount >= 1 && t.remain > 0);
+}
+
+function buildSlots(members: any[], paid: number, required: number): Slot[] {
+  const paidMembers = members.filter((m) => asRecord(m).paid === true);
+  const showN = Math.min(Math.max(required, 2), 8);
+  const filledN = Math.min(showN, Math.max(paidMembers.length, paid));
+  const slots: Slot[] = [];
+  for (let i = 0; i < showN; i++) {
+    const m = asRecord<any>(paidMembers[i]);
+    const filled = i < filledN;
+    slots.push({
+      id: i,
+      filled,
+      leader: filled && (m.leader === true || i === 0),
+      paid: filled,
+      name: filled ? String(m.nickname || (i === 0 ? "团长" : "邻居")) : "待参团",
+      avatar: filled ? String(m.avatarUrl || "") : "",
+    });
+  }
+  return slots;
+}
 
 const EVENT_LABEL: Record<string, string> = {
   OPEN: "发起拼团",
@@ -33,7 +78,10 @@ function buildView(act: any, team: any) {
   const goods = picks[0] || asRecord<any>({});
   const required = Math.max(2, toFiniteNumber(team && team.requiredCount) || toFiniteNumber(a.required_count) || 2);
   const members = asArray<any>(team && team.members);
-  const paid = team ? Math.max(0, toFiniteNumber(team.paidCount) ?? members.filter((m) => asRecord(m).paid).length) : 0;
+  const paidMembers = members.filter((m) => asRecord(m).paid === true);
+  const paid = team
+    ? Math.max(0, toFiniteNumber(team.paidCount) ?? paidMembers.length)
+    : 0;
   const memberCount = team ? Math.max(0, toFiniteNumber(team.memberCount) ?? members.length) : 0;
   const remain = Math.max(0, required - paid);
   const origin = toFiniteNumber(a.originTotalCent) || picks.reduce((s, g) => s + (g.originCent || 0), 0);
@@ -42,31 +90,9 @@ function buildView(act: any, team: any) {
     toFiniteNumber(a.group_price_cent) ||
     picks.reduce((s, g) => s + (g.groupPriceCent || 0), 0);
   const save = origin > group ? origin - group : 0;
-  const showN = Math.min(required, 8);
-  const slots: Slot[] = [];
-  for (let i = 0; i < showN; i++) {
-    const m = asRecord<any>(members[i]);
-    const filled = i < members.length;
-    slots.push({
-      id: i,
-      filled,
-      leader: filled && (m.leader === true || i === 0),
-      paid: filled && m.paid === true,
-      name: filled ? String(m.nickname || (i === 0 ? "团长" : "邻居")) : "待参团",
-      avatar: filled ? String(m.avatarUrl || "") : "",
-    });
-  }
+  const slots = buildSlots(members, paid, required);
   const cover = String(a.coverUrl || (team && team.coverUrl) || goods.coverUrl || goods.thumbUrl || "");
-  const openTeams: TeamPick[] = asArray<any>(a.openTeams).map((t: any) => {
-    const row = asRecord<any>(t);
-    return {
-      teamId: toFiniteNumber(row.teamId) || 0,
-      paidCount: toFiniteNumber(row.paidCount) || 0,
-      memberCount: toFiniteNumber(row.memberCount) || 0,
-      required: toFiniteNumber(row.required) || required,
-      remain: toFiniteNumber(row.remain) || 0,
-    };
-  });
+  const openTeams = joinableTeams(a.openTeams, required);
   const logs: LogItem[] = asArray<any>(team && team.progressLog).map((x: any) => {
     const row = asRecord<any>(x);
     const ev = String(row.event || "");
@@ -101,6 +127,13 @@ function buildView(act: any, team: any) {
     slots,
     openTeams,
     logs,
+    hasTeam: Boolean(team),
+    progressHint: team
+      ? `已支付 ${paid} 人，还差 ${remain} 人成团`
+      : openTeams.length
+        ? "选择下方进行中的团，或自己发起一趟"
+        : "还没有人开团，支付后占用名额，满员即按团价结算",
+    progressLabel: team ? `${paid}/${required}人已支付` : openTeams.length ? `${openTeams.length}个团进行中` : "待发起",
   };
 }
 
@@ -122,9 +155,11 @@ Page({
       act = list.find((x: any) => Number(x.id) === activityId) || list[0] || null;
     }
     let team: any = null;
-    if (teamId) {
+    const joinable = joinableTeams(act && act.openTeams, Math.max(2, toFiniteNumber(act && act.required_count) || 2));
+    const pickId = teamId || joinable[0]?.teamId || 0;
+    if (pickId) {
       try {
-        team = asRecord(await request(`/group-buys/teams/${teamId}`));
+        team = asRecord(await request(`/group-buys/teams/${pickId}`));
         const activity = asRecord<any>(team.activity);
         if (activity.id) {
           act = {
@@ -133,6 +168,7 @@ Page({
             goods: team.goods || (act && act.goods),
             goodsList: team.goodsList || (act && act.goodsList),
             coverUrl: team.coverUrl || (act && act.coverUrl),
+            openTeams: (act && act.openTeams) || [],
             totalGroupPriceCent: (act && act.totalGroupPriceCent) || activity.group_price_cent,
             originTotalCent: act && act.originTotalCent,
           };

@@ -69,15 +69,12 @@
   <view class="card">
     <view class="card-h">
       <text class="card-t">成团进度</text>
-      <text class="card-e">{{teamId ? (disp.num(view.paid) + '/' + disp.num(view.required) + '人已支付') : '待发起'}}</text>
+      <text class="card-e">{{disp.text(view.progressLabel)}}</text>
     </view>
     <view class="track">
       <view class="fill" style="width: {{view.progress}}%;"></view>
     </view>
-    <view class="hint" wx:if="{{teamId}}">
-      已支付 {{disp.num(view.paid)}} 人，团内 {{disp.num(view.memberCount)}} 人，还差 {{disp.num(view.remain)}} 人成团
-    </view>
-    <view class="hint" wx:else>邀请邻居一起买，支付后占用名额，满员即按团价结算</view>
+    <view class="hint">{{disp.text(view.progressHint)}}</view>
     <view class="slots">
       <view class="slot" wx:for="{{view.slots}}" wx:key="id">
         <t-avatar wx:if="{{item.filled && item.avatar}}" image="{{item.avatar}}" size="small" />
@@ -85,19 +82,35 @@
         <view wx:else class="slot-empty">
           <t-icon name="usergroup" size="32rpx" color="#d4c4b4" />
         </view>
-        <view class="slot-name">{{item.leader ? '团长' : (item.filled ? disp.text(item.name) : '待参团')}}</view>
+        <view class="slot-name {{item.leader ? 'lead' : ''}}">{{item.leader ? '团长' : (item.filled ? disp.text(item.name) : '待参团')}}</view>
       </view>
     </view>
   </view>
 
-  <view class="card" wx:if="{{view.openTeams.length && !teamId}}">
+  <view class="card" wx:if="{{view.openTeams.length}}">
     <view class="card-h">
       <text class="card-t">可参加的团</text>
+      <text class="card-e">{{disp.num(view.openTeams.length)}}个进行中</text>
     </view>
-    <view class="team" wx:for="{{view.openTeams}}" wx:key="teamId" data-id="{{item.teamId}}" bindtap="pickTeam">
-      <view class="team-t">已支付 {{disp.num(item.paidCount)}}/{{disp.num(item.required)}} 人</view>
-      <view class="team-s">还差 {{disp.num(item.remain)}} 人 · 点此参加</view>
+    <view
+      class="team {{item.teamId == teamId ? 'on' : ''}}"
+      wx:for="{{view.openTeams}}"
+      wx:key="teamId"
+      data-id="{{item.teamId}}"
+      bindtap="pickTeam"
+    >
+      <view class="team-top">
+        <view class="team-copy">
+          <view class="team-t">已支付 {{disp.num(item.paidCount)}}/{{disp.num(item.required)}} 人</view>
+          <view class="team-s">还差 {{disp.num(item.remain)}} 人成团</view>
+        </view>
+        <view class="team-go {{item.teamId == teamId ? 'now' : ''}}">{{item.teamId == teamId ? '当前团' : '参加'}}</view>
+      </view>
+      <view class="team-track">
+        <view class="fill" style="width: {{item.progressPct}}%;"></view>
+      </view>
     </view>
+    <view class="team-open" bindtap="open">没有合适的团？发起新团</view>
   </view>
 
   <view class="card" wx:if="{{view.logs.length}}">
@@ -143,8 +156,11 @@
     </view>
     <view class="bar-tip">{{view.multiGoods ? '组合总价' : '团价'}}</view>
   </view>
-  <view class="bar-actions">
-    <t-button wx:if="{{teamId}}" theme="primary" size="medium" shape="round" block disabled="{{!remainMs}}" bind:tap="join">
+  <view class="bar-actions {{teamId ? 'split' : ''}}">
+    <t-button wx:if="{{teamId}}" theme="primary" variant="outline" size="medium" shape="round" disabled="{{!remainMs}}" bind:tap="open">
+      发起新团
+    </t-button>
+    <t-button wx:if="{{teamId}}" class="bar-join" theme="primary" size="medium" shape="round" block disabled="{{!remainMs}}" bind:tap="join">
       {{remainMs ? '参加该团' : '已结束'}}
     </t-button>
     <t-button wx:else theme="primary" size="medium" shape="round" block disabled="{{!remainMs}}" bind:tap="open">

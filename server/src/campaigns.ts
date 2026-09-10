@@ -102,15 +102,30 @@ function coverOfActivity(act: { cover_url?: string | null }, goodsList: { coverU
 async function loadOpenTeamSummaries(activityIds: number[]) {
   const map = new Map<number, any[]>();
   if (!activityIds.length) return map;
-  const teams = await db("group_buy_teams")
-    .whereIn("activity_id", activityIds)
-    .where({ status: "OPEN" })
-    .orderBy("paid_count", "desc")
-    .orderBy("member_count", "desc")
-    .orderBy("id", "desc");
+  const now = new Date();
+  const teams = await db("group_buy_teams as t")
+    .leftJoin("group_buy_activities as a", "a.id", "t.activity_id")
+    .whereIn("t.activity_id", activityIds)
+    .where("t.status", "OPEN")
+    .where("t.expire_at", ">", now)
+    .where("t.paid_count", ">=", 1)
+    .orderBy("t.paid_count", "desc")
+    .orderBy("t.member_count", "desc")
+    .orderBy("t.id", "desc")
+    .select(
+      "t.id",
+      "t.activity_id",
+      "t.status",
+      "t.paid_count",
+      "t.member_count",
+      "t.required_count",
+      "t.expire_at",
+      "a.required_count as activity_required"
+    );
   for (const team of teams) {
-    const required = Math.max(0, Number(team.required_count || 0));
+    const required = Math.max(2, Number(team.required_count || 0) || Number(team.activity_required || 0) || 2);
     const paid = Math.max(0, Number(team.paid_count || 0));
+    if (paid >= required) continue;
     const members = Math.max(0, Number(team.member_count || 0));
     const item = {
       teamId: Number(team.id),
@@ -261,8 +276,8 @@ export async function loadTeam(teamId: number) {
     paid: GROUP_PAID_STATUSES.includes(String(m.order_status || "")),
   }));
   const logs = await db("group_buy_progress").where({ team_id: teamId }).orderBy("id", "asc").limit(40);
-  const paidCount = Number(team.paid_count || members.filter((m) => m.paid).length);
-  const memberCount = Number(team.member_count || members.length);
+  const paidCount = Math.max(Number(team.paid_count || 0), members.filter((m) => m.paid).length);
+  const memberCount = Math.max(Number(team.member_count || 0), members.length);
   const required = Number(team.required_count || act?.required_count || 0);
   return {
     ...team,

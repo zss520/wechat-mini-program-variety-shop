@@ -3,7 +3,7 @@ import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrder
 import { claimCoupon } from "../marketing";
 import { couponDiscount, pointsRedeem } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
-import { campaignBody, loadTeam, listActiveGroupBuys, refreshTeamProgress, replaceActivityGoods, saveCampaignPayload } from "../campaigns";
+import { campaignBody, getGroupBuy, loadTeam, listActiveGroupBuys, refreshTeamProgress, replaceActivityGoods, saveCampaignPayload } from "../campaigns";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -389,6 +389,57 @@ async function run() {
   assert(comboTeamLoaded && comboTeamLoaded.goodsList.length === 2, "team exposes combo goods");
   assert(comboTeamLoaded.progressLog.some((x: { event: string }) => x.event === "OPEN"), "open event recorded");
   assert(Number(comboTeamLoaded.memberCount) === 1, "member count persisted");
+  assert(Number(comboTeamLoaded.paidCount) === 0, "unpaid open team should not occupy paid seats");
+
+  const [aidJoin] = await db("group_buy_activities").insert({
+    goods_id: ggid,
+    title: "3人可参加团",
+    required_count: 3,
+    group_price_cent: 1200,
+    expire_hours: 24,
+    per_user_limit: 1,
+    start_at: new Date(Date.now() - 86400000),
+    end_at: new Date(Date.now() + 86400000),
+    enabled: 1,
+  });
+  await db("group_buy_teams").insert({
+    activity_id: aidJoin,
+    leader_user_id: uid,
+    status: "OPEN",
+    expire_at: expire,
+    member_count: 1,
+    paid_count: 0,
+    required_count: 3,
+  });
+  const [liveTeam] = await db("group_buy_teams").insert({
+    activity_id: aidJoin,
+    leader_user_id: uid2,
+    status: "OPEN",
+    expire_at: expire,
+    member_count: 2,
+    paid_count: 1,
+    required_count: 3,
+  });
+  await db("group_buy_teams").insert({
+    activity_id: aidJoin,
+    leader_user_id: uid,
+    status: "OPEN",
+    expire_at: expire,
+    member_count: 3,
+    paid_count: 3,
+    required_count: 3,
+  });
+  const listedJoin = await listActiveGroupBuys();
+  const foundJoin = listedJoin.find((x: { id: number }) => Number(x.id) === Number(aidJoin));
+  assert(foundJoin && Array.isArray(foundJoin.openTeams), "active list exposes openTeams");
+  assert(foundJoin.openTeams.length === 1, "unpaid and full teams should not be joinable");
+  assert(Number(foundJoin.openTeams[0].teamId) === Number(liveTeam), "joinable team is the paid incomplete one");
+  assert(Number(foundJoin.openTeams[0].paidCount) === 1, "joinable paid count uses payments");
+  assert(Number(foundJoin.openTeams[0].remain) === 2, "remain uses unpaid seats");
+  assert(Number(foundJoin.progress.teamId) === Number(liveTeam), "activity progress follows the paid team");
+  const detailJoin = await getGroupBuy(Number(aidJoin));
+  assert(detailJoin && detailJoin.openTeams.length === 1, "detail also hides unpaid ghost teams");
+  assert(Number(detailJoin.openTeams[0].teamId) === Number(liveTeam), "detail joinable team matches list");
 
   const rec = await personalizedGoods(uid, 4);
   assert(Array.isArray(rec), "personalized should return list");

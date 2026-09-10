@@ -273,6 +273,11 @@ page {
   text-overflow: ellipsis;
 }
 
+.slot-name.lead {
+  color: #c2410c;
+  font-weight: 600;
+}
+
 .rule {
   display: flex;
   align-items: flex-start;
@@ -354,8 +359,23 @@ page {
   min-width: 0;
 }
 
+.bar-actions.split {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
 .bar-actions t-button {
   width: 100%;
+}
+
+.bar-actions.split t-button {
+  flex: 1;
+  width: auto;
+}
+
+.bar-actions.split .bar-join {
+  flex: 1.7;
 }
 
 .combo {
@@ -406,9 +426,27 @@ page {
   border-bottom: 1rpx solid #f3e8dc;
 }
 
-.team:last-child {
+.team:last-of-type {
   border-bottom: 0;
-  padding-bottom: 0;
+}
+
+.team.on {
+  margin: 0 -8rpx;
+  padding: 16rpx 8rpx;
+  background: #fff7ed;
+  border-radius: 16rpx;
+  border-bottom-color: transparent;
+}
+
+.team-top {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.team-copy {
+  flex: 1;
+  min-width: 0;
 }
 
 .team-t {
@@ -421,6 +459,41 @@ page {
   margin-top: 4rpx;
   font-size: 22rpx;
   color: #c2410c;
+}
+
+.team-go {
+  flex: none;
+  min-width: 96rpx;
+  height: 52rpx;
+  padding: 0 18rpx;
+  line-height: 52rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  background: #c2410c;
+  border-radius: 999rpx;
+}
+
+.team-go.now {
+  color: #c2410c;
+  background: #ffedd5;
+}
+
+.team-track {
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: #f3e8dc;
+  overflow: hidden;
+  margin-top: 12rpx;
+}
+
+.team-open {
+  margin-top: 8rpx;
+  padding-top: 16rpx;
+  font-size: 24rpx;
+  color: #8a6a4a;
+  text-align: center;
 }
 
 .log {
