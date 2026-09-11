@@ -133,6 +133,18 @@ export const theme = createTheme({
         },
       },
     },
+    MuiTablePagination: {
+      defaultProps: {
+        labelRowsPerPage: "每页",
+        showFirstButton: true,
+        showLastButton: true,
+      },
+      styleOverrides: {
+        root: { overflow: "hidden", color: "rgba(0,0,0,0.65)" },
+        toolbar: { minHeight: 52 },
+        actions: { marginLeft: 8 },
+      },
+    },
     MuiChip: {
       styleOverrides: {
         root: { borderRadius: 4, height: 22, fontSize: 12 },

@@ -4,12 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { useClientPager } from "../components/ListPagination";
 import { asArray, asRecord, displayNumber, displayText, displayYuan } from "../utils/display";
 
 export default function Dashboard() {
   const nav = useNavigate();
   const [d, setD] = useState({ pendingPack: 0, waitPickup: 0, grouping: 0, todayOrders: 0, todayAmountCent: 0, lowStock: 0 });
   const [low, setLow] = useState<{ list: any[]; threshold: number }>({ list: [], threshold: 5 });
+  const lowPager = useClientPager(asArray(low.list));
   useEffect(() => {
     api.get("/dashboard/summary").then((raw) => setD(asRecord(raw, { pendingPack: 0, waitPickup: 0, grouping: 0, todayOrders: 0, todayAmountCent: 0, lowStock: 0 }))).catch(() => undefined);
     api.get("/dashboard/low-stock").then((raw) => setLow(asRecord(raw, { list: [], threshold: 5 }))).catch(() => undefined);
@@ -48,7 +50,9 @@ export default function Dashboard() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           在售商品库存 ≤ {displayNumber(low.threshold)}
         </Typography>
-        <DataTable>
+        <DataTable
+          footer={<ListPagination page={lowPager.page} pageSize={lowPager.pageSize} total={lowPager.total} onPageChange={lowPager.setPage} onPageSizeChange={lowPager.setPageSize} />}
+        >
           <TableHead>
             <TableRow>
               <TableCell>商品</TableCell>
@@ -56,13 +60,13 @@ export default function Dashboard() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {asArray(low.list).map((g: any) => (
+            {lowPager.rows.map((g: any) => (
               <TableRow key={g.id} hover sx={{ cursor: "pointer" }} onClick={() => nav(`/goods/${g.id}`)}>
                 <TableCell>{displayText(g.name)}</TableCell>
                 <TableCell sx={{ color: "error.main", fontWeight: 600 }}>{displayNumber(g.stock)}</TableCell>
               </TableRow>
             ))}
-            {!asArray(low.list).length && <EmptyRow cols={2} text="暂无低于阈值的在售商品" />}
+            {!lowPager.total && <EmptyRow cols={2} text="暂无低于阈值的在售商品" />}
           </TableBody>
         </DataTable>
       </Paper>

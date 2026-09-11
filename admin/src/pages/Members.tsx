@@ -16,9 +16,10 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { DEFAULT_PAGE_SIZE, lastPageOf, readPaged } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
 import PersonaRadar from "../components/PersonaRadar";
-import { asArray, asRecord, displayNumber, displayText, displayYuan } from "../utils/display";
+import { asRecord, displayNumber, displayText, displayYuan } from "../utils/display";
 
 type Row = { id: number; nickname: string; phone: string; points_balance: number; orderCount: number; payAmountCent: number };
 
@@ -59,17 +60,30 @@ export default function Members() {
   const fb = useFeedback();
   const [keyword, setKeyword] = useState("");
   const [list, setList] = useState<Row[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
   const [persona, setPersona] = useState<Persona | null>(null);
   const [personaTitle, setPersonaTitle] = useState("");
   const [loadingPersona, setLoadingPersona] = useState(false);
-  const load = () =>
+  const load = (p = page, size = pageSize) =>
     api
-      .get("/members", { params: { keyword, pageSize: 50 } })
-      .then((d: { list: Row[] }) => setList(asArray(asRecord(d).list)))
+      .get("/members", { params: { keyword, page: p, pageSize: size } })
+      .then((d) => {
+        const data = readPaged<Row>(d);
+        setList(data.list);
+        setTotal(data.total);
+        const last = lastPageOf(data.total, size);
+        if (p > last) setPage(last);
+      })
       .catch((e) => fb.error(e));
   useEffect(() => {
-    load();
-  }, []);
+    load(page, pageSize);
+  }, [page, pageSize]);
+  const query = () => {
+    if (page !== 1) setPage(1);
+    else load(1, pageSize);
+  };
 
   const openPersona = async (u: Row) => {
     setPersonaTitle(u.nickname || u.phone || "会员");
@@ -127,13 +141,16 @@ export default function Members() {
           placeholder="选填，回车查询"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && load()}
+          onKeyDown={(e) => e.key === "Enter" && query()}
         />
-        <Button variant="outlined" onClick={load}>
+        <Button variant="outlined" onClick={query}>
           查询
         </Button>
       </InlineForm>
-      <DataTable minWidth={760}>
+      <DataTable
+        minWidth={760}
+        footer={<ListPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>昵称</TableCell>

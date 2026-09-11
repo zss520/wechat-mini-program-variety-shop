@@ -4,9 +4,10 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { DEFAULT_PAGE_SIZE, lastPageOf, readPaged } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
 import { formatDateRange } from "../utils/datetime";
-import { asArray, asRecord, displayCouponRule, displayNumber, displayText } from "../utils/display";
+import { displayCouponRule, displayNumber, displayText } from "../utils/display";
 import { isValidNonNegInt } from "../utils/message";
 
 const empty = {
@@ -26,11 +27,24 @@ const empty = {
 export default function Coupons() {
   const fb = useFeedback();
   const [list, setList] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [total, setTotal] = useState(0);
   const [form, setForm] = useState(empty);
-  const load = () => api.get("/coupons").then((d: { list: any[] }) => setList(asArray(asRecord(d).list))).catch((e) => fb.error(e));
+  const load = (p = page, size = pageSize) =>
+    api
+      .get("/coupons", { params: { page: p, pageSize: size } })
+      .then((d) => {
+        const data = readPaged<any>(d);
+        setList(data.list);
+        setTotal(data.total);
+        const last = lastPageOf(data.total, size);
+        if (p > last) setPage(last);
+      })
+      .catch((e) => fb.error(e));
   useEffect(() => {
-    load();
-  }, []);
+    load(page, pageSize);
+  }, [page, pageSize]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -47,7 +61,8 @@ export default function Coupons() {
     try {
       await api.post("/coupons", { ...form, name: form.name.trim() });
       setForm(empty);
-      load();
+      if (page !== 1) setPage(1);
+      else load(1, pageSize);
       await fb.success("优惠券已创建");
     } catch (err) {
       await fb.error(err);
@@ -92,7 +107,9 @@ export default function Coupons() {
           </Button>
         </InlineForm>
       </form>
-      <DataTable>
+      <DataTable
+        footer={<ListPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>名称</TableCell>

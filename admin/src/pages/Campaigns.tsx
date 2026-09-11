@@ -5,6 +5,7 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { useClientPager } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
 import GoodsByCategoryPicker, { PickerCat, PickerGoods } from "../components/GoodsByCategoryPicker";
 import { formatDateRange } from "../utils/datetime";
@@ -50,6 +51,8 @@ export default function Campaigns() {
   const [cats, setCats] = useState<PickerCat[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
   const [seckills, setSeckills] = useState<any[]>([]);
+  const groupPager = useClientPager(groups);
+  const seckillPager = useClientPager(seckills);
   const [g, setG] = useState(emptyGroup);
   const [s, setS] = useState(emptySeckill);
   const [gGoods, setGGoods] = useState<PickerGoods | null>(null);
@@ -263,7 +266,10 @@ export default function Campaigns() {
           )}
         </Box>
       </form>
-      <DataTable minWidth={980}>
+      <DataTable
+        minWidth={980}
+        footer={<ListPagination page={groupPager.page} pageSize={groupPager.pageSize} total={groupPager.total} onPageChange={groupPager.setPage} onPageSizeChange={groupPager.setPageSize} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>标题</TableCell>
@@ -276,7 +282,7 @@ export default function Campaigns() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {groups.map((x) => {
+          {groupPager.rows.map((x) => {
             const items = asArray<{ goods_name?: string; origin_price_cent?: number; group_price_cent?: number }>(x.goods_items);
             const names = displayText(x.goods_names || items.map((i) => i.goods_name).join("、") || x.goods_name);
             const origin = items.length
@@ -319,7 +325,7 @@ export default function Campaigns() {
               </TableRow>
             );
           })}
-          {!groups.length && <EmptyRow cols={7} />}
+          {!groupPager.total && <EmptyRow cols={7} />}
         </TableBody>
       </DataTable>
 
@@ -353,7 +359,10 @@ export default function Campaigns() {
           </Button>
         </InlineForm>
       </form>
-      <DataTable minWidth={880}>
+      <DataTable
+        minWidth={880}
+        footer={<ListPagination page={seckillPager.page} pageSize={seckillPager.pageSize} total={seckillPager.total} onPageChange={seckillPager.setPage} onPageSizeChange={seckillPager.setPageSize} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>标题</TableCell>
@@ -365,7 +374,7 @@ export default function Campaigns() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {seckills.map((x) => (
+          {seckillPager.rows.map((x) => (
             <TableRow key={x.id}>
               <TableCell>{displayText(x.title)}</TableCell>
               <TableCell>{displayText(x.goods_name)}</TableCell>
@@ -383,7 +392,7 @@ export default function Campaigns() {
               </TableCell>
             </TableRow>
           ))}
-          {!seckills.length && <EmptyRow cols={6} />}
+          {!seckillPager.total && <EmptyRow cols={6} />}
         </TableBody>
       </DataTable>
     </PageContainer>

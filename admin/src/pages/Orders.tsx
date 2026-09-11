@@ -5,8 +5,9 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { DEFAULT_PAGE_SIZE, lastPageOf, readPaged } from "../components/ListPagination";
 import { formatDateTime } from "../utils/datetime";
-import { asArray, asRecord, displayFulfillType, displayJoin, displayNumber, displayText, displayYuan } from "../utils/display";
+import { displayFulfillType, displayJoin, displayNumber, displayText, displayYuan } from "../utils/display";
 import { useFeedback } from "../components/FeedbackProvider";
 
 const STATUS: Record<string, string> = {
@@ -30,8 +31,10 @@ export default function Orders() {
   const [customer, setCustomer] = useState("");
   const [pickupCode, setPickupCode] = useState("");
   const [list, setList] = useState<Row[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [total, setTotal] = useState(0);
-  const load = () =>
+  const load = (p = page, size = pageSize) =>
     api
       .get("/orders", {
         params: {
@@ -39,22 +42,29 @@ export default function Orders() {
           orderNo: orderNo.trim() || undefined,
           customer: customer.trim() || undefined,
           pickupCode: pickupCode.trim() || undefined,
-          pageSize: 50,
+          page: p,
+          pageSize: size,
         },
       })
-      .then((d: { list: Row[]; total: number }) => {
-        const data = asRecord(d);
-        setList(asArray(data.list));
-        setTotal(Number(data.total || 0));
+      .then((d) => {
+        const data = readPaged<Row>(d);
+        setList(data.list);
+        setTotal(data.total);
+        const last = lastPageOf(data.total, size);
+        if (p > last) setPage(last);
       })
       .catch((e) => fb.error(e, "订单加载失败"));
   useEffect(() => {
-    load();
-  }, []);
+    load(page, pageSize);
+  }, [page, pageSize]);
+  const query = () => {
+    if (page !== 1) setPage(1);
+    else load(1, pageSize);
+  };
   const onEnter = (e: KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      load();
+      query();
     }
   };
   return (
@@ -79,11 +89,14 @@ export default function Orders() {
             </MenuItem>
           ))}
         </TextField>
-        <Button variant="outlined" onClick={load}>
+        <Button variant="outlined" onClick={query}>
           查询
         </Button>
       </InlineForm>
-      <DataTable minWidth={880}>
+      <DataTable
+        minWidth={880}
+        footer={<ListPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>单号</TableCell>

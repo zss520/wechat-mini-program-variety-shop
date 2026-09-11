@@ -5,8 +5,9 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { DEFAULT_PAGE_SIZE, lastPageOf, readPaged } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
-import { asArray, asRecord, displayNumber, displayText, displayYuan, toFiniteNumber } from "../utils/display";
+import { displayNumber, displayText, displayYuan } from "../utils/display";
 
 type Goods = {
   id: number;
@@ -27,20 +28,28 @@ export default function GoodsList() {
   const [keyword, setKeyword] = useState("");
   const [onSale, setOnSale] = useState("");
   const [list, setList] = useState<Goods[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [total, setTotal] = useState(0);
-  const load = () => {
+  const load = (p = page, size = pageSize) => {
     api
-      .get("/goods", { params: { keyword, onSale, pageSize: 50 } })
-      .then((d: { list: Goods[]; total: number }) => {
-        const data = asRecord(d);
-        setList(asArray(data.list));
-        setTotal(toFiniteNumber(data.total) ?? 0);
+      .get("/goods", { params: { keyword, onSale, page: p, pageSize: size } })
+      .then((d) => {
+        const data = readPaged<Goods>(d);
+        setList(data.list);
+        setTotal(data.total);
+        const last = lastPageOf(data.total, size);
+        if (p > last) setPage(last);
       })
       .catch((e) => fb.error(e));
   };
   useEffect(() => {
-    load();
-  }, []);
+    load(page, pageSize);
+  }, [page, pageSize]);
+  const query = () => {
+    if (page !== 1) setPage(1);
+    else load(1, pageSize);
+  };
 
   const saveWeight = async (g: Goods, raw: string) => {
     const v = Number(raw);
@@ -82,7 +91,7 @@ export default function GoodsList() {
       }
     >
       <InlineForm>
-        <TextField size="small" label="名称" placeholder="选填，回车查询" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} />
+        <TextField size="small" label="名称" placeholder="选填，回车查询" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && query()} />
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>上架</InputLabel>
           <Select label="上架" value={onSale} onChange={(e) => setOnSale(String(e.target.value))}>
@@ -91,11 +100,14 @@ export default function GoodsList() {
             <MenuItem value="0">下架</MenuItem>
           </Select>
         </FormControl>
-        <Button variant="outlined" onClick={load}>
+        <Button variant="outlined" onClick={query}>
           查询
         </Button>
       </InlineForm>
-      <DataTable minWidth={800}>
+      <DataTable
+        minWidth={800}
+        footer={<ListPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>商品</TableCell>

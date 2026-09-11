@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { DEFAULT_PAGE_SIZE, lastPageOf, readPaged } from "../components/ListPagination";
 import { asArray, asRecord, displayNumber, displayPercent, displayText } from "../utils/display";
 import { useFeedback } from "../components/FeedbackProvider";
 
@@ -25,8 +26,11 @@ export default function Reports() {
   const [to, setTo] = useState(dayjs().format("YYYY-MM-DD"));
   const [funnel, setFunnel] = useState<{ steps: { name: string; uv: number }[] }>({ steps: [] });
   const [goods, setGoods] = useState<any[]>([]);
+  const [goodsTotal, setGoodsTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [signals, setSignals] = useState<any[]>([]);
-  const load = async () => {
+  const load = async (p = page, size = pageSize) => {
     if (!from || !to) {
       await fb.alert("请选择查询起止日期，格式为年-月-日", { title: "请完善信息", severity: "warning" });
       return;
@@ -38,19 +42,27 @@ export default function Reports() {
     try {
       const [funnelData, goodsData, signalData] = await Promise.all([
         api.get("/reports/funnel", { params: { from, to } }),
-        api.get("/reports/goods", { params: { from, to, pageSize: 50 } }),
+        api.get("/reports/goods", { params: { from, to, page: p, pageSize: size } }),
         api.get("/reports/signals", { params: { from, to } }),
       ]);
+      const paged = readPaged<any>(goodsData);
       setFunnel({ steps: asArray(asRecord(funnelData).steps) });
-      setGoods(asArray(asRecord(goodsData).list));
+      setGoods(paged.list);
+      setGoodsTotal(paged.total);
       setSignals(asArray(signalData));
+      const last = lastPageOf(paged.total, size);
+      if (p > last) setPage(last);
     } catch (e) {
       await fb.error(e);
     }
   };
   useEffect(() => {
-    load();
-  }, []);
+    load(page, pageSize);
+  }, [page, pageSize]);
+  const query = () => {
+    if (page !== 1) setPage(1);
+    else load(1, pageSize);
+  };
   return (
     <PageContainer
       title="数据分析"
@@ -59,7 +71,7 @@ export default function Reports() {
         <InlineForm sx={{ mb: 0 }}>
           <TextField required type="date" size="small" label="从" InputLabelProps={{ shrink: true }} value={from} onChange={(e) => setFrom(e.target.value)} />
           <TextField required type="date" size="small" label="到" InputLabelProps={{ shrink: true }} value={to} onChange={(e) => setTo(e.target.value)} />
-          <Button variant="outlined" onClick={load}>
+          <Button variant="outlined" onClick={query}>
             查询
           </Button>
           <Button
@@ -111,7 +123,10 @@ export default function Reports() {
       <Typography variant="subtitle1" sx={{ mt: 1, mb: 1.5 }}>
         商品分析
       </Typography>
-      <DataTable minWidth={880}>
+      <DataTable
+        minWidth={880}
+        footer={<ListPagination page={page} pageSize={pageSize} total={goodsTotal} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>商品</TableCell>

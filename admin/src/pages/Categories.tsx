@@ -4,6 +4,7 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { useClientPager } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
 import { asArray, displayText } from "../utils/display";
 
@@ -19,6 +20,7 @@ function parseSort(raw: string) {
 export default function Categories() {
   const fb = useFeedback();
   const [list, setList] = useState<Cat[]>([]);
+  const pager = useClientPager(list);
   const [name, setName] = useState("");
   const [sort, setSort] = useState("0");
   const load = () => api.get("/categories").then((d) => setList(asArray(d))).catch((e) => fb.error(e));
@@ -133,7 +135,9 @@ export default function Categories() {
           新增
         </Button>
       </InlineForm>
-      <DataTable>
+      <DataTable
+        footer={<ListPagination page={pager.page} pageSize={pager.pageSize} total={pager.total} onPageChange={pager.setPage} onPageSizeChange={pager.setPageSize} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>名称</TableCell>
@@ -143,7 +147,7 @@ export default function Categories() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {list.map((c) => (
+          {pager.rows.map((c) => (
             <TableRow key={c.id}>
               <TableCell>{displayText(c.name)}</TableCell>
               <TableCell>
@@ -173,7 +177,7 @@ export default function Categories() {
               </TableCell>
             </TableRow>
           ))}
-          {!list.length && <EmptyRow cols={4} />}
+          {!pager.total && <EmptyRow cols={4} />}
         </TableBody>
       </DataTable>
     </PageContainer>

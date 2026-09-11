@@ -19,6 +19,7 @@ import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
+import ListPagination, { useClientPager } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
 import { asArray, asRecord, displayText } from "../utils/display";
 
@@ -124,6 +125,7 @@ function JumpPicker({
 export default function Banners() {
   const fb = useFeedback();
   const [list, setList] = useState<Banner[]>([]);
+  const pager = useClientPager(list);
   const [cats, setCats] = useState<Cat[]>([]);
   const [imageUrl, setImageUrl] = useState("");
   const [title, setTitle] = useState("");
@@ -305,7 +307,9 @@ export default function Banners() {
           </Button>
         </InlineForm>
       </Stack>
-      <DataTable>
+      <DataTable
+        footer={<ListPagination page={pager.page} pageSize={pager.pageSize} total={pager.total} onPageChange={pager.setPage} onPageSizeChange={pager.setPageSize} />}
+      >
         <TableHead>
           <TableRow>
             <TableCell>预览</TableCell>
@@ -317,7 +321,7 @@ export default function Banners() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {list.map((b) => (
+          {pager.rows.map((b) => (
             <TableRow key={b.id}>
               <TableCell>
                 {b.image_url && <img src={b.image_url} alt="" width={80} style={{ borderRadius: 6 }} />}
@@ -364,7 +368,7 @@ export default function Banners() {
               </TableCell>
             </TableRow>
           ))}
-          {!list.length && <EmptyRow cols={6} />}
+          {!pager.total && <EmptyRow cols={6} />}
         </TableBody>
       </DataTable>
 
