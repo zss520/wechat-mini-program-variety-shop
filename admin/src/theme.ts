@@ -123,6 +123,12 @@ export const theme = createTheme({
           fontSize: 14,
           "@media (max-width:600px)": { padding: "8px 12px" },
         },
+        head: {
+          position: "sticky",
+          top: 0,
+          zIndex: 2,
+          backgroundColor: "#fafafa",
+        },
       },
     },
     MuiTableRow: {
@@ -133,16 +139,12 @@ export const theme = createTheme({
         },
       },
     },
-    MuiTablePagination: {
-      defaultProps: {
-        labelRowsPerPage: "每页",
-        showFirstButton: true,
-        showLastButton: true,
-      },
+    MuiPaginationItem: {
       styleOverrides: {
-        root: { overflow: "hidden", color: "rgba(0,0,0,0.65)" },
-        toolbar: { minHeight: 52 },
-        actions: { marginLeft: 8 },
+        root: {
+          borderRadius: 6,
+          "&.Mui-selected": { fontWeight: 600 },
+        },
       },
     },
     MuiChip: {

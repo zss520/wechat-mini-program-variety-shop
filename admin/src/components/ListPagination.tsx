@@ -1,4 +1,4 @@
-import { TablePagination } from "@mui/material";
+import { Box, MenuItem, Pagination, Select, Typography } from "@mui/material";
 import { useState } from "react";
 
 export const DEFAULT_PAGE_SIZE = 20;
@@ -56,33 +56,60 @@ export default function ListPagination({ page, pageSize, total, onPageChange, on
   const last = lastPageOf(total, pageSize);
   const safePage = total <= 0 ? 1 : Math.min(Math.max(1, page), last);
   return (
-    <TablePagination
-      component="div"
-      count={total}
-      page={total <= 0 ? 0 : safePage - 1}
-      onPageChange={(_, next) => onPageChange(next + 1)}
-      rowsPerPage={pageSize}
-      onRowsPerPageChange={(e) => onPageSizeChange(Number(e.target.value))}
-      rowsPerPageOptions={PAGE_SIZE_OPTIONS}
-      labelRowsPerPage="每页"
-      labelDisplayedRows={({ from, to, count }) => `${from}–${to} / ${count}`}
-      showFirstButton
-      showLastButton
-      getItemAriaLabel={(type) => (type === "first" ? "首页" : type === "last" ? "末页" : type === "next" ? "下一页" : "上一页")}
+    <Box
       sx={{
-        width: "100%",
-        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: { xs: "center", sm: "flex-end" },
+        flexWrap: "wrap",
+        gap: { xs: 1, sm: 1.5 },
+        px: 1.5,
+        py: 1,
         borderTop: "1px solid #f0f0f0",
-        ".MuiTablePagination-toolbar": {
-          minHeight: 52,
-          px: 1,
-          flexWrap: "wrap",
-          justifyContent: { xs: "center", sm: "flex-end" },
-          gap: 0.5,
-        },
-        ".MuiTablePagination-spacer": { display: { xs: "none", sm: "flex" } },
-        ".MuiTablePagination-displayedRows, .MuiTablePagination-selectLabel": { m: 0 },
+        bgcolor: "#fff",
+        flexShrink: 0,
       }}
-    />
+    >
+      <Typography variant="body2" color="text.secondary">
+        共 {total} 条
+      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+        <Typography variant="body2" color="text.secondary">
+          每页
+        </Typography>
+        <Select
+          size="small"
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          sx={{
+            height: 32,
+            fontSize: 13,
+            ".MuiSelect-select": { py: 0.75, pr: 3 },
+          }}
+        >
+          {PAGE_SIZE_OPTIONS.map((n) => (
+            <MenuItem key={n} value={n}>
+              {n} 条
+            </MenuItem>
+          ))}
+        </Select>
+      </Box>
+      <Pagination
+        color="primary"
+        size="small"
+        shape="rounded"
+        count={last}
+        page={safePage}
+        disabled={total <= 0}
+        onChange={(_, next) => onPageChange(next)}
+        showFirstButton
+        showLastButton
+        siblingCount={1}
+        boundaryCount={1}
+      />
+      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 84 }}>
+        第 {safePage} / {last} 页
+      </Typography>
+    </Box>
   );
 }
