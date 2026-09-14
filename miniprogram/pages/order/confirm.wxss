@@ -1,6 +1,18 @@
 .seg {
   margin: 24rpx;
 }
+.seg t-segmented {
+  display: block;
+  width: 100%;
+}
+.seg .t-segmented__item,
+.seg .t-segmented__item-inner,
+.seg .t-segmented__item-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
 .remark {
   margin: 16rpx 24rpx;
   background: #fff;

@@ -162,7 +162,7 @@ export default function Login() {
   const current = SLIDES[slide];
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", bgcolor: "#fff" }}>
+    <Box sx={{ height: "100%", minHeight: 0, display: "flex", bgcolor: "#fff", overflow: "auto" }}>
       <Box
         sx={{
           display: { xs: "none", md: "flex" },

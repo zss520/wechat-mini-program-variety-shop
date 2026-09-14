@@ -266,7 +266,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default", overflowX: "hidden" }}>
+    <Box sx={{ display: "flex", height: "100%", minHeight: 0, bgcolor: "background.default", overflow: "hidden" }}>
       <Drawer
         variant="temporary"
         open={mobileOpen}
@@ -291,6 +291,9 @@ export default function AdminLayout({ children }: PropsWithChildren) {
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
+          minHeight: 0,
+          height: "100%",
+          overflow: "hidden",
           width: "100%",
         }}
       >
@@ -359,7 +362,18 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             </MenuItem>
           </Menu>
         </Box>
-        <Box component="main" sx={{ flex: 1, p: { xs: 1.5, sm: 2, md: 3 }, minWidth: 0, width: "100%", boxSizing: "border-box" }}>
+        <Box
+          component="main"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: "auto",
+            p: { xs: 1.5, sm: 2, md: 3 },
+            minWidth: 0,
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
           {children}
         </Box>
       </Box>

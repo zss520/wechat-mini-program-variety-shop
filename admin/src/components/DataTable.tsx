@@ -21,7 +21,11 @@ export function DataTable({
     if (!el) return;
     const fit = () => {
       const top = el.getBoundingClientRect().top;
-      setFitH(Math.max(MIN_TABLE_BOX, Math.floor(window.innerHeight - top - VIEW_GAP)));
+      const scroller = el.closest("main");
+      const box = scroller?.getBoundingClientRect();
+      const bottom = box ? box.bottom : window.innerHeight;
+      const padBottom = scroller ? parseFloat(getComputedStyle(scroller).paddingBottom) || 0 : VIEW_GAP;
+      setFitH(Math.max(MIN_TABLE_BOX, Math.floor(bottom - top - padBottom)));
     };
     fit();
     const ro = new ResizeObserver(() => requestAnimationFrame(fit));
