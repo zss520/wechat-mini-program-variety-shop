@@ -105,13 +105,15 @@ function FunnelBoard({ steps }: { steps: FunnelStep[] }) {
   const first = Number(steps[0]?.uv) || 0;
   const last = Number(steps[steps.length - 1]?.uv) || 0;
   const overall = convRate(last, first);
+  const hasTraffic = steps.some((s) => Number(s.uv) > 0);
+  const inverted = steps.some((s, i) => i > 0 && Number(s.uv) > Number(steps[i - 1]?.uv));
   return (
     <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2.5 }, borderRadius: 2, mb: 2 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2} sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h6">转化漏斗</Typography>
           <Typography variant="body2" color="text.secondary">
-            每步为去重人数。箭头上的比例是相对上一步的转化。
+            每步为去重人数。右侧比例是相对上一步的转化；上一步为 0 时显示 —。
           </Typography>
         </Box>
         <Box sx={{ textAlign: "right", flexShrink: 0 }}>
@@ -169,9 +171,19 @@ function FunnelBoard({ steps }: { steps: FunnelStep[] }) {
           暂无漏斗数据
         </Typography>
       )}
-      {!!steps.length && first === 0 && (
+      {!!steps.length && !hasTraffic && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
           该时段还没有访问。小程序产生浏览后，这里会显示各步人数与转化。
+        </Typography>
+      )}
+      {hasTraffic && first === 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+          打开小程序埋点为 0，整体转化暂无法计算。支付人数按订单统计，可能仍有成交。
+        </Typography>
+      )}
+      {hasTraffic && inverted && first > 0 && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+          后一步人数高于前一步时，通常是浏览埋点与订单统计口径不同，不以漏斗形状强行对齐。
         </Typography>
       )}
     </Paper>
@@ -281,7 +293,8 @@ export default function Reports() {
       card={false}
       title="数据分析"
       description="漏斗看从打开到支付掉在哪一步；异常按类型筛选后可点进商品处理。人数不足 10 标「样本少」。"
-      extra={
+    >
+      <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, mb: 2 }}>
         <InlineForm sx={{ mb: 0 }}>
           <Button variant={from === todayStr() && to === todayStr() ? "contained" : "outlined"} onClick={() => applyPreset(1)}>
             今日
@@ -307,8 +320,7 @@ export default function Reports() {
             重算热度
           </Button>
         </InlineForm>
-      }
-    >
+      </Paper>
       {loading && <LinearProgress sx={{ mb: 2, borderRadius: 1 }} />}
       <FunnelBoard steps={funnel.steps} />
 
