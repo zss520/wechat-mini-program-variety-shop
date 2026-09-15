@@ -230,8 +230,7 @@ Page({
     const idx = Number(e.detail.value);
     const c = (this.data.couponOptions || [])[idx];
     if (!c || !c.id) {
-      this.setData({ userCouponId: 0 });
-      this.refresh();
+      this.setData({ userCouponId: 0, couponPickerIndex: 0 }, () => this.refresh());
       return;
     }
     if (c.blocked) {
@@ -242,8 +241,7 @@ Page({
       });
       return;
     }
-    this.setData({ userCouponId: c.id });
-    this.refresh();
+    this.setData({ userCouponId: c.id }, () => this.refresh());
   },
   remark(e: any) {
     this.setData({ remark: e.detail.value });
