@@ -90,7 +90,7 @@ export default function Coupons() {
   const [holdersTotal, setHoldersTotal] = useState(0);
   const [holdersPage, setHoldersPage] = useState(1);
   const [holdersPageSize, setHoldersPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [holdersStatus, setHoldersStatus] = useState("");
+  const [holdersStatus, setHoldersStatus] = useState("ALL");
 
   const load = (p = page, size = pageSize) =>
     api
@@ -200,7 +200,7 @@ export default function Coupons() {
 
   const loadHolders = (c: Coupon, p = holdersPage, size = holdersPageSize, status = holdersStatus) =>
     api
-      .get(`/coupons/${c.id}/holders`, { params: { page: p, pageSize: size, status: status || undefined } })
+      .get(`/coupons/${c.id}/holders`, { params: { page: p, pageSize: size, status: status && status !== "ALL" ? status : undefined } })
       .then((d) => {
         const data = readPaged<Holder>(d);
         setHolders(data.list);
@@ -213,8 +213,8 @@ export default function Coupons() {
   const openHolders = (c: Coupon) => {
     setHoldersCoupon(c);
     setHoldersPage(1);
-    setHoldersStatus("");
-    loadHolders(c, 1, holdersPageSize, "");
+    setHoldersStatus("ALL");
+    loadHolders(c, 1, holdersPageSize, "ALL");
   };
 
   const limitText = (c: Coupon) => {
@@ -373,7 +373,7 @@ export default function Coupons() {
               onChange={(e) => setHoldersStatus(e.target.value)}
               sx={{ minWidth: 140 }}
             >
-              <MenuItem value="">全部</MenuItem>
+              <MenuItem value="ALL">全部</MenuItem>
               <MenuItem value="UNUSED">未使用</MenuItem>
               <MenuItem value="USED">已使用</MenuItem>
               <MenuItem value="EXPIRED">已过期</MenuItem>

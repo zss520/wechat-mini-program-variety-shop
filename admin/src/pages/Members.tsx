@@ -40,7 +40,7 @@ type LedgerRow = {
 };
 
 const POINTS_REASONS = [
-  { value: "", label: "全部类型" },
+  { value: "ALL", label: "全部类型" },
   { value: "PAY_EARN", label: "消费获得" },
   { value: "REDEEM", label: "下单抵扣" },
   { value: "REDEEM_REVERSE", label: "取消订单退回" },
@@ -98,7 +98,7 @@ export default function Members() {
   const [ledgerPageSize, setLedgerPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [ledgerBalance, setLedgerBalance] = useState(0);
   const [ledgerSummary, setLedgerSummary] = useState({ earned: 0, spent: 0 });
-  const [ledgerReason, setLedgerReason] = useState("");
+  const [ledgerReason, setLedgerReason] = useState("ALL");
   const [ledgerFrom, setLedgerFrom] = useState("");
   const [ledgerTo, setLedgerTo] = useState("");
   const [loadingLedger, setLoadingLedger] = useState(false);
@@ -172,7 +172,7 @@ export default function Members() {
   const loadLedger = (u: Row, p = ledgerPage, size = ledgerPageSize, reason = ledgerReason, from = ledgerFrom, to = ledgerTo) => {
     setLoadingLedger(true);
     return api
-      .get(`/members/${u.id}/points-ledger`, { params: { page: p, pageSize: size, reason: reason || undefined, from: from || undefined, to: to || undefined } })
+      .get(`/members/${u.id}/points-ledger`, { params: { page: p, pageSize: size, reason: reason && reason !== "ALL" ? reason : undefined, from: from || undefined, to: to || undefined } })
       .then((d) => {
         const data = asRecord(d) as {
           list?: LedgerRow[];
@@ -197,10 +197,10 @@ export default function Members() {
   const openLedger = (u: Row) => {
     setLedgerUser(u);
     setLedgerPage(1);
-    setLedgerReason("");
+    setLedgerReason("ALL");
     setLedgerFrom("");
     setLedgerTo("");
-    loadLedger(u, 1, ledgerPageSize, "", "", "");
+    loadLedger(u, 1, ledgerPageSize, "ALL", "", "");
   };
 
   const closeLedger = () => {
@@ -349,7 +349,7 @@ export default function Members() {
           <InlineForm>
             <TextField select size="small" label="类型" value={ledgerReason} onChange={(e) => setLedgerReason(e.target.value)} sx={{ minWidth: 140 }}>
               {POINTS_REASONS.map((r) => (
-                <MenuItem key={r.value || "all"} value={r.value}>
+                <MenuItem key={r.value} value={r.value}>
                   {r.label}
                 </MenuItem>
               ))}
