@@ -56,6 +56,34 @@ async function run() {
   const previewCoupon = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { userCouponId: uc.id });
   assert(previewCoupon.couponDiscountCent === 200, `full reduce expected 200 got ${previewCoupon.couponDiscountCent}`);
   assert(previewCoupon.payAmountCent === 1300, `pay after coupon expected 1300 got ${previewCoupon.payAmountCent}`);
+  assert(previewCoupon.userCouponId === uc.id, "usable coupon should stay applied in preview");
+
+  const [cidHigh] = await db("coupons").insert({
+    name: "满100减10",
+    type: "FULL_REDUCE",
+    min_amount_cent: 10000,
+    reduce_cent: 1000,
+    discount_bp: 10000,
+    per_user_limit: 1,
+    start_at: new Date(Date.now() - 86400000),
+    end_at: new Date(Date.now() + 86400000),
+    enabled: 1,
+  });
+  const ucHigh = await claimCoupon(uid, cidHigh);
+  const previewSkip = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { userCouponId: ucHigh.id });
+  assert(previewSkip.couponDiscountCent === 0, "below-threshold coupon should not apply in preview");
+  assert(!previewSkip.userCouponId, "below-threshold coupon should not stay selected");
+  const orderSkip = await createOrder({
+    userId: uid,
+    items: [{ goodsId: gid, qty: 1 }],
+    fulfillType: "PICKUP",
+    userCouponId: ucHigh.id,
+  });
+  const skipDetail = await loadOrderDetail(orderSkip.id);
+  assert(!skipDetail.coupon_name, "unusable coupon should not be written onto the order");
+  assert(Number(skipDetail.pay_amount_cent) === Number(previewSkip.payAmountCent), "checkout should succeed without the unusable coupon");
+  const leftover = await db("user_coupons").where({ id: ucHigh.id }).first();
+  assert(leftover && leftover.status === "UNUSED", "unusable coupon should remain unused");
 
   const couponOrder = await createOrder({
     userId: uid,

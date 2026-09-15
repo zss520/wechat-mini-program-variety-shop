@@ -255,10 +255,16 @@ export async function previewOrder(
 
   let couponDiscountCent = 0;
   let couponName: string | null = null;
+  let appliedUserCouponId: number | null = null;
   if (extras.userCouponId) {
-    const applied = await loadUsableCoupon(userId, extras.userCouponId, lines, goodsAmount);
-    couponDiscountCent = applied.discount;
-    couponName = applied.coupon.name;
+    try {
+      const applied = await loadUsableCoupon(userId, extras.userCouponId, lines, goodsAmount);
+      couponDiscountCent = applied.discount;
+      couponName = applied.coupon.name;
+      appliedUserCouponId = Number(extras.userCouponId);
+    } catch (e) {
+      if (!(e instanceof HttpError) || e.status !== 409) throw e;
+    }
   }
 
   const afterCoupon = Math.max(0, goodsAmount + freight - couponDiscountCent);
@@ -286,6 +292,7 @@ export async function previewOrder(
     pointsStep: redeem.step,
     pointsCanUse: settings.points_enabled && redeem.maxPoints >= POINTS_REDEEM_STEP,
     couponName,
+    userCouponId: appliedUserCouponId,
     payAmountCent: payAmount,
     address,
     pickup: fulfillType === "PICKUP" ? { address: settings.pickup_address, hours: settings.business_hours, phone: settings.phone } : null,
@@ -366,7 +373,7 @@ export async function createOrder(params: {
       remark: (params.remark || "").slice(0, 80) || null,
       pickup_code: pickupCode,
       address_snapshot: JSON.stringify(snapshot),
-      user_coupon_id: extras.userCouponId || null,
+      user_coupon_id: preview.userCouponId || null,
       activity_type: extras.activityType || "NORMAL",
       activity_id: extras.activityId || null,
       team_id: extras.teamId || null,
@@ -383,8 +390,8 @@ export async function createOrder(params: {
         amount_cent: l.amountCent,
       }))
     );
-    if (extras.userCouponId) {
-      await trx("user_coupons").where({ id: extras.userCouponId, user_id: params.userId, status: "UNUSED" }).update({
+    if (preview.userCouponId) {
+      await trx("user_coupons").where({ id: preview.userCouponId, user_id: params.userId, status: "UNUSED" }).update({
         status: "USED",
         used_at: trx.fn.now(),
         order_id: orderId,

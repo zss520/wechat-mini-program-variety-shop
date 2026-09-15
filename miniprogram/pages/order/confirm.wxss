@@ -18,6 +18,10 @@
   background: #fff;
   border-radius: 16rpx;
   overflow: hidden;
+  --td-textarea-padding: 20rpx 24rpx;
+}
+.remark .t-textarea__wrapper-inner {
+  min-height: 72rpx;
 }
 .safe-bottom {
   margin: 24rpx;

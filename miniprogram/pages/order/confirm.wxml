@@ -38,14 +38,15 @@
 </t-cell-group>
 
 <t-cell-group theme="card">
-  <picker range="{{coupons}}" range-key="name" bindchange="pickCoupon">
+  <picker wx:if="{{couponOptions.length > 1}}" range="{{couponOptions}}" range-key="label" value="{{couponPickerIndex}}" bindchange="pickCoupon">
     <t-cell
       title="优惠券"
-      note="{{disp.couponNote(preview.couponName, preview.couponDiscountCent)}}"
+      note="{{couponNote}}"
       left-icon="coupon"
       arrow
     />
   </picker>
+  <t-cell wx:else title="优惠券" note="{{couponNote}}" left-icon="coupon" />
   <block wx:if="{{settings.points_enabled !== false}}">
     <t-cell title="积分抵扣" description="{{pointsHint}}" left-icon="gift">
       <t-switch slot="note" value="{{usePoints}}" disabled="{{!canUsePoints}}" bind:change="onPoints" />
@@ -70,7 +71,15 @@
 </t-cell-group>
 
 <view class="remark">
-  <t-textarea placeholder="备注（选填）" value="{{remark}}" maxlength="80" bind:change="remark" />
+  <t-textarea
+    placeholder="备注（选填）"
+    value="{{remark}}"
+    maxlength="80"
+    autosize="{{remarkAutosize}}"
+    disable-default-padding="{{true}}"
+    confirm-type="done"
+    bind:change="remark"
+  />
 </view>
 
 <view class="pay-hint" wx:if="{{payHint}}">{{payHint}}</view>

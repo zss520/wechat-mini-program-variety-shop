@@ -5,12 +5,62 @@ import { track } from "../../utils/tracker";
 
 const POINTS_STEP = 100;
 
+type CouponOption = { id: number; label: string; blocked: boolean; reason: string };
+
 function snapPoints(raw: number, max: number) {
   if (max < POINTS_STEP) return 0;
   let n = Math.round(Number(raw || 0) / POINTS_STEP) * POINTS_STEP;
   if (n < POINTS_STEP) n = POINTS_STEP;
   if (n > max) n = Math.floor(max / POINTS_STEP) * POINTS_STEP;
   return n;
+}
+
+function yuanLabel(cent: number) {
+  const n = Math.round(Number(cent || 0)) / 100;
+  if (!Number.isFinite(n)) return "0";
+  return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
+}
+
+function couponBlockReason(coupon: any, preview: any): string {
+  const min = Number(coupon.min_amount_cent || 0);
+  const goods = Number(preview.goodsAmountCent || 0);
+  if (String(coupon.type || "") === "DISCOUNT") {
+    const base = asArray(preview.items)
+      .filter((l: any) => !l.isPromo)
+      .reduce((s: number, l: any) => s + Number(l.amountCent || 0), 0);
+    if (base <= 0) return "折扣券不与特价/拼团/秒杀叠加";
+    if (base < min) return `未满门槛，还差¥${yuanLabel(min - base)}`;
+    return "";
+  }
+  if (goods < min) return min > 0 ? `未满门槛，还差¥${yuanLabel(min - goods)}` : "未满优惠券门槛";
+  return "";
+}
+
+function buildCouponUi(coupons: any[], preview: any, appliedId: number) {
+  const options: CouponOption[] = [{ id: 0, label: "不使用优惠券", blocked: false, reason: "" }];
+  for (const c of coupons) {
+    const reason = couponBlockReason(c, preview);
+    const name = String(c.name || "优惠券");
+    options.push({
+      id: Number(c.id || 0),
+      label: reason ? `${name}（${/门槛/.test(reason) ? "未满门槛" : "暂不可用"}）` : name,
+      blocked: Boolean(reason),
+      reason,
+    });
+  }
+  const hasUsable = options.some((o) => o.id && !o.blocked);
+  const blocked = options.filter((o) => o.id && o.blocked);
+  const appliedName = String(preview.couponName || "");
+  const discount = Number(preview.couponDiscountCent || 0);
+  let couponNote = "未选";
+  if (appliedId && appliedName) {
+    couponNote = discount > 0 ? `${appliedName} -¥${yuanLabel(discount)}` : appliedName;
+  } else if (!hasUsable && blocked.length) {
+    const allThreshold = blocked.every((o) => o.reason.indexOf("门槛") >= 0);
+    couponNote = allThreshold ? "未满门槛" : "暂不可用";
+  }
+  const couponPickerIndex = appliedId ? Math.max(0, options.findIndex((o) => o.id === appliedId)) : 0;
+  return { couponOptions: options, couponNote, couponPickerIndex };
 }
 
 Page({
@@ -24,7 +74,11 @@ Page({
     addressId: 0 as number,
     settings: {} as any,
     coupons: [] as any[],
+    couponOptions: [] as CouponOption[],
+    couponNote: "未选",
+    couponPickerIndex: 0,
     userCouponId: 0,
+    remarkAutosize: { minHeight: 48, maxHeight: 120 },
     usePoints: false,
     pointsToUse: 0,
     pointsMax: 0,
@@ -79,9 +133,12 @@ Page({
     this.setData({ addresses, addressId: def ? def.id : 0 });
     this.refresh();
   },
-  extra() {
+  extra(submit = false) {
+    const preview = this.data.preview || {};
+    const selected = this.data.userCouponId || 0;
+    const applied = Boolean(preview.couponName) || Number(preview.couponDiscountCent || 0) > 0;
     return {
-      userCouponId: this.data.userCouponId || null,
+      userCouponId: submit ? (applied ? selected : null) : selected || null,
       usePoints: this.data.usePoints,
       pointsToUse: this.data.usePoints ? this.data.pointsToUse : 0,
       activityType: this.data.activityType,
@@ -109,12 +166,15 @@ Page({
           ? `本次使用 ${pointsToUse} 积分`
           : `可用 ${Number(preview.pointsBalance || 0)}，可抵最多 ${pointsMax}`;
       const pickup = asRecord(preview.pickup);
+      const priced = {
+        ...preview,
+        items: asArray(preview.items),
+        address: asRecord(preview.address),
+      };
+      const appliedId = Number(preview.userCouponId || 0);
+      const couponUi = buildCouponUi(this.data.coupons, priced, appliedId);
       this.setData({
-        preview: {
-          ...preview,
-          items: asArray(preview.items),
-          address: asRecord(preview.address),
-        },
+        preview: priced,
         pointsMax,
         canUsePoints,
         usePoints,
@@ -124,9 +184,17 @@ Page({
         pickupHours: String(pickup.hours || this.data.settings.business_hours || "").trim(),
         pickupPhone: String(pickup.phone || this.data.settings.phone || "").trim(),
         paused: preview.pauseOrder != null ? Boolean(preview.pauseOrder) : isPaused(this.data.settings),
+        userCouponId: appliedId,
+        ...couponUi,
       });
     } catch (e: any) {
-      wx.showToast({ title: e.message, icon: "none" });
+      const msg = String((e && e.message) || "预览失败");
+      if (this.data.userCouponId && /优惠券|门槛|叠加/.test(msg)) {
+        this.setData({ userCouponId: 0 });
+        await this.refresh();
+        return;
+      }
+      wx.showToast({ title: msg, icon: "none" });
     }
   },
   setType(e: any) {
@@ -160,8 +228,21 @@ Page({
   },
   pickCoupon(e: any) {
     const idx = Number(e.detail.value);
-    const c = this.data.coupons[idx];
-    this.setData({ userCouponId: c ? c.id : 0 });
+    const c = (this.data.couponOptions || [])[idx];
+    if (!c || !c.id) {
+      this.setData({ userCouponId: 0 });
+      this.refresh();
+      return;
+    }
+    if (c.blocked) {
+      this.setData({
+        userCouponId: 0,
+        couponPickerIndex: 0,
+        couponNote: /门槛/.test(c.reason) ? "未满门槛" : "暂不可用",
+      });
+      return;
+    }
+    this.setData({ userCouponId: c.id });
     this.refresh();
   },
   remark(e: any) {
@@ -182,7 +263,7 @@ Page({
         items: this.data.items,
         remark: this.data.remark,
         from: this.data.from || "CART",
-        ...this.extra(),
+        ...this.extra(true),
       });
       track("order_submit", { order_no: order.order_no });
       const pay = await request(`/orders/${order.id}/pay`, "POST");
