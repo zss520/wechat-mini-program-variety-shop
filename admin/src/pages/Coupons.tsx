@@ -24,15 +24,15 @@ import ListPagination, { DEFAULT_PAGE_SIZE, lastPageOf, readPaged } from "../com
 import { useFeedback } from "../components/FeedbackProvider";
 import { formatDateRange, formatDateTime } from "../utils/datetime";
 import { displayCouponRule, displayNumber, displayText } from "../utils/display";
-import { isValidNonNegInt } from "../utils/message";
+import { isValidNonNegInt, isValidNonNegYuan, isValidYuan, yuanToCent } from "../utils/message";
 
 const empty = {
   name: "",
   type: "FULL_REDUCE",
-  minAmountCent: 3000,
-  reduceCent: 500,
+  minAmountYuan: 30,
+  reduceYuan: 5,
   discountBp: 9000,
-  discountCapCent: 0,
+  discountCapYuan: 0,
   perUserLimit: 1,
   totalLimit: 0,
   startAt: "",
@@ -110,12 +110,15 @@ export default function Coupons() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return fb.alert("请填写优惠券名称", { title: "请完善信息", severity: "warning" });
-    if (!isValidNonNegInt(form.minAmountCent)) return fb.alert("门槛须为大于等于 0 的整数，单位是分，如 3000 表示满 ¥30", { title: "请完善信息", severity: "warning" });
-    if (form.type === "FULL_REDUCE" && (!Number.isInteger(form.reduceCent) || form.reduceCent <= 0)) {
-      return fb.alert("减免金额须为大于 0 的整数，单位是分，如 500 表示减 ¥5", { title: "请完善信息", severity: "warning" });
+    if (!isValidNonNegYuan(form.minAmountYuan)) return fb.alert("门槛须为大于等于 0 的金额，单位是元，最多两位小数，如 30 表示满 ¥30", { title: "请完善信息", severity: "warning" });
+    if (form.type === "FULL_REDUCE" && !isValidYuan(form.reduceYuan)) {
+      return fb.alert("减免金额须大于 0，单位是元，最多两位小数，如 5 表示减 ¥5", { title: "请完善信息", severity: "warning" });
     }
     if (form.type === "DISCOUNT" && (form.discountBp < 1000 || form.discountBp > 9900)) {
       return fb.alert("折扣 BP 范围为 1000～9900，9000 表示 9 折", { title: "请完善信息", severity: "warning" });
+    }
+    if (form.type === "DISCOUNT" && form.discountCapYuan && !isValidYuan(form.discountCapYuan)) {
+      return fb.alert("封顶金额须大于 0，单位是元；0 表示不封顶", { title: "请完善信息", severity: "warning" });
     }
     if (!Number.isInteger(form.perUserLimit) || form.perUserLimit < 1) {
       return fb.alert("每人限领须为大于等于 1 的整数", { title: "请完善信息", severity: "warning" });
@@ -126,7 +129,19 @@ export default function Coupons() {
     if (!form.startAt || !form.endAt) return fb.alert("请填写有效期开始和结束时间", { title: "请完善信息", severity: "warning" });
     if (form.startAt >= form.endAt) return fb.alert("结束时间须晚于开始时间", { title: "请完善信息", severity: "warning" });
     try {
-      await api.post("/coupons", { ...form, name: form.name.trim(), totalLimit: form.totalLimit > 0 ? form.totalLimit : null });
+      await api.post("/coupons", {
+        name: form.name.trim(),
+        type: form.type,
+        minAmountCent: yuanToCent(form.minAmountYuan),
+        reduceCent: yuanToCent(form.reduceYuan),
+        discountBp: form.discountBp,
+        discountCapCent: form.discountCapYuan > 0 ? yuanToCent(form.discountCapYuan) : 0,
+        perUserLimit: form.perUserLimit,
+        totalLimit: form.totalLimit > 0 ? form.totalLimit : null,
+        startAt: form.startAt,
+        endAt: form.endAt,
+        enabled: form.enabled,
+      });
       setForm(empty);
       if (page !== 1) setPage(1);
       else load(1, pageSize);
@@ -229,7 +244,7 @@ export default function Coupons() {
   };
 
   return (
-    <PageContainer title="优惠券" description="带 * 为必填。金额填「分」。折扣 BP：9000 = 9 折。总量填 0 表示不限量。发放会遵守每人限领与总量。">
+    <PageContainer title="优惠券" description="带 * 为必填。金额统一填「元」，最多两位小数。折扣 BP：9000 = 9 折。总量填 0 表示不限量。发放会遵守每人限领与总量。">
       <form onSubmit={submit} noValidate>
         <InlineForm>
           <TextField required size="small" label="名称" placeholder="最多 40 字" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} inputProps={{ maxLength: 40 }} />
@@ -237,13 +252,13 @@ export default function Coupons() {
             <MenuItem value="FULL_REDUCE">满减</MenuItem>
             <MenuItem value="DISCOUNT">折扣</MenuItem>
           </TextField>
-          <TextField required size="small" type="number" label="门槛(分)" placeholder="如 3000" value={form.minAmountCent} onChange={(e) => setForm({ ...form, minAmountCent: Number(e.target.value) })} inputProps={{ min: 0, step: 1 }} sx={{ width: 130 }} />
+          <TextField required size="small" type="number" label="门槛（元）" placeholder="如 30" value={form.minAmountYuan} onChange={(e) => setForm({ ...form, minAmountYuan: Number(e.target.value) })} inputProps={{ min: 0, step: "0.01" }} sx={{ width: 130 }} />
           {form.type === "FULL_REDUCE" ? (
-            <TextField required size="small" type="number" label="减免(分)" placeholder="如 500" value={form.reduceCent} onChange={(e) => setForm({ ...form, reduceCent: Number(e.target.value) })} inputProps={{ min: 1, step: 1 }} sx={{ width: 130 }} />
+            <TextField required size="small" type="number" label="减免（元）" placeholder="如 5" value={form.reduceYuan} onChange={(e) => setForm({ ...form, reduceYuan: Number(e.target.value) })} inputProps={{ min: 0.01, step: "0.01" }} sx={{ width: 130 }} />
           ) : (
             <>
               <TextField required size="small" type="number" label="折扣BP" placeholder="9000=9折" value={form.discountBp} onChange={(e) => setForm({ ...form, discountBp: Number(e.target.value) })} inputProps={{ min: 1000, max: 9900, step: 100 }} sx={{ width: 140 }} />
-              <TextField size="small" type="number" label="封顶(分)" placeholder="0 为不封顶" value={form.discountCapCent} onChange={(e) => setForm({ ...form, discountCapCent: Number(e.target.value) })} inputProps={{ min: 0, step: 1 }} sx={{ width: 130 }} />
+              <TextField size="small" type="number" label="封顶（元）" placeholder="0 为不封顶" value={form.discountCapYuan} onChange={(e) => setForm({ ...form, discountCapYuan: Number(e.target.value) })} inputProps={{ min: 0, step: "0.01" }} sx={{ width: 130 }} />
             </>
           )}
           <TextField required size="small" type="number" label="每人限领" value={form.perUserLimit} onChange={(e) => setForm({ ...form, perUserLimit: Number(e.target.value) })} inputProps={{ min: 1, step: 1 }} sx={{ width: 120 }} />

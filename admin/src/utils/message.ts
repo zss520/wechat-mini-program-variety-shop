@@ -17,15 +17,12 @@ export function goodsUnitOptions(current?: string): string[] {
   return GOODS_UNITS;
 }
 
-export function isValidYuan(v: unknown): boolean {
-  const n = Number(v);
-  return Number.isFinite(n) && n > 0;
-}
-
 export function isValidNonNegInt(v: unknown): boolean {
   const n = Number(v);
   return Number.isInteger(n) && n >= 0;
 }
+
+export { isValidNonNegYuan, isValidYuan, yuanToCent } from "./money";
 
 export function isCnMobile(v: string): boolean {
   return /^1\d{10}$/.test(v.trim());

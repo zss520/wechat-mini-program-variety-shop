@@ -14,8 +14,9 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { api } from "../api";
 import PageContainer from "../components/PageContainer";
 import { useFeedback } from "../components/FeedbackProvider";
-import { isCnMobile, isValidNonNegInt } from "../utils/message";
+import { isCnMobile, isValidNonNegInt, isValidNonNegYuan } from "../utils/message";
 import { asRecord } from "../utils/display";
+import { centToYuanNumber, yuanToCent } from "../utils/money";
 
 type ShopForm = {
   shop_name: string;
@@ -26,8 +27,8 @@ type ShopForm = {
   pickup_address: string;
   business_hours: string;
   delivery_enabled: boolean;
-  freight_cent: number;
-  free_freight_over_cent: number;
+  freightYuan: number;
+  freeFreightOverYuan: number;
   pay_timeout_minutes: number;
   pause_order: boolean;
   low_stock_threshold: number;
@@ -46,8 +47,8 @@ const EMPTY: ShopForm = {
   pickup_address: "",
   business_hours: "08:00-21:00",
   delivery_enabled: true,
-  freight_cent: 0,
-  free_freight_over_cent: 0,
+  freightYuan: 0,
+  freeFreightOverYuan: 0,
   pay_timeout_minutes: 15,
   pause_order: false,
   low_stock_threshold: 5,
@@ -56,8 +57,6 @@ const EMPTY: ShopForm = {
   points_earn_per_yuan: 1,
   points_redeem_rate: 100,
 };
-
-const KEYS = Object.keys(EMPTY) as (keyof ShopForm)[];
 
 function asBool(v: unknown): boolean {
   return v === true || v === 1 || v === "1" || v === "true";
@@ -80,8 +79,8 @@ function normalize(raw: unknown): ShopForm {
     pickup_address: String(src.pickup_address ?? ""),
     business_hours: String(src.business_hours ?? EMPTY.business_hours),
     delivery_enabled: src.delivery_enabled == null ? EMPTY.delivery_enabled : asBool(src.delivery_enabled),
-    freight_cent: asNum(src.freight_cent, EMPTY.freight_cent),
-    free_freight_over_cent: asNum(src.free_freight_over_cent, EMPTY.free_freight_over_cent),
+    freightYuan: centToYuanNumber(src.freight_cent ?? EMPTY.freightYuan),
+    freeFreightOverYuan: centToYuanNumber(src.free_freight_over_cent ?? EMPTY.freeFreightOverYuan),
     pay_timeout_minutes: asNum(src.pay_timeout_minutes, EMPTY.pay_timeout_minutes),
     pause_order: src.pause_order == null ? EMPTY.pause_order : asBool(src.pause_order),
     low_stock_threshold: asNum(src.low_stock_threshold, EMPTY.low_stock_threshold),
@@ -92,10 +91,26 @@ function normalize(raw: unknown): ShopForm {
   };
 }
 
-function payload(form: ShopForm): ShopForm {
-  const out = { ...EMPTY };
-  for (const k of KEYS) (out as Record<string, unknown>)[k] = form[k];
-  return out;
+function payload(form: ShopForm) {
+  return {
+    shop_name: form.shop_name,
+    logo_url: form.logo_url,
+    intro: form.intro,
+    phone: form.phone,
+    wechat_id: form.wechat_id,
+    pickup_address: form.pickup_address,
+    business_hours: form.business_hours,
+    delivery_enabled: form.delivery_enabled,
+    freight_cent: yuanToCent(form.freightYuan),
+    free_freight_over_cent: yuanToCent(form.freeFreightOverYuan),
+    pay_timeout_minutes: form.pay_timeout_minutes,
+    pause_order: form.pause_order,
+    low_stock_threshold: form.low_stock_threshold,
+    primary_color: form.primary_color,
+    points_enabled: form.points_enabled,
+    points_earn_per_yuan: form.points_earn_per_yuan,
+    points_redeem_rate: form.points_redeem_rate,
+  };
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -170,8 +185,8 @@ export default function Settings() {
       await fb.alert("电话请填写 11 位手机号，如 13800138000", { title: "请完善信息", severity: "warning" });
       return;
     }
-    if (!isValidNonNegInt(form.freight_cent) || !isValidNonNegInt(form.free_freight_over_cent)) {
-      await fb.alert("配送费、满额免运费须为大于等于 0 的整数，单位是分", { title: "请完善信息", severity: "warning" });
+    if (!isValidNonNegYuan(form.freightYuan) || !isValidNonNegYuan(form.freeFreightOverYuan)) {
+      await fb.alert("配送费、满额免运费须为大于等于 0 的金额，单位是元，最多两位小数", { title: "请完善信息", severity: "warning" });
       return;
     }
     if (!Number.isInteger(form.pay_timeout_minutes) || form.pay_timeout_minutes < 1) {
@@ -205,7 +220,7 @@ export default function Settings() {
   };
 
   return (
-    <PageContainer title="店铺设置" description="带 * 为必填。金额类字段单位是「分」，100 分 = ¥1。保存后顾客端在缓存到期后更新。">
+    <PageContainer title="店铺设置" description="带 * 为必填。金额统一填「元」，最多两位小数。保存后顾客端在缓存到期后更新。">
       {loadState === "loading" && (
         <Stack alignItems="center" sx={{ py: 6 }}>
           <CircularProgress size={28} />
@@ -324,21 +339,21 @@ export default function Settings() {
               <TextField
                 required
                 type="number"
-                label="配送费（分）"
-                value={form.freight_cent}
-                onChange={(e) => set("freight_cent", Number(e.target.value))}
-                helperText="必填，整数。300 表示 ¥3.00"
-                inputProps={{ min: 0, step: 1 }}
+                label="配送费（元）"
+                value={form.freightYuan}
+                onChange={(e) => set("freightYuan", Number(e.target.value))}
+                helperText="必填，单位元，最多两位小数。3 表示 ¥3.00"
+                inputProps={{ min: 0, step: "0.01" }}
                 disabled={!form.delivery_enabled}
               />
               <TextField
                 required
                 type="number"
-                label="满额免运费（分）"
-                value={form.free_freight_over_cent}
-                onChange={(e) => set("free_freight_over_cent", Number(e.target.value))}
-                helperText="必填，整数。3000 表示满 ¥30 免运费"
-                inputProps={{ min: 0, step: 1 }}
+                label="满额免运费（元）"
+                value={form.freeFreightOverYuan}
+                onChange={(e) => set("freeFreightOverYuan", Number(e.target.value))}
+                helperText="必填，单位元。30 表示满 ¥30 免运费；0 表示不减免"
+                inputProps={{ min: 0, step: "0.01" }}
                 disabled={!form.delivery_enabled}
               />
             </Section>

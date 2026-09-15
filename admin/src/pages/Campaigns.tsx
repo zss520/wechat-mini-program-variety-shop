@@ -10,7 +10,7 @@ import { useFeedback } from "../components/FeedbackProvider";
 import GoodsByCategoryPicker, { PickerCat, PickerGoods } from "../components/GoodsByCategoryPicker";
 import { formatDateRange } from "../utils/datetime";
 import { asArray, displayNumber, displayText, displayYuan } from "../utils/display";
-import { isValidNonNegInt, isValidYuan } from "../utils/message";
+import { isValidNonNegInt, isValidYuan, yuanToCent } from "../utils/message";
 
 const MAX_IMAGE_BYTES = 400 * 1024;
 const MAX_COMBO = 8;
@@ -27,7 +27,7 @@ const emptyGroup = {
   title: "",
   categoryId: 0,
   goodsId: 0,
-  itemPriceCent: 0,
+  itemPriceYuan: 0,
   requiredCount: 2,
   perUserLimit: 1,
   expireHours: 24,
@@ -39,7 +39,7 @@ const emptySeckill = {
   title: "",
   categoryId: 0,
   goodsId: 0,
-  seckillPriceCent: 0,
+  seckillPriceYuan: 0,
   seckillStock: 10,
   perUserLimit: 1,
   startAt: "",
@@ -94,18 +94,18 @@ export default function Campaigns() {
     if (!g.goodsId || !gGoods) return fb.alert("请选择要加入组合的商品", { title: "请完善信息", severity: "warning" });
     if (combo.some((x) => x.goodsId === g.goodsId)) return fb.alert("该商品已在组合中", { title: "请完善信息", severity: "warning" });
     if (combo.length >= MAX_COMBO) return fb.alert("一组最多 8 件商品", { title: "请完善信息", severity: "warning" });
-    if (!isValidYuan(g.itemPriceCent / 100)) return fb.alert("该商品团价须为大于 0 的整数，单位是分，如 3290 表示 ¥32.90", { title: "请完善信息", severity: "warning" });
+    if (!isValidYuan(g.itemPriceYuan)) return fb.alert("该商品团价须大于 0，单位是元，最多两位小数，如 32.9", { title: "请完善信息", severity: "warning" });
     setCombo((list) => [
       ...list,
       {
         goodsId: g.goodsId,
         name: gGoods.name,
         originPriceCent: Number(gGoods.price_cent || 0),
-        groupPriceCent: g.itemPriceCent,
+        groupPriceCent: yuanToCent(g.itemPriceYuan),
         coverUrl: String((gGoods as PickerGoods & { cover_url?: string }).cover_url || ""),
       },
     ]);
-    setG((x) => ({ ...x, goodsId: 0, itemPriceCent: 0 }));
+    setG((x) => ({ ...x, goodsId: 0, itemPriceYuan: 0 }));
     setGGoods(null);
   };
 
@@ -147,7 +147,7 @@ export default function Campaigns() {
     if (!s.title.trim()) return fb.alert("请填写秒杀标题", { title: "请完善信息", severity: "warning" });
     if (!s.categoryId) return fb.alert("请选择分类", { title: "请完善信息", severity: "warning" });
     if (!s.goodsId) return fb.alert("请选择商品", { title: "请完善信息", severity: "warning" });
-    if (!isValidYuan(s.seckillPriceCent / 100)) return fb.alert("秒杀价须为大于 0 的整数，单位是分，如 1290 表示 ¥12.90", { title: "请完善信息", severity: "warning" });
+    if (!isValidYuan(s.seckillPriceYuan)) return fb.alert("秒杀价须大于 0，单位是元，最多两位小数，如 12.9", { title: "请完善信息", severity: "warning" });
     if (!isValidNonNegInt(s.seckillStock) || s.seckillStock < 1) return fb.alert("秒杀库存须为大于 0 的整数", { title: "请完善信息", severity: "warning" });
     if (!Number.isInteger(s.perUserLimit) || s.perUserLimit < 1 || s.perUserLimit > 99) {
       return fb.alert("每人限购须为 1～99 的整数", { title: "请完善信息", severity: "warning" });
@@ -155,7 +155,16 @@ export default function Campaigns() {
     if (!s.startAt || !s.endAt) return fb.alert("请填写开始和结束时间", { title: "请完善信息", severity: "warning" });
     if (s.startAt >= s.endAt) return fb.alert("结束时间须晚于开始时间", { title: "请完善信息", severity: "warning" });
     try {
-      await api.post("/seckills", { ...s, title: s.title.trim() });
+      await api.post("/seckills", {
+        title: s.title.trim(),
+        categoryId: s.categoryId,
+        goodsId: s.goodsId,
+        seckillPriceCent: yuanToCent(s.seckillPriceYuan),
+        seckillStock: s.seckillStock,
+        perUserLimit: s.perUserLimit,
+        startAt: s.startAt,
+        endAt: s.endAt,
+      });
       setS({ ...emptySeckill, categoryId: s.categoryId });
       setSGoods(null);
       load();
@@ -178,7 +187,7 @@ export default function Campaigns() {
   };
 
   return (
-    <PageContainer title="拼团秒杀" description="拼团可上传标题图、加入多件商品组合。多件时团价按组合总价结算（各件团价相加）。价格单位是「分」。">
+    <PageContainer title="拼团秒杀" description="拼团可上传标题图、加入多件商品组合。多件时团价按组合总价结算（各件团价相加）。金额统一填「元」，最多两位小数。">
       <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
         拼团
       </Typography>
@@ -238,7 +247,7 @@ export default function Campaigns() {
             }}
           />
           <TextField size="small" label="原价" value={gGoods ? displayYuan(gGoods.price_cent) : "选商品后预览"} InputProps={{ readOnly: true }} sx={{ width: 140 }} />
-          <TextField required size="small" type="number" label="该商品团价(分)" placeholder="如 3290" value={g.itemPriceCent} onChange={(e) => setG({ ...g, itemPriceCent: Number(e.target.value) })} inputProps={{ min: 1, step: 1 }} sx={{ width: 160 }} />
+          <TextField required size="small" type="number" label="该商品团价（元）" placeholder="如 32.9" value={g.itemPriceYuan} onChange={(e) => setG({ ...g, itemPriceYuan: Number(e.target.value) })} inputProps={{ min: 0.01, step: "0.01" }} sx={{ width: 160 }} />
           <Button type="button" variant="outlined" onClick={() => void addComboItem()}>
             加入组合
           </Button>
@@ -349,7 +358,7 @@ export default function Campaigns() {
             }}
           />
           <TextField size="small" label="原价" value={sGoods ? displayYuan(sGoods.price_cent) : "选商品后预览"} InputProps={{ readOnly: true }} sx={{ width: 140 }} />
-          <TextField required size="small" type="number" label="秒杀价(分)" placeholder="如 1290" value={s.seckillPriceCent} onChange={(e) => setS({ ...s, seckillPriceCent: Number(e.target.value) })} inputProps={{ min: 1, step: 1 }} sx={{ width: 140 }} />
+          <TextField required size="small" type="number" label="秒杀价（元）" placeholder="如 12.9" value={s.seckillPriceYuan} onChange={(e) => setS({ ...s, seckillPriceYuan: Number(e.target.value) })} inputProps={{ min: 0.01, step: "0.01" }} sx={{ width: 140 }} />
           <TextField required size="small" type="number" label="秒杀库存" placeholder="正整数" value={s.seckillStock} onChange={(e) => setS({ ...s, seckillStock: Number(e.target.value) })} inputProps={{ min: 1, step: 1 }} sx={{ width: 120 }} />
           <TextField required size="small" type="number" label="每人限购" placeholder="1～99" value={s.perUserLimit} onChange={(e) => setS({ ...s, perUserLimit: Number(e.target.value) })} inputProps={{ min: 1, max: 99, step: 1 }} sx={{ width: 120 }} />
           <TextField required size="small" type="datetime-local" label="开始" InputLabelProps={{ shrink: true }} value={s.startAt} onChange={(e) => setS({ ...s, startAt: e.target.value })} />

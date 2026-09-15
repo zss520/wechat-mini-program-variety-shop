@@ -7,6 +7,7 @@ import PageContainer from "../components/PageContainer";
 import { useFeedback } from "../components/FeedbackProvider";
 import { asArray, displayText } from "../utils/display";
 import { goodsUnitOptions, isValidNonNegInt, isValidYuan } from "../utils/message";
+import { centToYuanNumber } from "../utils/money";
 
 type Cat = { id: number; name: string };
 
@@ -57,8 +58,8 @@ export default function GoodsForm() {
           name: String(g.name || ""),
           subtitle: String(g.subtitle || ""),
           categoryId: Number(g.category_id),
-          priceYuan: Number(g.price_cent) / 100,
-          originPriceYuan: g.origin_price_cent ? Number(g.origin_price_cent) / 100 : 0,
+          priceYuan: centToYuanNumber(g.price_cent),
+          originPriceYuan: g.origin_price_cent ? centToYuanNumber(g.origin_price_cent) : 0,
           unit: String(g.unit || "件"),
           stock: Number(g.stock || 0),
           images: parseGoodsImages(g),
@@ -66,7 +67,7 @@ export default function GoodsForm() {
           onSale: Boolean(g.on_sale),
           sort: Number(g.sort || 0),
           manualWeight: Number(g.manual_weight || 0),
-          specialPriceYuan: g.special_price_cent ? Number(g.special_price_cent) / 100 : 0,
+          specialPriceYuan: g.special_price_cent ? centToYuanNumber(g.special_price_cent) : 0,
           specialStart: g.special_start ? String(g.special_start).slice(0, 16).replace(" ", "T") : "",
           specialEnd: g.special_end ? String(g.special_end).slice(0, 16).replace(" ", "T") : "",
         });
