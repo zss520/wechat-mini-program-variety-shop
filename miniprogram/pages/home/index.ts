@@ -1,5 +1,6 @@
 import { request } from "../../utils/request";
 import { asArray, asRecord, displayText, toFiniteNumber } from "../../utils/display";
+import { applyShopChrome, contactShop, isPaused, mediaUrl, shopHint, shareShop } from "../../utils/shop";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
@@ -27,6 +28,8 @@ Page({
     recommendTitle: "本店推荐",
     settings: {} as any,
     shopHint: "",
+    logoUrl: "",
+    paused: false,
     nav: { type: "dots-bar" },
   },
   onShow() {
@@ -58,9 +61,11 @@ Page({
     wx.setStorageSync("mockWx", !!boot.mockWx);
     this.setData({
       settings,
-      shopHint: [settings.pickup_address, settings.business_hours].filter(Boolean).join(" · "),
+      shopHint: shopHint(settings),
+      logoUrl: mediaUrl(settings.logo_url),
+      paused: isPaused(settings),
     });
-    if (settings.shop_name) wx.setNavigationBarTitle({ title: String(settings.shop_name) });
+    applyShopChrome(settings);
   },
   async loadBanner() {
     const banner = readBlock(await request("/home/banner"));
@@ -150,6 +155,12 @@ Page({
     wx.navigateTo({
       url: `/pages/order/confirm?from=SECKILL&activityId=${item.id}&goodsId=${item.goods_id}&qty=1`,
     });
+  },
+  contact() {
+    contactShop(this.data.settings);
+  },
+  onShareAppMessage() {
+    return shareShop(this.data.settings);
   },
   onBanner(e: any) {
     const idx = Number(e.detail?.index ?? e.detail?.current ?? 0);

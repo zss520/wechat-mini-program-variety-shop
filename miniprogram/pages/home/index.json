@@ -1,5 +1,6 @@
 {
   "usingComponents": { "goods-card": "/components/goods-card/index" },
   "enablePullDownRefresh": true,
-  "navigationBarTitleText": "首页"
+  "navigationBarTitleText": "首页",
+  "enableShareAppMessage": true
 }

@@ -1,4 +1,5 @@
 import { clearSession, currentUser, ensureMember, goLogin, isMember, request, tryRestoreMember } from "../../utils/request";
+import { contactShop, copyWechat, mediaUrl, readSettings } from "../../utils/shop";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
@@ -14,6 +15,10 @@ Page({
     subscribed: false,
     logged: false,
     phoneText: "",
+    logoUrl: "",
+    hasWechat: false,
+    pickupAddress: "",
+    businessHours: "",
   },
   onShow() {
     syncTabBar(this, "mine");
@@ -24,11 +29,16 @@ Page({
     if (!isMember()) await tryRestoreMember();
     const user = currentUser();
     const logged = isMember();
+    const settings = readSettings();
     this.setData({
       user,
       logged,
       phoneText: logged ? maskPhone(user.phone || "") : "授权登录后同步订单与优惠券",
-      settings: wx.getStorageSync("settings") || {},
+      settings,
+      logoUrl: mediaUrl(settings.logo_url),
+      hasWechat: Boolean(String(settings.wechat_id || "").trim()),
+      pickupAddress: String(settings.pickup_address || "").trim(),
+      businessHours: String(settings.business_hours || "").trim(),
     });
     if (logged) {
       request("/auth/me")
@@ -76,11 +86,10 @@ Page({
     wx.navigateTo({ url: "/pages/address/list" });
   },
   call() {
-    const phone = this.data.settings.phone;
-    if (phone) {
-      track("contact_shop", { extra: { action: "phone" } });
-      wx.makePhoneCall({ phoneNumber: phone });
-    }
+    contactShop(this.data.settings);
+  },
+  copyWechat() {
+    copyWechat(this.data.settings);
   },
   privacy() {
     const url = this.data.settings.privacyUrl || "http://10.0.8.98:3000/privacy";

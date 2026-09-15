@@ -10,6 +10,20 @@
 </view>
 
 <view class="mine-groups">
+  <view class="mine-block" wx:if="{{logoUrl || settings.intro || pickupAddress || businessHours}}">
+    <view class="shop-info">
+      <image wx:if="{{logoUrl}}" class="shop-logo" src="{{logoUrl}}" mode="aspectFill" />
+      <view class="shop-meta">
+        <view class="shop-name">{{settings.shop_name || '本店'}}</view>
+        <view class="shop-intro" wx:if="{{settings.intro}}">{{settings.intro}}</view>
+      </view>
+    </view>
+    <t-cell-group theme="card" wx:if="{{pickupAddress || businessHours}}">
+      <t-cell wx:if="{{pickupAddress}}" title="自提地址" note="{{pickupAddress}}" left-icon="location" />
+      <t-cell wx:if="{{businessHours}}" title="营业时间" note="{{businessHours}}" left-icon="time" />
+    </t-cell-group>
+  </view>
+
   <view class="mine-block">
     <t-cell-group theme="card">
       <t-cell title="我的订单" left-icon="order" arrow hover bind:click="orders" />
@@ -32,6 +46,7 @@
         <t-switch slot="note" value="{{subscribed}}" />
       </t-cell>
       <t-cell title="联系店主" left-icon="service" note="{{settings.phone || ''}}" arrow hover bind:click="call" />
+      <t-cell wx:if="{{hasWechat}}" title="微信号" left-icon="chat" note="{{settings.wechat_id}}" arrow hover bind:click="copyWechat" />
       <t-cell title="隐私政策" left-icon="info-circle" arrow hover bind:click="privacy" />
       <t-cell wx:if="{{logged}}" title="退出登录" left-icon="close" hover bind:click="logout" />
     </t-cell-group>

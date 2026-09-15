@@ -1,4 +1,11 @@
 <wxs src="../../utils/display.wxs" module="disp" />
+<t-notice-bar
+  wx:if="{{paused}}"
+  visible
+  theme="warning"
+  content="店主休息中，暂不接单"
+  prefix-icon="error-circle"
+/>
 <view wx:if="{{needLogin}}" class="need-login">
   <t-empty icon="user" description="授权登录后查看购物车" />
   <t-button theme="primary" shape="round" bind:tap="login">微信授权登录</t-button>
@@ -50,5 +57,5 @@
 <view class="bar" wx:if="{{list.length}}">
   <t-checkbox checked="{{allChecked}}" bind:change="toggleAll" label="全选" />
   <view class="sum">合计 <text class="price">{{disp.money(total)}}</text></view>
-  <t-button theme="primary" size="large" shape="round" bind:tap="settle">去结算</t-button>
+  <t-button theme="primary" size="large" shape="round" disabled="{{paused}}" bind:tap="settle">{{paused ? '店主休息中' : '去结算'}}</t-button>
 </view>

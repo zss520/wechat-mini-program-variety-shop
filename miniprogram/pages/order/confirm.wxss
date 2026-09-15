@@ -22,6 +22,12 @@
 .safe-bottom {
   margin: 24rpx;
 }
+.pay-hint {
+  margin: 0 24rpx 16rpx;
+  font-size: 24rpx;
+  color: #8a6a4a;
+  text-align: center;
+}
 t-cell-group {
   display: block;
   margin-top: 24rpx;

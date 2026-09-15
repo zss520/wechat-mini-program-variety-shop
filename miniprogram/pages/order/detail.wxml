@@ -5,6 +5,7 @@
     <view class="code">{{disp.text(o.pickup_code)}}</view>
     <view class="hint">到店出示提货码</view>
   </block>
+  <view class="hint" wx:elif="{{o.status=='PENDING_PAY' && payHint}}">{{payHint}}</view>
 </view>
 
 <view class="detail-body {{showCode ? 'below-code' : ''}}">

@@ -12,6 +12,11 @@
   font-weight: 700;
   margin-top: 8rpx;
 }
+.rule {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  opacity: 0.85;
+}
 t-cell-group {
   display: block;
   margin-top: 24rpx;

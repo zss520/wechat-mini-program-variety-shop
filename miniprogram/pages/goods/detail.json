@@ -1,4 +1,5 @@
 {
   "navigationBarTitleText": "商品详情",
-  "usingComponents": { "goods-card": "/components/goods-card/index" }
+  "usingComponents": { "goods-card": "/components/goods-card/index" },
+  "enableShareAppMessage": true
 }

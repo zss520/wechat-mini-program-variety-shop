@@ -1,11 +1,12 @@
 import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord } from "../../utils/display";
+import { guardOpenOrder, isPaused, mediaUrl, readSettings, shareShop } from "../../utils/shop";
 import { track } from "../../utils/tracker";
 
 Page({
-  data: { item: {} as any, related: [] as any[], qty: 1, slot: "", id: 0, detailImages: [] as string[], nav: { type: "dots-bar" } },
+  data: { item: {} as any, related: [] as any[], qty: 1, slot: "", id: 0, detailImages: [] as string[], nav: { type: "dots-bar" }, paused: false },
   onLoad(q: any) {
-    this.setData({ id: Number(q.id), slot: q.slot || "" });
+    this.setData({ id: Number(q.id), slot: q.slot || "", paused: isPaused(readSettings()) });
     this.load();
   },
   async load() {
@@ -43,10 +44,21 @@ Page({
   },
   async buy() {
     if (this.data.item.soldOut) return;
+    if (!guardOpenOrder(readSettings())) return;
     if (!(await ensureMember())) return;
     track("buy_now_click", { goods_id: this.data.item.id });
     wx.navigateTo({
       url: `/pages/order/confirm?from=BUY_NOW&goodsId=${this.data.item.id}&qty=${this.data.qty}`,
     });
+  },
+  onShareAppMessage() {
+    const item = asRecord(this.data.item);
+    const shop = shareShop(readSettings());
+    const cover = mediaUrl(item.coverUrl || item.cover_url);
+    return {
+      title: String(item.name || shop.title),
+      path: `/pages/goods/detail?id=${this.data.id}&from=share`,
+      imageUrl: cover || shop.imageUrl,
+    };
   },
 });

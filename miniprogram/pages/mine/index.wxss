@@ -32,3 +32,34 @@
   display: block;
   margin-top: 0;
 }
+.shop-info {
+  margin: 0 24rpx 16rpx;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.shop-logo {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 16rpx;
+  background: #fff7ed;
+  flex-shrink: 0;
+}
+.shop-meta {
+  min-width: 0;
+  flex: 1;
+}
+.shop-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #3f2e22;
+}
+.shop-intro {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #8a6a4a;
+  line-height: 1.5;
+}

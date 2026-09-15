@@ -2,6 +2,7 @@
 <view class="head">
   <view class="label">当前积分</view>
   <view class="num">{{disp.num(balance)}}</view>
+  <view class="rule" wx:if="{{rule}}">{{rule}}</view>
 </view>
 <t-cell-group theme="card" title="积分明细">
   <t-cell

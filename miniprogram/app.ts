@@ -1,4 +1,5 @@
 import { request } from "./utils/request";
+import { applyShopNavColor } from "./utils/shop";
 import { track, flush } from "./utils/tracker";
 
 App({
@@ -24,9 +25,7 @@ App({
       this.globalData.settings = settings;
       wx.setStorageSync("settings", settings);
       wx.setStorageSync("mockWx", !!data.mockWx);
-      if (data.settings?.shop_name) {
-        wx.setNavigationBarTitle({ title: data.settings.shop_name });
-      }
+      applyShopNavColor(settings);
     } catch (e) {
       console.error(e);
     }

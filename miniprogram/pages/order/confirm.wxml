@@ -1,15 +1,21 @@
 <wxs src="../../utils/display.wxs" module="disp" />
+<t-notice-bar
+  wx:if="{{paused}}"
+  visible
+  theme="warning"
+  content="店主休息中，暂不接单"
+  prefix-icon="error-circle"
+/>
 <view class="seg">
   <t-segmented value="{{fulfillType}}" options="{{fulfillOptions}}" bind:change="onType" />
 </view>
 
 <t-cell-group theme="card">
-  <t-cell
-    wx:if="{{fulfillType=='PICKUP'}}"
-    title="到店自提"
-    description="{{disp.text(settings.pickup_address)}}（{{disp.text(settings.business_hours)}}）"
-    left-icon="shop"
-  />
+  <block wx:if="{{fulfillType=='PICKUP'}}">
+    <t-cell title="自提地址" description="{{disp.text(pickupAddress)}}" left-icon="shop" />
+    <t-cell wx:if="{{pickupHours}}" title="营业时间" note="{{pickupHours}}" left-icon="time" />
+    <t-cell wx:if="{{pickupPhone}}" title="联系电话" note="{{pickupPhone}}" left-icon="call" arrow hover bind:click="callShop" />
+  </block>
   <t-cell
     wx:else
     title="收货地址"
@@ -58,7 +64,7 @@
       />
     </t-cell>
   </block>
-  <t-cell title="运费" note="{{disp.money(preview.freightCent, '¥0')}}" />
+  <t-cell title="运费" note="{{disp.money(preview.freightCent, '¥0')}}" description="{{fulfillType=='DELIVERY' ? freightHint : ''}}" />
   <t-cell title="优惠" note="{{disp.minusMoney(preview.discountCent)}}" />
   <t-cell title="应付" note="{{disp.money(preview.payAmountCent, '¥0')}}" />
 </t-cell-group>
@@ -67,6 +73,7 @@
   <t-textarea placeholder="备注（选填）" value="{{remark}}" maxlength="80" bind:change="remark" />
 </view>
 
+<view class="pay-hint" wx:if="{{payHint}}">{{payHint}}</view>
 <view class="safe-bottom">
-  <t-button theme="primary" size="large" shape="round" block bind:tap="submit">提交并支付</t-button>
+  <t-button theme="primary" size="large" shape="round" block disabled="{{paused}}" bind:tap="submit">{{paused ? '店主休息中' : '提交并支付'}}</t-button>
 </view>

@@ -1,6 +1,7 @@
 import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord, displayText } from "../../utils/display";
 import { formatDateTime } from "../../utils/datetime";
+import { contactShop, payTimeoutHint, readSettings } from "../../utils/shop";
 import { track } from "../../utils/tracker";
 
 const MAP: Record<string, string> = {
@@ -33,9 +34,10 @@ Page({
     activityText: "普通",
     times: [] as { key: string; label: string; time: string }[],
     timeline: [] as { id: number; title: string; time: string }[],
+    payHint: "",
   },
   onLoad(q: any) {
-    this.setData({ id: Number(q.id), settings: wx.getStorageSync("settings") || {} });
+    this.setData({ id: Number(q.id), settings: readSettings(), payHint: payTimeoutHint(readSettings()) });
   },
   onShow() {
     this.load();
@@ -81,7 +83,6 @@ Page({
     this.load();
   },
   call() {
-    const phone = this.data.settings.phone;
-    if (phone) wx.makePhoneCall({ phoneNumber: phone });
+    contactShop(this.data.settings);
   },
 });

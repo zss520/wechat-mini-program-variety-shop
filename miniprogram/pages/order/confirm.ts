@@ -1,5 +1,6 @@
 import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord } from "../../utils/display";
+import { contactShop, freightNote, guardOpenOrder, isPaused, payTimeoutHint, readSettings } from "../../utils/shop";
 import { track } from "../../utils/tracker";
 
 const POINTS_STEP = 100;
@@ -36,10 +37,16 @@ Page({
       { label: "到店自提", value: "PICKUP" },
       { label: "配送到家", value: "DELIVERY" },
     ],
+    paused: false,
+    pickupAddress: "",
+    pickupHours: "",
+    pickupPhone: "",
+    freightHint: "",
+    payHint: "",
   },
   async onLoad(q: any) {
     if (!(await ensureMember())) return;
-    const settings = wx.getStorageSync("settings") || {};
+    const settings = readSettings();
     const fulfillOptions = settings.delivery_enabled
       ? [
           { label: "到店自提", value: "PICKUP" },
@@ -60,6 +67,12 @@ Page({
       activityType: q.from === "SECKILL" ? "SECKILL" : "NORMAL",
       activityId: Number(q.activityId || 0),
       teamId: Number(q.teamId || 0),
+      paused: isPaused(settings),
+      freightHint: freightNote(settings),
+      payHint: payTimeoutHint(settings),
+      pickupAddress: String(settings.pickup_address || "").trim(),
+      pickupHours: String(settings.business_hours || "").trim(),
+      pickupPhone: String(settings.phone || "").trim(),
     });
     const addresses = asArray(await request("/addresses"));
     const def = addresses.find((a: any) => a.is_default) || addresses[0];
@@ -95,6 +108,7 @@ Page({
         : usePoints
           ? `本次使用 ${pointsToUse} 积分`
           : `可用 ${Number(preview.pointsBalance || 0)}，可抵最多 ${pointsMax}`;
+      const pickup = asRecord(preview.pickup);
       this.setData({
         preview: {
           ...preview,
@@ -106,6 +120,10 @@ Page({
         usePoints,
         pointsToUse,
         pointsHint,
+        pickupAddress: String(pickup.address || this.data.settings.pickup_address || "").trim(),
+        pickupHours: String(pickup.hours || this.data.settings.business_hours || "").trim(),
+        pickupPhone: String(pickup.phone || this.data.settings.phone || "").trim(),
+        paused: preview.pauseOrder != null ? Boolean(preview.pauseOrder) : isPaused(this.data.settings),
       });
     } catch (e: any) {
       wx.showToast({ title: e.message, icon: "none" });
@@ -152,7 +170,11 @@ Page({
   goAddr() {
     wx.navigateTo({ url: "/pages/address/list" });
   },
+  callShop() {
+    contactShop(this.data.settings);
+  },
   async submit() {
+    if (!guardOpenOrder(this.data.settings)) return;
     try {
       const order = await request("/orders", "POST", {
         fulfillType: this.data.fulfillType,

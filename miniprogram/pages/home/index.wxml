@@ -5,12 +5,20 @@
 </view>
 
 <t-notice-bar
-  wx:if="{{settings.pause_order}}"
+  wx:if="{{paused}}"
   visible
   theme="warning"
   content="店主休息中，暂不接单"
   prefix-icon="error-circle"
 />
+
+<view class="shop-card" wx:if="{{logoUrl || settings.intro}}">
+  <image wx:if="{{logoUrl}}" class="shop-logo" src="{{logoUrl}}" mode="aspectFill" />
+  <view class="shop-meta">
+    <view class="shop-name" wx:if="{{settings.shop_name}}">{{settings.shop_name}}</view>
+    <view class="shop-intro" wx:if="{{settings.intro}}">{{settings.intro}}</view>
+  </view>
+</view>
 
 <view class="banner-wrap" wx:if="{{bannerImages.length}}">
   <t-swiper
@@ -129,5 +137,8 @@
   </view>
 </view>
 
-<t-empty wx:if="{{!recommend.length && !deals.length && !forYou.length}}" icon="shop" description="店主正在上架" />
+<view class="empty-box" wx:if="{{!recommend.length && !deals.length && !forYou.length}}">
+  <t-empty icon="shop" description="店主正在上架" />
+  <t-button theme="primary" variant="outline" shape="round" bind:tap="contact">联系店主</t-button>
+</view>
 </view>

@@ -1,6 +1,7 @@
 import { request, ensureMember, isMember, tryRestoreMember } from "../../utils/request";
 import { asArray, asRecord } from "../../utils/display";
 import { applyCartSelection, cartItemId, nextCheckedIds } from "../../utils/cartSelect";
+import { guardOpenOrder, isPaused, readSettings } from "../../utils/shop";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
@@ -12,9 +13,11 @@ Page({
     upsell: { suggestions: [] as any[], target: {} as any },
     allChecked: false,
     needLogin: false,
+    paused: false,
   },
   onShow() {
     syncTabBar(this, "cart");
+    this.setData({ paused: isPaused(readSettings()) });
     this.load();
   },
   applyChecked(list: any[], checkedIds: unknown[]) {
@@ -94,6 +97,7 @@ Page({
     if (await ensureMember()) this.load();
   },
   settle() {
+    if (!guardOpenOrder(readSettings())) return;
     const items = this.data.list.filter((x: any) => x.selected && !x.invalid);
     if (!items.length) {
       wx.showToast({ title: "请先选择商品", icon: "none" });
