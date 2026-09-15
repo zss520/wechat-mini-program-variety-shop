@@ -4,9 +4,7 @@ import multer from "multer";
 import path from "path";
 import { z } from "zod";
 import { db } from "./db";
-import { ok } from "./http";
-import { HttpError } from "./http";
-import { parsePage, maskPhone, yuanToCent } from "./http";
+import { ok, HttpError, parsePage, maskPhone, yuanToCent, requirePositiveInt } from "./http";
 import { requireRole, signToken } from "./auth";
 import { getSettings, saveSettings } from "./settings";
 import { ensureGoodsThumb, ensureUploadDirs, MAX_GOODS_IMAGES, MAX_IMAGE_BYTES, normalizeGoodsImages } from "./image";
@@ -800,7 +798,7 @@ adminRouter.get("/members/:id/points-ledger", async (req, res, next) => {
     ok(
       res,
       await queryPointsLedger({
-        userId: Number(req.params.id),
+        userId: requirePositiveInt(req.params.id, "用户"),
         page,
         pageSize,
         reason: q.reason ? String(q.reason) : "",
@@ -859,7 +857,7 @@ adminRouter.put("/coupons/:id", async (req, res, next) => {
 
 adminRouter.delete("/coupons/:id", async (req, res, next) => {
   try {
-    ok(res, await voidCoupon(Number(req.params.id)));
+    ok(res, await voidCoupon(requirePositiveInt(req.params.id, "优惠券")));
   } catch (e) {
     next(e);
   }
@@ -873,7 +871,7 @@ adminRouter.post("/coupons/:id/grant", async (req, res, next) => {
         grantAll: z.boolean().optional(),
       })
       .parse(req.body || {});
-    ok(res, await adminGrantCoupon(Number(req.params.id), body));
+    ok(res, await adminGrantCoupon(requirePositiveInt(req.params.id, "优惠券"), body));
   } catch (e) {
     next(e);
   }
@@ -885,7 +883,7 @@ adminRouter.get("/coupons/:id/holders", async (req, res, next) => {
     const { page, pageSize } = parsePage(q);
     ok(
       res,
-      await listCouponHolders(Number(req.params.id), {
+      await listCouponHolders(requirePositiveInt(req.params.id, "优惠券"), {
         page,
         pageSize,
         status: q.status ? String(q.status) : "",

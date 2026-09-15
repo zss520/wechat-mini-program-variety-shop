@@ -8,22 +8,30 @@ import { bindGracefulShutdown, bindHttpServer, installProcessGuards } from "./pr
 installProcessGuards();
 ensureUploadDirs();
 
-const app = createApp();
-const server = bindHttpServer(app, config.port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`variety-shop API listening on ${config.port}`);
-  try {
-    startJobs();
-  } catch (e) {
+db.migrate
+  .latest()
+  .then(() => {
+    const app = createApp();
+    const server = bindHttpServer(app, config.port, () => {
+      // eslint-disable-next-line no-console
+      console.log(`variety-shop API listening on ${config.port}`);
+      try {
+        startJobs();
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("startJobs failed", e);
+      }
+      backfillMissingThumbs().catch((e) => {
+        // eslint-disable-next-line no-console
+        console.error("backfillMissingThumbs failed", e);
+      });
+    });
+    bindGracefulShutdown(server, async () => {
+      await db.destroy();
+    });
+  })
+  .catch((e) => {
     // eslint-disable-next-line no-console
-    console.error("startJobs failed", e);
-  }
-  backfillMissingThumbs().catch((e) => {
-    // eslint-disable-next-line no-console
-    console.error("backfillMissingThumbs failed", e);
+    console.error("migrate failed", e);
+    process.exit(1);
   });
-});
-
-bindGracefulShutdown(server, async () => {
-  await db.destroy();
-});

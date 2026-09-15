@@ -25,10 +25,18 @@ export function parsePage(q: Record<string, unknown>) {
   return { page, pageSize, offset: (page - 1) * pageSize };
 }
 
-export function maskPhone(phone?: string | null) {
-  if (!phone) return "";
-  if (phone.length < 7) return phone;
-  return `${phone.slice(0, 3)}****${phone.slice(-4)}`;
+/** 路径参数转正整数；非法值不要交给 knex，否则 MySQL 会把 NaN 当成列名导致 500。 */
+export function requirePositiveInt(raw: unknown, label = "记录") {
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n <= 0) throw new HttpError(404, `${label}不存在`);
+  return n;
+}
+
+export function maskPhone(phone?: string | number | null) {
+  const s = phone == null ? "" : String(phone);
+  if (!s) return "";
+  if (s.length < 7) return s;
+  return `${s.slice(0, 3)}****${s.slice(-4)}`;
 }
 
 export function yuanToCent(yuan: number) {

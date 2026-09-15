@@ -1,4 +1,5 @@
 import { db } from "../db";
+import { HttpError } from "../http";
 import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrderDetail, orderTimePoints, applyOrderListFilters } from "../orderService";
 import {
   adminGrantCoupon,
@@ -509,6 +510,15 @@ async function run() {
   const holders = await listCouponHolders(cidHigh, { page: 1, pageSize: 20 });
   assert(holders.total >= 2, "holders include claim and grant");
   assert(holders.list.some((h: { source: string; sourceLabel: string }) => h.source === "ADMIN_GRANT" && h.sourceLabel === "店主发放"), "holder source labeled");
+  let badHolders = false;
+  try {
+    await listCouponHolders(Number("abc"), { page: 1, pageSize: 20 });
+  } catch (e) {
+    badHolders = e instanceof HttpError && e.status === 404;
+  }
+  assert(badHolders, "invalid coupon id should 404 instead of sql 500");
+  const emptyHolders = await listCouponHolders(cidHigh, { page: 1, pageSize: 20, status: "USED" });
+  assert(Array.isArray(emptyHolders.list), "holders with status filter still returns list");
 
   const [cidCap] = await db("coupons").insert({
     name: `__cap_${Date.now()}`,

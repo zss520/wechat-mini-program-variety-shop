@@ -211,6 +211,11 @@ export default function Coupons() {
       .catch((e) => fb.error(e));
 
   const openHolders = (c: Coupon) => {
+    const id = Number(c.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      fb.error(new Error("优惠券不存在"));
+      return;
+    }
     setHoldersCoupon(c);
     setHoldersPage(1);
     setHoldersStatus("ALL");

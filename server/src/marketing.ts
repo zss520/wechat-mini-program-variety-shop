@@ -1,6 +1,6 @@
 import type { Knex } from "knex";
 import { db } from "./db";
-import { HttpError, maskPhone, parsePage } from "./http";
+import { HttpError, maskPhone, parsePage, requirePositiveInt } from "./http";
 import { couponDiscount, toSqlDateTime, type PricedLine } from "./pricing";
 
 export const POINTS_REASON_LABELS: Record<string, string> = {
@@ -30,6 +30,14 @@ export function pointsReasonLabel(reason: string) {
 
 export function couponSourceLabel(source?: string | null) {
   return COUPON_SOURCE_LABELS[source || "CLAIM"] || "自行领取";
+}
+
+let userCouponSourceColumn: boolean | undefined;
+async function userCouponsHasSource(trx: Knex | Knex.Transaction = db) {
+  if (userCouponSourceColumn === undefined) {
+    userCouponSourceColumn = await trx.schema.hasColumn("user_coupons", "source");
+  }
+  return userCouponSourceColumn;
 }
 
 export async function changePoints(
@@ -64,14 +72,15 @@ export async function queryPointsLedger(opts: {
   from?: string;
   to?: string;
 }) {
-  const user = await db("users").where({ id: opts.userId }).first();
+  const userId = requirePositiveInt(opts.userId, "用户");
+  const user = await db("users").where({ id: userId }).first();
   if (!user) throw new HttpError(404, "用户不存在");
   const { page, pageSize, offset } = parsePage({
     page: opts.page,
     pageSize: opts.pageSize,
   });
   const applyFilters = (b: Knex.QueryBuilder) => {
-    b.where("points_ledger.user_id", opts.userId);
+    b.where("points_ledger.user_id", userId);
     if (opts.reason) b.where("points_ledger.reason", String(opts.reason));
     if (opts.from) b.where("points_ledger.created_at", ">=", `${opts.from} 00:00:00`);
     if (opts.to) b.where("points_ledger.created_at", "<=", `${opts.to} 23:59:59`);
@@ -79,7 +88,7 @@ export async function queryPointsLedger(opts: {
   const filtered = db("points_ledger").modify(applyFilters);
   const totalRow = await filtered.clone().count({ c: "*" }).first();
   const allSummary = await db("points_ledger")
-    .where({ user_id: opts.userId })
+    .where({ user_id: userId })
     .select(
       db.raw("COALESCE(SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END), 0) as earned"),
       db.raw("COALESCE(SUM(CASE WHEN delta < 0 THEN -delta ELSE 0 END), 0) as spent")
@@ -143,7 +152,7 @@ export async function grantCouponToUser(
     coupon_id: opts.couponId,
     status: "UNUSED",
     claimed_at: trx.fn.now(),
-    source: opts.source,
+    ...((await userCouponsHasSource(trx)) ? { source: opts.source } : {}),
   });
   await trx("coupons").where({ id: opts.couponId }).increment("claimed_count", 1);
   return trx("user_coupons").where({ id }).first();
@@ -154,9 +163,10 @@ export async function claimCoupon(userId: number, couponId: number) {
 }
 
 export async function adminGrantCoupon(couponId: number, body: { userIds?: number[]; grantAll?: boolean }) {
+  const id = requirePositiveInt(couponId, "优惠券");
   const uniqueIds = [...new Set((body.userIds || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
   return db.transaction(async (trx) => {
-    const coupon = await trx("coupons").where({ id: couponId }).whereNull("deleted_at").first();
+    const coupon = await trx("coupons").where({ id }).whereNull("deleted_at").first();
     if (!coupon) throw new HttpError(404, "优惠券不存在");
     if (!coupon.enabled) throw new HttpError(409, "优惠券已停用");
     if (couponEnded(coupon)) throw new HttpError(409, "优惠券已过期");
@@ -177,7 +187,7 @@ export async function adminGrantCoupon(couponId: number, body: { userIds?: numbe
         continue;
       }
       try {
-        await grantCouponToUser(trx, { userId, couponId, source: "ADMIN_GRANT" });
+        await grantCouponToUser(trx, { userId, couponId: id, source: "ADMIN_GRANT" });
         granted += 1;
       } catch (e) {
         if (e instanceof HttpError && e.message === "优惠券已领完") {
@@ -212,11 +222,12 @@ export async function expireUserCoupons() {
 }
 
 export async function voidCoupon(couponId: number) {
+  const id = requirePositiveInt(couponId, "优惠券");
   return db.transaction(async (trx) => {
-    const coupon = await trx("coupons").where({ id: couponId }).whereNull("deleted_at").first();
+    const coupon = await trx("coupons").where({ id }).whereNull("deleted_at").first();
     if (!coupon) throw new HttpError(404, "优惠券不存在");
-    await trx("coupons").where({ id: couponId }).update({ deleted_at: trx.fn.now(), enabled: 0 });
-    await trx("user_coupons").where({ coupon_id: couponId, status: "UNUSED" }).update({ status: "EXPIRED" });
+    await trx("coupons").where({ id }).update({ deleted_at: trx.fn.now(), enabled: 0 });
+    await trx("user_coupons").where({ coupon_id: id, status: "UNUSED" }).update({ status: "EXPIRED" });
     return true;
   });
 }
@@ -253,29 +264,24 @@ export async function attachCouponStats<T extends { id: number }>(list: T[]) {
 }
 
 export async function listCouponHolders(couponId: number, opts: { page?: number; pageSize?: number; status?: string }) {
-  const coupon = await db("coupons").where({ id: couponId }).first();
+  const id = requirePositiveInt(couponId, "优惠券");
+  const coupon = await db("coupons").where({ id }).first();
   if (!coupon) throw new HttpError(404, "优惠券不存在");
   const { page, pageSize, offset } = parsePage({ page: opts.page, pageSize: opts.pageSize });
-  const q = db("user_coupons")
-    .join("users", "users.id", "user_coupons.user_id")
-    .where("user_coupons.coupon_id", couponId)
-    .modify((b) => {
-      if (opts.status) b.where("user_coupons.status", String(opts.status));
-    });
-  const total = await q.clone().count({ c: "*" }).first();
-  const list = await q
-    .clone()
-    .select(
-      "user_coupons.id",
-      "user_coupons.status",
-      "user_coupons.source",
-      "user_coupons.claimed_at",
-      "user_coupons.used_at",
-      "user_coupons.order_id",
-      "users.id as user_id",
-      "users.nickname",
-      "users.phone"
-    )
+  const status = opts.status && opts.status !== "ALL" ? String(opts.status) : "";
+  const apply = (b: Knex.QueryBuilder) => {
+    b.where("user_coupons.coupon_id", id);
+    if (status) b.where("user_coupons.status", status);
+  };
+  const total = await db("user_coupons")
+    .leftJoin("users", "users.id", "user_coupons.user_id")
+    .modify(apply)
+    .count({ c: "*" })
+    .first();
+  const list = await db("user_coupons")
+    .leftJoin("users", "users.id", "user_coupons.user_id")
+    .modify(apply)
+    .select("user_coupons.*", "users.nickname as nickname", "users.phone as phone")
     .orderBy("user_coupons.id", "desc")
     .offset(offset)
     .limit(pageSize);
