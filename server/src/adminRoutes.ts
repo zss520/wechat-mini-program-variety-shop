@@ -28,6 +28,7 @@ import { config } from "./config";
 import { attachGroupAdminExtras, campaignAdminQuery, replaceActivityGoods, saveCampaignPayload } from "./campaigns";
 import { changePoints, couponPayload } from "./marketing";
 import { listNotifyLogs } from "./notify";
+import { applyAdminGoodsFilters } from "./adminGoodsQuery";
 import { toSqlDateTime } from "./pricing";
 
 ensureUploadDirs();
@@ -167,11 +168,7 @@ adminRouter.get("/goods", async (req, res, next) => {
     const q = db("goods")
       .leftJoin("categories as c", "c.id", "goods.category_id")
       .whereNull("goods.deleted_at")
-      .modify((b) => {
-        if (req.query.keyword) b.where("goods.name", "like", `%${String(req.query.keyword)}%`);
-        if (req.query.categoryId) b.where("goods.category_id", Number(req.query.categoryId));
-        if (req.query.onSale === "1" || req.query.onSale === "0") b.where("goods.on_sale", Number(req.query.onSale));
-      });
+      .modify((b) => applyAdminGoodsFilters(b, req.query as Record<string, unknown>));
     const total = await q.clone().clearSelect().clearOrder().count({ c: "*" }).first();
     const list = await q
       .select("goods.*", "c.name as category_name")

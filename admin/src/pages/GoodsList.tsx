@@ -7,7 +7,9 @@ import InlineForm from "../components/InlineForm";
 import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "../components/DataTable";
 import ListPagination, { DEFAULT_PAGE_SIZE, lastPageOf, readPaged } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
-import { displayNumber, displayText, displayYuan } from "../utils/display";
+import { asArray, displayNumber, displayText, displayYuan } from "../utils/display";
+
+type Cat = { id: number; name: string };
 
 type Goods = {
   id: number;
@@ -15,6 +17,9 @@ type Goods = {
   cover_url: string;
   thumb_url?: string;
   price_cent: number;
+  special_price_cent?: number | null;
+  special_start?: string | null;
+  special_end?: string | null;
   stock: number;
   on_sale: number;
   category_name: string;
@@ -22,18 +27,39 @@ type Goods = {
   manual_weight: number;
 };
 
+function isSpecialNow(g: Goods) {
+  const sp = Number(g.special_price_cent || 0);
+  if (!sp || !g.special_start || !g.special_end) return false;
+  const start = new Date(g.special_start).getTime();
+  const end = new Date(g.special_end).getTime();
+  const now = Date.now();
+  return Number.isFinite(start) && Number.isFinite(end) && now >= start && now <= end;
+}
+
 export default function GoodsList() {
   const nav = useNavigate();
   const fb = useFeedback();
   const [keyword, setKeyword] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [onSale, setOnSale] = useState("");
+  const [onSpecial, setOnSpecial] = useState("");
+  const [cats, setCats] = useState<Cat[]>([]);
   const [list, setList] = useState<Goods[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [total, setTotal] = useState(0);
   const load = (p = page, size = pageSize) => {
     api
-      .get("/goods", { params: { keyword, onSale, page: p, pageSize: size } })
+      .get("/goods", {
+        params: {
+          keyword: keyword.trim() || undefined,
+          categoryId: categoryId || undefined,
+          onSale: onSale || undefined,
+          onSpecial: onSpecial || undefined,
+          page: p,
+          pageSize: size,
+        },
+      })
       .then((d) => {
         const data = readPaged<Goods>(d);
         setList(data.list);
@@ -43,6 +69,9 @@ export default function GoodsList() {
       })
       .catch((e) => fb.error(e));
   };
+  useEffect(() => {
+    api.get("/categories").then((d) => setCats(asArray<Cat>(d))).catch((e) => fb.error(e));
+  }, []);
   useEffect(() => {
     load(page, pageSize);
   }, [page, pageSize]);
@@ -83,7 +112,7 @@ export default function GoodsList() {
   return (
     <PageContainer
       title="商品"
-      description={`共 ${displayNumber(total, "0")} 件。加权为整数 -50～50。`}
+      description={`共 ${displayNumber(total, "0")} 件。当前特价可在下方筛选查看；设置入口在商品编辑页底部「限时特价」。加权为整数 -50～50。`}
       extra={
         <Button variant="contained" onClick={() => nav("/goods/new")}>
           新建商品
@@ -92,12 +121,30 @@ export default function GoodsList() {
     >
       <InlineForm>
         <TextField size="small" label="名称" placeholder="选填，回车查询" value={keyword} onChange={(e) => setKeyword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && query()} />
+        <FormControl size="small" sx={{ minWidth: 148 }}>
+          <InputLabel>分类</InputLabel>
+          <Select label="分类" value={categoryId} onChange={(e) => setCategoryId(String(e.target.value))}>
+            <MenuItem value="">全部</MenuItem>
+            {cats.map((c) => (
+              <MenuItem key={c.id} value={String(c.id)}>
+                {displayText(c.name)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <FormControl size="small" sx={{ minWidth: 120 }}>
           <InputLabel>上架</InputLabel>
           <Select label="上架" value={onSale} onChange={(e) => setOnSale(String(e.target.value))}>
             <MenuItem value="">全部</MenuItem>
             <MenuItem value="1">上架</MenuItem>
             <MenuItem value="0">下架</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 148 }}>
+          <InputLabel>特价</InputLabel>
+          <Select label="特价" value={onSpecial} onChange={(e) => setOnSpecial(String(e.target.value))}>
+            <MenuItem value="">全部</MenuItem>
+            <MenuItem value="1">当前特价</MenuItem>
           </Select>
         </FormControl>
         <Button variant="outlined" onClick={query}>
@@ -143,13 +190,25 @@ export default function GoodsList() {
                       flexShrink: 0,
                     }}
                   />
-                  <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {displayText(g.name)}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0 }}>
+                    <Box component="span" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {displayText(g.name)}
+                    </Box>
+                    {isSpecialNow(g) && <Chip size="small" label="特价" color="warning" sx={{ height: 20, flexShrink: 0 }} />}
                   </Box>
                 </Box>
               </TableCell>
               <TableCell>{displayText(g.category_name)}</TableCell>
-              <TableCell>{displayYuan(g.price_cent)}</TableCell>
+              <TableCell>
+                {isSpecialNow(g) ? (
+                  <Box>
+                    <Box sx={{ color: "primary.main", fontWeight: 600 }}>{displayYuan(g.special_price_cent)}</Box>
+                    <Box sx={{ color: "text.secondary", textDecoration: "line-through", fontSize: 12 }}>{displayYuan(g.price_cent)}</Box>
+                  </Box>
+                ) : (
+                  displayYuan(g.price_cent)
+                )}
+              </TableCell>
               <TableCell>{displayNumber(g.stock)}</TableCell>
               <TableCell>{displayNumber(g.heat_score)}</TableCell>
               <TableCell>

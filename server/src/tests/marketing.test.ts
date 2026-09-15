@@ -34,6 +34,18 @@ async function run() {
   const previewSpecial = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP");
   assert(previewSpecial.goodsAmountCent === 1500, `special price expected 1500 got ${previewSpecial.goodsAmountCent}`);
 
+  const { applyAdminGoodsFilters } = await import("../adminGoodsQuery");
+  const specials = await db("goods")
+    .whereNull("goods.deleted_at")
+    .modify((b) => applyAdminGoodsFilters(b, { onSpecial: "1" }))
+    .select("goods.id");
+  assert(specials.some((g: { id: number }) => g.id === gid), "admin goods list can filter current specials");
+  const byCat = await db("goods")
+    .whereNull("goods.deleted_at")
+    .modify((b) => applyAdminGoodsFilters(b, { categoryId: cat.id }))
+    .select("goods.id");
+  assert(byCat.some((g: { id: number }) => g.id === gid), "admin goods list can filter by category");
+
   const disc = couponDiscount(
     { type: "DISCOUNT", min_amount_cent: 0, reduce_cent: 0, discount_bp: 9000, discount_cap_cent: null },
     previewSpecial.items,
