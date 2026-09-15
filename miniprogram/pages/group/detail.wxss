@@ -327,7 +327,7 @@ page {
   padding: 12rpx 24rpx calc(12rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -8rpx 24rpx rgba(63, 46, 34, 0.06);
   --td-button-medium-height: 80rpx;
-  --td-button-medium-font: 600 28rpx / 40rpx PingFang SC, Microsoft YaHei, Arial Regular;
+  --td-button-medium-font: 600 28rpx / 40rpx var(--td-font-family, PingFangSC, PingFang SC, sans-serif);
   --td-button-medium-padding-horizontal: 36rpx;
 }
 

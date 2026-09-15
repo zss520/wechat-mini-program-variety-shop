@@ -25,6 +25,8 @@ page {
   --tab-bar-space: 180rpx;
   --tab-bar-space: calc(128rpx + constant(safe-area-inset-bottom));
   --tab-bar-space: calc(128rpx + env(safe-area-inset-bottom));
+  --td-font-family: PingFangSC, PingFang SC, sans-serif;
+  font-family: PingFangSC, PingFang SC, sans-serif;
 }
 
 .price {

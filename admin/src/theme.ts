@@ -20,8 +20,7 @@ export const theme = createTheme({
   shape: { borderRadius: 6 },
   spacing: 8,
   typography: {
-    fontFamily:
-      '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif',
+    fontFamily: "PingFangSC, PingFang SC, sans-serif",
     fontSize: 14,
     h5: { fontSize: "20px", fontWeight: 600, lineHeight: 1.4, color: "rgba(0,0,0,0.88)" },
     h6: { fontSize: "16px", fontWeight: 600, lineHeight: 1.5, color: "rgba(0,0,0,0.88)" },
@@ -33,7 +32,11 @@ export const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
-        body: { backgroundColor: "#f5f5f5", overflowX: "hidden" },
+        body: {
+          backgroundColor: "#f5f5f5",
+          overflowX: "hidden",
+          fontFamily: "PingFangSC, PingFang SC, sans-serif",
+        },
         "#root": { minWidth: 0, maxWidth: "100%" },
         "*::-webkit-scrollbar": { width: 8, height: 8 },
         "*::-webkit-scrollbar-thumb": { background: "#d9d9d9", borderRadius: 4 },
