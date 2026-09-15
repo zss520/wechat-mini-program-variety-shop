@@ -21,7 +21,7 @@ import multer from "multer";
 import path from "path";
 import { cancelOrder, createOrder, loadOrderDetail, markPaid, previewOrder, ST } from "./orderService";
 import { config, publicUrl } from "./config";
-import { claimCoupon, listClaimableCoupons } from "./marketing";
+import { claimCoupon, decorateUserCoupon, listClaimableCoupons, queryPointsLedger } from "./marketing";
 import { activityWindowOk, getGroupBuy, listActiveGroupBuys, listActiveSeckills, loadGroupGoodsRows, comboLineItems, loadTeam, refreshTeamProgress } from "./campaigns";
 import { cartUpsell, relatedGoods } from "./personalize";
 import { listNotifyLogs, setSubscribe } from "./notify";
@@ -595,8 +595,18 @@ appRouter.get("/me/coupons", requireRole("user"), async (req, res, next) => {
       .modify((b) => {
         if (status) b.where("user_coupons.status", status);
       })
-      .select("user_coupons.*", "coupons.name", "coupons.type", "coupons.min_amount_cent", "coupons.reduce_cent", "coupons.discount_bp", "coupons.end_at");
-    ok(res, await q.orderBy("user_coupons.id", "desc"));
+      .select(
+        "user_coupons.*",
+        "coupons.name",
+        "coupons.type",
+        "coupons.min_amount_cent",
+        "coupons.reduce_cent",
+        "coupons.discount_bp",
+        "coupons.start_at",
+        "coupons.end_at"
+      );
+    const rows = await q.orderBy("user_coupons.id", "desc");
+    ok(res, rows.map(decorateUserCoupon));
   } catch (e) {
     next(e);
   }
@@ -604,9 +614,17 @@ appRouter.get("/me/coupons", requireRole("user"), async (req, res, next) => {
 
 appRouter.get("/me/points", requireRole("user"), async (req, res, next) => {
   try {
-    const user = await db("users").where({ id: req.auth!.id }).first();
-    const ledger = await db("points_ledger").where({ user_id: req.auth!.id }).orderBy("id", "desc").limit(50);
-    ok(res, { balance: Number(user?.points_balance || 0), ledger });
+    const q = req.query as Record<string, unknown>;
+    const { page, pageSize } = parsePage(q);
+    ok(
+      res,
+      await queryPointsLedger({
+        userId: req.auth!.id,
+        page,
+        pageSize,
+        reason: q.reason ? String(q.reason) : "",
+      })
+    );
   } catch (e) {
     next(e);
   }

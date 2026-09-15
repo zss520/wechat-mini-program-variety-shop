@@ -3,14 +3,26 @@
   <view class="label">当前积分</view>
   <view class="num">{{disp.num(balance)}}</view>
   <view class="rule" wx:if="{{rule}}">{{rule}}</view>
+  <view class="stats">
+    <view class="stat">
+      <view class="stat-n">{{disp.num(earned)}}</view>
+      <view class="stat-l">累计获得</view>
+    </view>
+    <view class="stat">
+      <view class="stat-n">{{disp.num(spent)}}</view>
+      <view class="stat-l">累计使用</view>
+    </view>
+  </view>
 </view>
 <t-cell-group theme="card" title="积分明细">
   <t-cell
     wx:for="{{ledger}}"
     wx:key="id"
-    title="{{disp.text(item.reason)}} {{disp.signed(item.delta)}}"
-    description="{{disp.text(item.createdAtText)}}{{item.note ? ' · ' + item.note : ''}}"
+    title="{{disp.text(item.reasonText)}} {{disp.signed(item.delta)}}"
+    description="{{disp.text(item.createdAtText)}}{{item.note ? ' · ' + item.note : ''}}{{item.order_no ? ' · ' + item.order_no : ''}}"
     note="余额 {{disp.num(item.balance_after)}}"
   />
 </t-cell-group>
+<view class="more" wx:if="{{ledger.length && ledger.length < total}}">上拉加载更多</view>
+<view class="more" wx:elif="{{ledger.length && ledger.length >= total}}">已加载全部</view>
 <t-empty wx:if="{{!ledger.length}}" icon="gift" description="暂无积分记录" />

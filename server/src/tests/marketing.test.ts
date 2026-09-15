@@ -1,6 +1,14 @@
 import { db } from "../db";
 import { previewOrder, createOrder, markPaid, ST, promoteGroupIfReady, loadOrderDetail, orderTimePoints, applyOrderListFilters } from "../orderService";
-import { claimCoupon } from "../marketing";
+import {
+  adminGrantCoupon,
+  changePoints,
+  claimCoupon,
+  expireUserCoupons,
+  listCouponHolders,
+  queryPointsLedger,
+  voidCoupon,
+} from "../marketing";
 import { couponDiscount, pointsRedeem } from "../pricing";
 import { personalizedGoods, relatedGoods, cartUpsell } from "../personalize";
 import { campaignBody, getGroupBuy, loadTeam, listActiveGroupBuys, refreshTeamProgress, replaceActivityGoods, saveCampaignPayload } from "../campaigns";
@@ -65,6 +73,7 @@ async function run() {
     enabled: 1,
   });
   const uc = await claimCoupon(uid, cid);
+  assert(uc && uc.source === "CLAIM", "self claim should mark source CLAIM");
   const previewCoupon = await previewOrder(uid, [{ goodsId: gid, qty: 1 }], "PICKUP", null, { userCouponId: uc.id });
   assert(previewCoupon.couponDiscountCent === 200, `full reduce expected 200 got ${previewCoupon.couponDiscountCent}`);
   assert(previewCoupon.payAmountCent === 1300, `pay after coupon expected 1300 got ${previewCoupon.payAmountCent}`);
@@ -480,6 +489,64 @@ async function run() {
   const detailJoin = await getGroupBuy(Number(aidJoin));
   assert(detailJoin && detailJoin.openTeams.length === 1, "detail also hides unpaid ghost teams");
   assert(Number(detailJoin.openTeams[0].teamId) === Number(liveTeam), "detail joinable team matches list");
+
+  await changePoints(db, uid, 30, "ADMIN_ADJUST", null, "测试加分");
+  const ledgerAll = await queryPointsLedger({ userId: uid, page: 1, pageSize: 10 });
+  assert(ledgerAll.balance === Number((await db("users").where({ id: uid }).first()).points_balance), "ledger balance matches user");
+  assert(ledgerAll.summary.earned >= 30, "summary earned includes admin adjust");
+  assert(ledgerAll.list.some((x: { reason: string; reasonLabel?: string }) => x.reason === "ADMIN_ADJUST" && x.reasonLabel === "店主调整"), "admin adjust has Chinese label");
+  const ledgerAdj = await queryPointsLedger({ userId: uid, page: 1, pageSize: 20, reason: "ADMIN_ADJUST" });
+  assert(ledgerAdj.list.length >= 1 && ledgerAdj.list.every((x: { reason: string }) => x.reason === "ADMIN_ADJUST"), "reason filter keeps admin adjust");
+  const ledgerPage1 = await queryPointsLedger({ userId: uid, page: 1, pageSize: 1 });
+  assert(ledgerPage1.list.length === 1 && ledgerPage1.total >= 1, "points ledger paginates");
+
+  const grantOne = await adminGrantCoupon(cidHigh, { userIds: [uid2] });
+  assert(grantOne.granted === 1 && grantOne.skipped === 0, "admin can grant coupon to a member");
+  const grantedRow = await db("user_coupons").where({ user_id: uid2, coupon_id: cidHigh }).first();
+  assert(grantedRow && grantedRow.source === "ADMIN_GRANT" && grantedRow.status === "UNUSED", "granted coupon is unused admin grant");
+  const grantDup = await adminGrantCoupon(cidHigh, { userIds: [uid2] });
+  assert(grantDup.granted === 0 && grantDup.skipped === 1, "second grant hits per-user limit");
+  const holders = await listCouponHolders(cidHigh, { page: 1, pageSize: 20 });
+  assert(holders.total >= 2, "holders include claim and grant");
+  assert(holders.list.some((h: { source: string; sourceLabel: string }) => h.source === "ADMIN_GRANT" && h.sourceLabel === "店主发放"), "holder source labeled");
+
+  const [cidCap] = await db("coupons").insert({
+    name: `__cap_${Date.now()}`,
+    type: "FULL_REDUCE",
+    min_amount_cent: 0,
+    reduce_cent: 100,
+    discount_bp: 10000,
+    per_user_limit: 1,
+    total_limit: 1,
+    claimed_count: 0,
+    start_at: new Date(Date.now() - 86400000),
+    end_at: new Date(Date.now() + 86400000),
+    enabled: 1,
+  });
+  const grantCap = await adminGrantCoupon(cidCap, { userIds: [uid, uid2] });
+  assert(grantCap.granted === 1 && grantCap.skipped === 1, "total limit 1 grants one and skips the rest");
+
+  const [cidVoid] = await db("coupons").insert({
+    name: `__void_${Date.now()}`,
+    type: "FULL_REDUCE",
+    min_amount_cent: 0,
+    reduce_cent: 100,
+    discount_bp: 10000,
+    per_user_limit: 1,
+    start_at: new Date(Date.now() - 86400000),
+    end_at: new Date(Date.now() + 86400000),
+    enabled: 1,
+  });
+  await adminGrantCoupon(cidVoid, { userIds: [uid] });
+  await voidCoupon(cidVoid);
+  const voided = await db("user_coupons").where({ coupon_id: cidVoid, user_id: uid }).first();
+  assert(voided && voided.status === "EXPIRED", "voiding a coupon expires unused holdings");
+
+  await db("coupons").where({ id: cidCap }).update({ end_at: new Date(Date.now() - 1000) });
+  const expiredN = await expireUserCoupons();
+  assert(Number(expiredN) >= 1, "expire job marks unused coupons past end_at");
+  const capRow = await db("user_coupons").where({ coupon_id: cidCap }).first();
+  assert(capRow && capRow.status === "EXPIRED", "sold-out coupon expires after end_at");
 
   const rec = await personalizedGoods(uid, 4);
   assert(Array.isArray(rec), "personalized should return list");

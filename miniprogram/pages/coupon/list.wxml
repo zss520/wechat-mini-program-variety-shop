@@ -17,18 +17,23 @@
       disabled="{{item.remain<=0}}"
       data-id="{{item.id}}"
       bind:tap="claim"
-    >{{item.remain>0?'领取':'已领'}}</t-button>
+    >{{disp.text(item.btnText)}}</t-button>
   </view>
   <t-empty wx:if="{{!shop.length}}" icon="coupon" description="暂无可领优惠券" />
 </view>
 
 <view wx:if="{{tab=='mine'}}">
-  <view class="coupon" wx:for="{{mine}}" wx:key="id">
+  <t-tabs value="{{mineTab}}" bind:change="onMineTab" theme="line">
+    <t-tab-panel label="未使用" value="UNUSED" />
+    <t-tab-panel label="已使用" value="USED" />
+    <t-tab-panel label="已过期" value="EXPIRED" />
+  </t-tabs>
+  <view class="coupon" wx:for="{{mineFiltered}}" wx:key="id">
     <view class="left">
       <view class="name">{{disp.text(item.name)}}</view>
-      <view class="sub">截止 {{disp.text(item.endAtText)}}</view>
+      <view class="sub">截止 {{disp.text(item.endAtText)}}{{item.sourceText ? ' · ' + item.sourceText : ''}}</view>
     </view>
-    <t-tag theme="{{item.status=='UNUSED' ? 'primary' : 'default'}}" variant="light">{{disp.text(item.statusText)}}</t-tag>
+    <t-tag theme="{{item.displayStatus=='UNUSED' ? 'primary' : 'default'}}" variant="light">{{disp.text(item.statusText)}}</t-tag>
   </view>
-  <t-empty wx:if="{{!mine.length}}" icon="coupon" description="暂无优惠券" />
+  <t-empty wx:if="{{!mineFiltered.length}}" icon="coupon" description="暂无优惠券" />
 </view>

@@ -3,26 +3,37 @@ import { formatDateTime } from "../../utils/datetime";
 import { asArray, displayText } from "../../utils/display";
 
 Page({
-  data: { tab: "shop", shop: [] as any[], mine: [] as any[] },
+  data: { tab: "shop", mineTab: "UNUSED", shop: [] as any[], mine: [] as any[], mineFiltered: [] as any[] },
   onShow() {
     this.load();
   },
+  filterMine(mine: any[], mineTab: string) {
+    return mine.filter((x) => x.displayStatus === mineTab);
+  },
   async load() {
     if (!(await ensureMember())) return;
-    const shop = asArray(await request("/coupons"));
-    const ST: Record<string, string> = { UNUSED: "未使用", USED: "已使用", EXPIRED: "已过期" };
+    const shop = asArray(await request("/coupons")).map((x: any) => ({
+      ...x,
+      btnText: x.remain > 0 ? "领取" : x.soldOut ? "已领完" : "已领",
+    }));
     const mine = asArray(await request("/me/coupons")).map((x: any) => ({
       ...x,
-      statusText: ST[x.status] || displayText(x.status),
+      displayStatus: x.displayStatus || x.status,
+      statusText: x.statusLabel || displayText(x.status),
+      sourceText: x.sourceLabel || "",
       endAtText: formatDateTime(x.end_at),
     }));
-    this.setData({ shop, mine });
+    this.setData({ shop, mine, mineFiltered: this.filterMine(mine, this.data.mineTab) });
   },
   setTab(e: any) {
     this.setData({ tab: e.currentTarget.dataset.t });
   },
   onTab(e: any) {
     this.setData({ tab: e.detail.value });
+  },
+  onMineTab(e: any) {
+    const mineTab = e.detail.value;
+    this.setData({ mineTab, mineFiltered: this.filterMine(this.data.mine, mineTab) });
   },
   async claim(e: any) {
     try {

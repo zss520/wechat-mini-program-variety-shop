@@ -26,7 +26,15 @@ import { memberPersona } from "./persona";
 import { fillRecommend } from "./recommend";
 import { config } from "./config";
 import { attachGroupAdminExtras, campaignAdminQuery, replaceActivityGoods, saveCampaignPayload } from "./campaigns";
-import { changePoints, couponPayload } from "./marketing";
+import {
+  adminGrantCoupon,
+  attachCouponStats,
+  changePoints,
+  couponPayload,
+  listCouponHolders,
+  queryPointsLedger,
+  voidCoupon,
+} from "./marketing";
 import { listNotifyLogs } from "./notify";
 import { applyAdminGoodsFilters } from "./adminGoodsQuery";
 import { toSqlDateTime } from "./pricing";
@@ -785,6 +793,26 @@ adminRouter.get("/members/:id/persona", async (req, res, next) => {
   }
 });
 
+adminRouter.get("/members/:id/points-ledger", async (req, res, next) => {
+  try {
+    const q = req.query as Record<string, unknown>;
+    const { page, pageSize } = parsePage(q);
+    ok(
+      res,
+      await queryPointsLedger({
+        userId: Number(req.params.id),
+        page,
+        pageSize,
+        reason: q.reason ? String(q.reason) : "",
+        from: q.from ? String(q.from) : "",
+        to: q.to ? String(q.to) : "",
+      })
+    );
+  } catch (e) {
+    next(e);
+  }
+});
+
 adminRouter.post("/members/:id/points", async (req, res, next) => {
   try {
     const body = z.object({ delta: z.number().int(), note: z.string().max(80).optional() }).parse(req.body);
@@ -802,7 +830,7 @@ adminRouter.get("/coupons", async (req, res, next) => {
     const q = db("coupons").whereNull("deleted_at");
     const total = await q.clone().count({ c: "*" }).first();
     const list = await q.orderBy("id", "desc").offset(offset).limit(pageSize);
-    ok(res, { list, page, pageSize, total: Number(total?.c || 0) });
+    ok(res, { list: await attachCouponStats(list), page, pageSize, total: Number(total?.c || 0) });
   } catch (e) {
     next(e);
   }
@@ -831,8 +859,38 @@ adminRouter.put("/coupons/:id", async (req, res, next) => {
 
 adminRouter.delete("/coupons/:id", async (req, res, next) => {
   try {
-    await db("coupons").where({ id: Number(req.params.id) }).update({ deleted_at: db.fn.now(), enabled: 0 });
-    ok(res, true);
+    ok(res, await voidCoupon(Number(req.params.id)));
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.post("/coupons/:id/grant", async (req, res, next) => {
+  try {
+    const body = z
+      .object({
+        userIds: z.array(z.number().int().positive()).max(500).optional(),
+        grantAll: z.boolean().optional(),
+      })
+      .parse(req.body || {});
+    ok(res, await adminGrantCoupon(Number(req.params.id), body));
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/coupons/:id/holders", async (req, res, next) => {
+  try {
+    const q = req.query as Record<string, unknown>;
+    const { page, pageSize } = parsePage(q);
+    ok(
+      res,
+      await listCouponHolders(Number(req.params.id), {
+        page,
+        pageSize,
+        status: q.status ? String(q.status) : "",
+      })
+    );
   } catch (e) {
     next(e);
   }

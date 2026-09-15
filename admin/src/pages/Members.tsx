@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Chip,
   CircularProgress,
@@ -7,7 +8,10 @@ import {
   DialogContent,
   DialogTitle,
   Grid,
+  MenuItem,
   Stack,
+  Table,
+  TableContainer,
   TextField,
   Typography,
 } from "@mui/material";
@@ -19,9 +23,30 @@ import { DataTable, EmptyRow, TableBody, TableCell, TableHead, TableRow } from "
 import ListPagination, { DEFAULT_PAGE_SIZE, lastPageOf, readPaged } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
 import PersonaRadar from "../components/PersonaRadar";
+import { formatDateTime } from "../utils/datetime";
 import { asRecord, displayNumber, displayText, displayYuan } from "../utils/display";
 
 type Row = { id: number; nickname: string; phone: string; points_balance: number; orderCount: number; payAmountCent: number };
+
+type LedgerRow = {
+  id: number;
+  delta: number;
+  balance_after: number;
+  reason: string;
+  reasonLabel?: string;
+  note?: string | null;
+  order_no?: string | null;
+  created_at: string;
+};
+
+const POINTS_REASONS = [
+  { value: "", label: "全部类型" },
+  { value: "PAY_EARN", label: "消费获得" },
+  { value: "REDEEM", label: "下单抵扣" },
+  { value: "REDEEM_REVERSE", label: "取消订单退回" },
+  { value: "REFUND_REVERSE", label: "退款退回" },
+  { value: "ADMIN_ADJUST", label: "店主调整" },
+];
 
 type Persona = {
   member: { id: number; nickname: string; phone: string; pointsBalance: number; registeredAt: string };
@@ -66,6 +91,17 @@ export default function Members() {
   const [persona, setPersona] = useState<Persona | null>(null);
   const [personaTitle, setPersonaTitle] = useState("");
   const [loadingPersona, setLoadingPersona] = useState(false);
+  const [ledgerUser, setLedgerUser] = useState<Row | null>(null);
+  const [ledgerRows, setLedgerRows] = useState<LedgerRow[]>([]);
+  const [ledgerTotal, setLedgerTotal] = useState(0);
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const [ledgerPageSize, setLedgerPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [ledgerBalance, setLedgerBalance] = useState(0);
+  const [ledgerSummary, setLedgerSummary] = useState({ earned: 0, spent: 0 });
+  const [ledgerReason, setLedgerReason] = useState("");
+  const [ledgerFrom, setLedgerFrom] = useState("");
+  const [ledgerTo, setLedgerTo] = useState("");
+  const [loadingLedger, setLoadingLedger] = useState(false);
   const load = (p = page, size = pageSize) =>
     api
       .get("/members", { params: { keyword, page: p, pageSize: size } })
@@ -120,6 +156,7 @@ export default function Members() {
     try {
       await api.post(`/members/${u.id}/points`, { delta, note });
       load();
+      if (ledgerUser?.id === u.id) await loadLedger(ledgerUser, ledgerPage, ledgerPageSize);
       await fb.success("积分已调整");
     } catch (e) {
       await fb.error(e);
@@ -130,6 +167,46 @@ export default function Members() {
     setPersona(null);
     setLoadingPersona(false);
     setPersonaTitle("");
+  };
+
+  const loadLedger = (u: Row, p = ledgerPage, size = ledgerPageSize, reason = ledgerReason, from = ledgerFrom, to = ledgerTo) => {
+    setLoadingLedger(true);
+    return api
+      .get(`/members/${u.id}/points-ledger`, { params: { page: p, pageSize: size, reason: reason || undefined, from: from || undefined, to: to || undefined } })
+      .then((d) => {
+        const data = asRecord(d) as {
+          list?: LedgerRow[];
+          total?: number;
+          balance?: number;
+          summary?: { earned?: number; spent?: number };
+          page?: number;
+          pageSize?: number;
+        };
+        const paged = readPaged<LedgerRow>(data);
+        setLedgerRows(paged.list);
+        setLedgerTotal(paged.total);
+        setLedgerBalance(Number(data.balance || 0));
+        setLedgerSummary({ earned: Number(data.summary?.earned || 0), spent: Number(data.summary?.spent || 0) });
+        const last = lastPageOf(paged.total, size);
+        if (p > last) setLedgerPage(last);
+      })
+      .catch((e) => fb.error(e))
+      .finally(() => setLoadingLedger(false));
+  };
+
+  const openLedger = (u: Row) => {
+    setLedgerUser(u);
+    setLedgerPage(1);
+    setLedgerReason("");
+    setLedgerFrom("");
+    setLedgerTo("");
+    loadLedger(u, 1, ledgerPageSize, "", "", "");
+  };
+
+  const closeLedger = () => {
+    setLedgerUser(null);
+    setLedgerRows([]);
+    setLoadingLedger(false);
   };
 
   return (
@@ -172,6 +249,9 @@ export default function Members() {
               <TableCell>
                 <Button size="small" onClick={() => openPersona(u)}>
                   画像
+                </Button>
+                <Button size="small" onClick={() => openLedger(u)}>
+                  积分明细
                 </Button>
                 <Button size="small" onClick={() => adjust(u)}>
                   调积分
@@ -255,6 +335,92 @@ export default function Members() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={closePersona}>关闭</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!ledgerUser} onClose={closeLedger} fullWidth maxWidth="md">
+        <DialogTitle>积分明细 · {displayText(ledgerUser?.nickname || ledgerUser?.phone)}</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={1.5} sx={{ pt: 0.5, pb: 1.5 }}>
+            <Metric label="当前积分" value={displayNumber(ledgerBalance)} />
+            <Metric label="累计获得" value={displayNumber(ledgerSummary.earned)} />
+            <Metric label="累计使用" value={displayNumber(ledgerSummary.spent)} />
+          </Grid>
+          <InlineForm>
+            <TextField select size="small" label="类型" value={ledgerReason} onChange={(e) => setLedgerReason(e.target.value)} sx={{ minWidth: 140 }}>
+              {POINTS_REASONS.map((r) => (
+                <MenuItem key={r.value || "all"} value={r.value}>
+                  {r.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField size="small" type="date" label="从" InputLabelProps={{ shrink: true }} value={ledgerFrom} onChange={(e) => setLedgerFrom(e.target.value)} />
+            <TextField size="small" type="date" label="到" InputLabelProps={{ shrink: true }} value={ledgerTo} onChange={(e) => setLedgerTo(e.target.value)} />
+            <Button
+              variant="outlined"
+              onClick={() => {
+                if (!ledgerUser) return;
+                setLedgerPage(1);
+                loadLedger(ledgerUser, 1, ledgerPageSize);
+              }}
+            >
+              筛选
+            </Button>
+          </InlineForm>
+          {loadingLedger && !ledgerRows.length ? (
+            <Stack alignItems="center" sx={{ py: 4 }}>
+              <CircularProgress size={28} />
+            </Stack>
+          ) : (
+            <Box>
+              <TableContainer sx={{ maxHeight: 360, border: "1px solid #f0f0f0", borderRadius: 1 }}>
+                <Table size="small" stickyHeader sx={{ minWidth: 720 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>时间</TableCell>
+                      <TableCell>类型</TableCell>
+                      <TableCell>变动</TableCell>
+                      <TableCell>余额</TableCell>
+                      <TableCell>订单</TableCell>
+                      <TableCell>备注</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {ledgerRows.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell>{formatDateTime(r.created_at, true)}</TableCell>
+                        <TableCell>{displayText(r.reasonLabel || r.reason)}</TableCell>
+                        <TableCell sx={{ color: r.delta > 0 ? "success.main" : r.delta < 0 ? "error.main" : "text.primary", fontWeight: 600 }}>
+                          {r.delta > 0 ? `+${r.delta}` : displayNumber(r.delta)}
+                        </TableCell>
+                        <TableCell>{displayNumber(r.balance_after)}</TableCell>
+                        <TableCell>{displayText(r.order_no)}</TableCell>
+                        <TableCell>{displayText(r.note)}</TableCell>
+                      </TableRow>
+                    ))}
+                    {!ledgerRows.length && <EmptyRow cols={6} />}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <ListPagination
+                page={ledgerPage}
+                pageSize={ledgerPageSize}
+                total={ledgerTotal}
+                onPageChange={(p) => {
+                  setLedgerPage(p);
+                  if (ledgerUser) loadLedger(ledgerUser, p, ledgerPageSize);
+                }}
+                onPageSizeChange={(size) => {
+                  setLedgerPageSize(size);
+                  setLedgerPage(1);
+                  if (ledgerUser) loadLedger(ledgerUser, 1, size);
+                }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={closeLedger}>关闭</Button>
         </DialogActions>
       </Dialog>
     </PageContainer>

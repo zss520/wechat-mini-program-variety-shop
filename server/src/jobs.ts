@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { closeExpiredOrders, expireGroupTeams } from "./orderService";
 import { recomputeHeat } from "./analytics";
+import { expireUserCoupons } from "./marketing";
 
 function safe(name: string, fn: () => Promise<unknown>) {
   return () => {
@@ -17,6 +18,7 @@ export function startJobs() {
   cron.schedule("* * * * *", () => {
     safe("closeExpiredOrders", closeExpiredOrders)();
     safe("expireGroupTeams", expireGroupTeams)();
+    safe("expireUserCoupons", expireUserCoupons)();
   });
   cron.schedule("20 0 * * *", safe("recomputeHeat", recomputeHeat));
 }

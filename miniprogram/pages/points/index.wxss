@@ -17,7 +17,27 @@
   font-size: 24rpx;
   opacity: 0.85;
 }
+.stats {
+  display: flex;
+  gap: 48rpx;
+  margin-top: 28rpx;
+}
+.stat-n {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+.stat-l {
+  font-size: 22rpx;
+  opacity: 0.8;
+  margin-top: 4rpx;
+}
 t-cell-group {
   display: block;
   margin-top: 24rpx;
+}
+.more {
+  text-align: center;
+  color: #888;
+  font-size: 24rpx;
+  padding: 16rpx 0 48rpx;
 }
