@@ -1,4 +1,6 @@
 {
   "usingComponents": { "goods-card": "/components/goods-card/index" },
-  "navigationBarTitleText": "搜索"
+  "navigationBarTitleText": "搜索",
+  "backgroundColor": "#F8F4F0",
+  "backgroundTextStyle": "dark"
 }

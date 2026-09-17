@@ -1,11 +1,131 @@
-.hist {
-  padding: 8rpx 24rpx;
+.page {
+  min-height: 100%;
+  background: #f8f4f0;
 }
+
+.search-bar {
+  padding: 16rpx 24rpx 20rpx;
+  background: #fff;
+  box-shadow: 0 8rpx 20rpx rgba(63, 46, 34, 0.04);
+  --td-search-height: 72rpx;
+  --td-search-bg-color: #f8f4f0;
+  --td-search-padding: 0 28rpx;
+  --td-search-icon-size: 40rpx;
+  --td-search-icon-color: #c2410c;
+  --td-search-placeholder-color: #b89a82;
+  --td-search-text-color: #3f2e22;
+  --td-search-action-color: #ffffff;
+  --td-search-clear-icon-color: #c4a58d;
+}
+
+.search-action {
+  margin-left: 16rpx;
+  padding: 0 28rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 36rpx;
+  background: #c2410c;
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.hist {
+  margin: 20rpx 24rpx 0;
+  padding: 28rpx 24rpx 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  --td-tag-primary-color: #c2410c;
+  --td-tag-primary-light-color: #fff7ed;
+  --td-tag-medium-padding: 10rpx 24rpx;
+}
+
+.hist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.hist-title {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #3f2e22;
+  line-height: 1.2;
+}
+
+.hist-clear {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 8rpx 4rpx 8rpx 12rpx;
+  color: #8a6a4a;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
+  gap: 16rpx;
 }
+
+.hist-empty {
+  padding: 12rpx 0 8rpx;
+  color: #b89a82;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.empty-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20rpx 24rpx 0;
+  padding: 48rpx 32rpx 40rpx;
+  background: #fff;
+  border-radius: 20rpx;
+}
+
+.empty-title {
+  margin-top: 16rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #3f2e22;
+}
+
+.empty-sub {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #8a6a4a;
+  line-height: 1.5;
+}
+
+.result {
+  padding: 8rpx 0 32rpx;
+}
+
+.result-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 20rpx 24rpx 4rpx;
+}
+
+.result-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #3f2e22;
+}
+
+.result-count {
+  font-size: 24rpx;
+  color: #8a6a4a;
+}
+
 .wrap {
-  padding: 16rpx;
+  padding: 16rpx 24rpx 0;
 }
