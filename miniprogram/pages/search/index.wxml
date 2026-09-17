@@ -37,7 +37,7 @@
         bind:click="tapHist"
         theme="primary"
         variant="light"
-        size="medium"
+        size="large"
         shape="round"
       >{{item}}</t-tag>
     </view>

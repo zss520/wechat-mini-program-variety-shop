@@ -1,6 +1,7 @@
 .page {
   min-height: 100%;
   background: #f8f4f0;
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
 }
 
 .search-bar {
@@ -37,7 +38,7 @@
   border-radius: 20rpx;
   --td-tag-primary-color: #c2410c;
   --td-tag-primary-light-color: #fff7ed;
-  --td-tag-medium-padding: 10rpx 24rpx;
+  --td-tag-large-padding: 12rpx 28rpx;
 }
 
 .hist-head {
