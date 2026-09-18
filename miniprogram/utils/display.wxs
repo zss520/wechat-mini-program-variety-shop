@@ -122,15 +122,45 @@ function join(a, b, fallback) {
   return s || fallbackOf(fallback);
 }
 
-function cover(v) {
+var FILE_BASE = 'http://10.0.8.98:3000'; // 与 utils/config.ts 的 FILE_BASE 保持一致
+
+function pathFromAbs(s) {
+  var scheme = s.indexOf('://');
+  if (scheme < 0) return s;
+  var rest = s.substring(scheme + 3);
+  var slash = rest.indexOf('/');
+  if (slash < 0) return '';
+  return rest.substring(slash);
+}
+
+function hostPrefix(s, prefix) {
+  if (s.indexOf(prefix) !== 0) return false;
+  var next = s.substring(prefix.length, prefix.length + 1);
+  return next === '' || next === ':' || next === '/';
+}
+
+function isLoopback(s) {
+  return hostPrefix(s, 'http://127.0.0.1') || hostPrefix(s, 'https://127.0.0.1') || hostPrefix(s, 'http://localhost') || hostPrefix(s, 'https://localhost');
+}
+
+function media(v) {
   var s = text(v, '');
-  return s || '/assets/tab-home.png';
+  if (!s) return '/assets/tab-home.png';
+  if (s.indexOf('wxfile://') === 0 || s.indexOf('http://tmp/') === 0 || s.indexOf('https://tmp/') === 0) return s;
+  if (s.indexOf('/assets/') === 0) return s;
+  if (isLoopback(s)) return FILE_BASE + pathFromAbs(s);
+  if (s.indexOf('/') === 0 && s.indexOf('//') !== 0) return FILE_BASE + s;
+  return s;
+}
+
+function cover(v) {
+  return media(v);
 }
 
 function thumb(thumbUrl, coverUrl) {
   var a = text(thumbUrl, '');
-  if (a) return a;
-  return cover(coverUrl);
+  if (a) return media(a);
+  return media(coverUrl);
 }
 
 function unit(v) {

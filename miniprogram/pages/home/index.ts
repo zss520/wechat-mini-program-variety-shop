@@ -71,7 +71,7 @@ Page({
     const banner = readBlock(await request("/home/banner"));
     this.setData({
       banners: banner.list,
-      bannerImages: banner.list.map((b: any) => b.image_url).filter(Boolean),
+      bannerImages: banner.list.map((b: any) => mediaUrl(b.image_url)).filter(Boolean),
     });
   },
   async loadSeckill() {

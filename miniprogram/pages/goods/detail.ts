@@ -12,7 +12,10 @@ Page({
   async load() {
     try {
       const item = asRecord(await request(`/goods/${this.data.id}`));
-      const images = (asArray(item.images).length ? asArray<string>(item.images) : item.coverUrl ? [item.coverUrl] : []).slice(0, 6);
+      const images = (asArray(item.images).length ? asArray<string>(item.images) : item.coverUrl ? [item.coverUrl] : [])
+        .slice(0, 6)
+        .map((u) => mediaUrl(u))
+        .filter(Boolean);
       this.setData({ item, related: asArray(item.related), detailImages: images });
       track("goods_detail_view", { goods_id: item.id, extra: { from_slot: this.data.slot } });
     } catch (e: any) {

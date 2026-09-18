@@ -1,5 +1,6 @@
 import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord, toFiniteNumber } from "../../utils/display";
+import { mediaUrl } from "../../utils/shop";
 
 type Slot = { id: number; filled: boolean; leader: boolean; name: string; avatar: string; paid: boolean };
 type GoodsPick = { id: number; name: string; coverUrl: string; thumbUrl: string; groupPriceCent: number; originCent: number };
@@ -45,7 +46,7 @@ function buildSlots(members: any[], paid: number, required: number): Slot[] {
       leader: filled && (m.leader === true || i === 0),
       paid: filled,
       name: filled ? String(m.nickname || (i === 0 ? "团长" : "邻居")) : "待参团",
-      avatar: filled ? String(m.avatarUrl || "") : "",
+      avatar: filled ? mediaUrl(m.avatarUrl) : "",
     });
   }
   return slots;

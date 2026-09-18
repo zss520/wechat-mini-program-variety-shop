@@ -27,7 +27,8 @@ Page({
   },
   async refresh() {
     if (!isMember()) await tryRestoreMember();
-    const user = currentUser();
+    const user = { ...currentUser() };
+    if (user.avatarUrl) user.avatarUrl = mediaUrl(user.avatarUrl) || user.avatarUrl;
     const logged = isMember();
     const settings = readSettings();
     this.setData({
@@ -43,8 +44,10 @@ Page({
     if (logged) {
       request("/auth/me")
         .then((u: any) => {
-          wx.setStorageSync("user", u);
-          this.setData({ user: u, phoneText: maskPhone(u.phone || "") });
+          const next = u || {};
+          if (next.avatarUrl) next.avatarUrl = mediaUrl(next.avatarUrl) || next.avatarUrl;
+          wx.setStorageSync("user", next);
+          this.setData({ user: next, phoneText: maskPhone(next.phone || "") });
         })
         .catch(() => undefined);
     }

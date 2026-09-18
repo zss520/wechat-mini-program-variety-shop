@@ -1,4 +1,4 @@
-import { FILE_BASE } from "./config";
+import { toDeviceMediaUrl } from "./config";
 import { track } from "./tracker";
 
 export type ShopSettings = Record<string, any>;
@@ -8,12 +8,7 @@ export function readSettings(): ShopSettings {
 }
 
 export function mediaUrl(path: unknown) {
-  const s = String(path || "").trim();
-  if (!s) return "";
-  if (/^https?:\/\//i.test(s)) return s;
-  if (s.startsWith("//")) return `https:${s}`;
-  if (s.startsWith("/")) return `${FILE_BASE}${s}`;
-  return `${FILE_BASE}/${s}`;
+  return toDeviceMediaUrl(path);
 }
 
 export function yuanText(cent: unknown) {
