@@ -1,5 +1,6 @@
 import { db } from "../db";
 import {
+  buildAnnouncementBlock,
   buildBannerBlock,
   buildDealBlock,
   buildForYouBlock,
@@ -7,6 +8,7 @@ import {
   buildRecommendBlock,
   buildSeckillBlock,
 } from "../home";
+import { announcementMpPath } from "../announcements";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -51,6 +53,72 @@ async function run() {
     }
   }
 
+  assert(announcementMpPath("NONE", "1") === "", "none jump empty path");
+  assert(announcementMpPath("GOODS", "9") === "/pages/goods/detail?id=9&slot=announce&pos=1", "goods jump path");
+  assert(announcementMpPath("PATH", "/pages/coupon/list") === "/pages/coupon/list", "custom path");
+  assert(announcementMpPath("PATH", "https://example.com") === "", "reject non-page path");
+  assert(announcementMpPath("CATEGORY") === "/pages/category/index", "category jump");
+
+  const stamp = Date.now();
+  assert(await db.schema.hasTable("announcements"), "announcements table exists");
+  const goods = await db("goods").whereNull("deleted_at").first();
+  const inserted: number[] = [];
+  try {
+    const [idA] = await db("announcements").insert({
+      title: `公告A_${stamp}`,
+      content: "内容A",
+      link_type: "NONE",
+      link_value: "",
+      sort: 20,
+      enabled: 1,
+    });
+    inserted.push(Number(idA));
+    const [idB] = await db("announcements").insert({
+      title: `公告B_${stamp}`,
+      content: "内容B",
+      link_type: goods ? "GOODS" : "NONE",
+      link_value: goods ? String(goods.id) : "",
+      sort: 10,
+      enabled: 1,
+    });
+    inserted.push(Number(idB));
+    const [idOff] = await db("announcements").insert({
+      title: `公告关_${stamp}`,
+      content: "已下架",
+      link_type: "NONE",
+      link_value: "",
+      sort: 99,
+      enabled: 0,
+    });
+    inserted.push(Number(idOff));
+
+    const announcement = await buildAnnouncementBlock();
+    assert(announcement.key === "announcement", "announcement key");
+    assert(announcement.title === "通知公告", "announcement title");
+    assert(Array.isArray(announcement.list), "announcement list");
+    const titles = announcement.list.map((x: { title?: string }) => String(x.title || ""));
+    assert(titles.includes(`公告A_${stamp}`), "enabled announcement listed");
+    assert(titles.includes(`公告B_${stamp}`), "second enabled announcement listed");
+    assert(!titles.includes(`公告关_${stamp}`), "disabled announcement hidden");
+    const a = announcement.list.find((x: { title?: string }) => x.title === `公告A_${stamp}`) as {
+      canJump?: boolean;
+      content?: string;
+      mpPath?: string;
+    };
+    assert(a && a.canJump === false && a.content === "内容A" && !a.mpPath, "plain announcement no jump");
+    if (goods) {
+      const b = announcement.list.find((x: { title?: string }) => x.title === `公告B_${stamp}`) as {
+        canJump?: boolean;
+        mpPath?: string;
+        linkType?: string;
+      };
+      assert(b && b.canJump === true && String(b.mpPath).indexOf(`/pages/goods/detail?id=${goods.id}`) === 0, "goods announcement can jump");
+      assert(b.linkType === "GOODS", "goods link type");
+    }
+  } finally {
+    if (inserted.length) await db("announcements").whereIn("id", inserted).delete();
+  }
+
   await db.destroy();
   console.log("home block apis test passed", {
     banner: banner.list.length,
@@ -62,7 +130,12 @@ async function run() {
   });
 }
 
-run().catch((e) => {
+run().catch(async (e) => {
   console.error(e);
+  try {
+    await db.destroy();
+  } catch {
+    /* ignore */
+  }
   process.exit(1);
 });

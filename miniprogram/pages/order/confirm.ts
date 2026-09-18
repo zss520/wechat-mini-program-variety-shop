@@ -1,6 +1,7 @@
 import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord } from "../../utils/display";
 import { contactShop, freightNote, guardOpenOrder, isPaused, payTimeoutHint, readSettings } from "../../utils/shop";
+import { couponBlockReason, usableCoupons } from "../../utils/coupon";
 import { track } from "../../utils/tracker";
 
 const POINTS_STEP = 100;
@@ -21,43 +22,30 @@ function yuanLabel(cent: number) {
   return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
 }
 
-function couponBlockReason(coupon: any, preview: any): string {
-  const min = Number(coupon.min_amount_cent || 0);
-  const goods = Number(preview.goodsAmountCent || 0);
-  if (String(coupon.type || "") === "DISCOUNT") {
-    const base = asArray(preview.items)
-      .filter((l: any) => !l.isPromo)
-      .reduce((s: number, l: any) => s + Number(l.amountCent || 0), 0);
-    if (base <= 0) return "折扣券不与特价/拼团/秒杀叠加";
-    if (base < min) return `未满门槛，还差¥${yuanLabel(min - base)}`;
-    return "";
-  }
-  if (goods < min) return min > 0 ? `未满门槛，还差¥${yuanLabel(min - goods)}` : "未满优惠券门槛";
-  return "";
-}
-
 function buildCouponUi(coupons: any[], preview: any, appliedId: number) {
+  const usable = usableCoupons(coupons, preview);
+  const blocked = (coupons || []).filter((c) => couponBlockReason(c, preview));
   const options: CouponOption[] = [{ id: 0, label: "不使用优惠券", blocked: false, reason: "" }];
-  for (const c of coupons) {
-    const reason = couponBlockReason(c, preview);
-    const name = String(c.name || "优惠券");
+  for (const c of usable) {
     options.push({
       id: Number(c.id || 0),
-      label: reason ? `${name}（${/门槛/.test(reason) ? "未满门槛" : "暂不可用"}）` : name,
-      blocked: Boolean(reason),
-      reason,
+      label: String(c.name || "优惠券"),
+      blocked: false,
+      reason: "",
     });
   }
-  const hasUsable = options.some((o) => o.id && !o.blocked);
-  const blocked = options.filter((o) => o.id && o.blocked);
+  const hasUsable = usable.length > 0;
   const appliedName = String(preview.couponName || "");
   const discount = Number(preview.couponDiscountCent || 0);
   let couponNote = "未选";
   if (appliedId && appliedName) {
     couponNote = discount > 0 ? `${appliedName} -¥${yuanLabel(discount)}` : appliedName;
-  } else if (!hasUsable && blocked.length) {
-    const allThreshold = blocked.every((o) => o.reason.indexOf("门槛") >= 0);
-    couponNote = allThreshold ? "未满门槛" : "暂不可用";
+  } else if (!hasUsable) {
+    if (blocked.length && blocked.every((c) => couponBlockReason(c, preview).indexOf("门槛") >= 0)) {
+      couponNote = "暂无满足门槛的优惠券";
+    } else {
+      couponNote = "暂无可用优惠券";
+    }
   }
   const couponPickerIndex = appliedId ? Math.max(0, options.findIndex((o) => o.id === appliedId)) : 0;
   return { couponOptions: options, couponNote, couponPickerIndex };

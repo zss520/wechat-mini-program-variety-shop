@@ -36,6 +36,7 @@ import {
 import { listNotifyLogs } from "./notify";
 import { applyAdminGoodsFilters } from "./adminGoodsQuery";
 import { toSqlDateTime } from "./pricing";
+import { MAX_ENABLED_ANNOUNCEMENTS, announcementMpPath } from "./announcements";
 
 ensureUploadDirs();
 const upload = multer({
@@ -513,6 +514,30 @@ async function decorateBanners(rows: Record<string, unknown>[]) {
   });
 }
 
+async function decorateAnnouncements(rows: Record<string, unknown>[]) {
+  const ids = [
+    ...new Set(
+      rows
+        .filter((b) => b.link_type === "GOODS" && b.link_value)
+        .map((b) => Number(b.link_value))
+        .filter((n) => Number.isInteger(n) && n > 0)
+    ),
+  ];
+  const goods = ids.length ? await db("goods").whereIn("id", ids).select("id", "name", "category_id") : [];
+  const map = new Map(goods.map((g: { id: number; name: string; category_id: number }) => [Number(g.id), g]));
+  return rows.map((row) => {
+    const g = row.link_type === "GOODS" ? map.get(Number(row.link_value)) : null;
+    return {
+      ...row,
+      goods_name: g?.name || "",
+      category_id: g?.category_id || null,
+      mp_path: g
+        ? announcementMpPath("GOODS", String(g.id))
+        : announcementMpPath(String(row.link_type || "NONE"), String(row.link_value || "")),
+    };
+  });
+}
+
 adminRouter.get("/banners", async (_req, res, next) => {
   try {
     const list = await db("banners").orderBy("sort", "desc").orderBy("id", "desc");
@@ -594,6 +619,99 @@ adminRouter.put("/banners/:id", async (req, res, next) => {
 adminRouter.delete("/banners/:id", async (req, res, next) => {
   try {
     await db("banners").where({ id: Number(req.params.id) }).delete();
+    ok(res, true);
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/announcements", async (_req, res, next) => {
+  try {
+    const list = await db("announcements").orderBy("sort", "desc").orderBy("id", "desc");
+    ok(res, await decorateAnnouncements(list));
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.post("/announcements", async (req, res, next) => {
+  try {
+    const body = z
+      .object({
+        title: z.string().trim().min(1).max(40),
+        content: z.string().trim().min(1).max(200),
+        linkType: z.enum(["NONE", "GOODS", "CATEGORY", "PATH"]).optional(),
+        linkValue: z.string().optional(),
+        sort: z.number().int().optional(),
+        enabled: z.boolean().optional(),
+      })
+      .parse(req.body);
+    if (body.enabled !== false) {
+      const n = await db("announcements").where({ enabled: 1 }).count({ c: "*" }).first();
+      if (Number(n?.c || 0) >= MAX_ENABLED_ANNOUNCEMENTS) {
+        throw new HttpError(409, `最多启用 ${MAX_ENABLED_ANNOUNCEMENTS} 条公告`);
+      }
+    }
+    const link = await resolveBannerLink(body.linkType, body.linkValue);
+    const [id] = await db("announcements").insert({
+      title: body.title,
+      content: body.content,
+      link_type: link.link_type,
+      link_value: link.link_value,
+      sort: body.sort ?? 0,
+      enabled: body.enabled === false ? 0 : 1,
+    });
+    const row = await db("announcements").where({ id }).first();
+    ok(res, (await decorateAnnouncements([row]))[0]);
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.put("/announcements/:id", async (req, res, next) => {
+  try {
+    const id = requirePositiveInt(req.params.id, "公告");
+    const exist = await db("announcements").where({ id }).first();
+    if (!exist) throw new HttpError(404, "公告不存在");
+    const body = z
+      .object({
+        title: z.string().trim().min(1).max(40).optional(),
+        content: z.string().trim().min(1).max(200).optional(),
+        linkType: z.enum(["NONE", "GOODS", "CATEGORY", "PATH"]).optional(),
+        linkValue: z.string().optional().nullable(),
+        sort: z.number().int().optional(),
+        enabled: z.boolean().optional(),
+      })
+      .parse(req.body || {});
+    const patch: Record<string, unknown> = {};
+    if (body.title != null) patch.title = body.title;
+    if (body.content != null) patch.content = body.content;
+    if (body.linkType) {
+      const link = await resolveBannerLink(body.linkType, body.linkValue || "");
+      patch.link_type = link.link_type;
+      patch.link_value = link.link_value;
+    } else if (body.linkValue != null) {
+      patch.link_value = body.linkValue;
+    }
+    if (body.sort != null) patch.sort = body.sort;
+    if (body.enabled != null) patch.enabled = body.enabled ? 1 : 0;
+    if (patch.enabled === 1) {
+      const n = await db("announcements").where({ enabled: 1 }).whereNot({ id }).count({ c: "*" }).first();
+      if (Number(n?.c || 0) >= MAX_ENABLED_ANNOUNCEMENTS) {
+        throw new HttpError(409, `最多启用 ${MAX_ENABLED_ANNOUNCEMENTS} 条公告`);
+      }
+    }
+    if (Object.keys(patch).length) await db("announcements").where({ id }).update(patch);
+    const row = await db("announcements").where({ id }).first();
+    ok(res, (await decorateAnnouncements([row]))[0]);
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.delete("/announcements/:id", async (req, res, next) => {
+  try {
+    await db("announcements").where({ id: requirePositiveInt(req.params.id, "公告") }).delete();
     ok(res, true);
   } catch (e) {
     next(e);

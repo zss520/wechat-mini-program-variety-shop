@@ -8,7 +8,9 @@
   <view class="coupon" wx:for="{{shop}}" wx:key="id">
     <view class="left">
       <view class="name">{{disp.text(item.name)}}</view>
-      <view class="sub">{{item.type=='DISCOUNT' ? '折扣券' : '满减券'}} · 满{{disp.yuan(item.min_amount_cent)}}可用</view>
+      <view class="sub">{{disp.text(item.typeText)}} · {{disp.text(item.thresholdText)}}</view>
+      <view class="meta">有效开始 {{disp.text(item.startText)}}</view>
+      <view class="meta">有效结束 {{disp.text(item.endText)}}</view>
     </view>
     <t-button
       theme="primary"
@@ -31,7 +33,9 @@
   <view class="coupon" wx:for="{{mineFiltered}}" wx:key="id">
     <view class="left">
       <view class="name">{{disp.text(item.name)}}</view>
-      <view class="sub">截止 {{disp.text(item.endAtText)}}{{item.sourceText ? ' · ' + item.sourceText : ''}}</view>
+      <view class="sub">{{disp.text(item.typeText)}} · {{disp.text(item.thresholdText)}}</view>
+      <view class="meta">有效开始 {{disp.text(item.startText)}}</view>
+      <view class="meta">有效结束 {{disp.text(item.endText)}}{{item.sourceText ? ' · ' + item.sourceText : ''}}</view>
     </view>
     <t-tag theme="{{item.displayStatus=='UNUSED' ? 'primary' : 'default'}}" variant="light">{{disp.text(item.statusText)}}</t-tag>
   </view>

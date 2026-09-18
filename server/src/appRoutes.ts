@@ -1,11 +1,12 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { db } from "./db";
-import { ok, HttpError, parsePage } from "./http";
+import { ok, HttpError, parsePage, requirePositiveInt } from "./http";
 import { optionalUser, requireRole } from "./auth";
 import { getSettings } from "./settings";
 import { applyGoodsSort, publicGoods } from "./recommend";
 import {
+  buildAnnouncementBlock,
   buildBannerBlock,
   buildDealBlock,
   buildForYouBlock,
@@ -13,6 +14,7 @@ import {
   buildRecommendBlock,
   buildSeckillBlock,
 } from "./home";
+import { listPublicAnnouncements, loadPublicAnnouncement } from "./announcements";
 import { ingestEvents } from "./analytics";
 import { getWxPhone, mockPayParams } from "./wechat";
 import { authorizeWxMember, publicMember, restoreWxSession } from "./wxAuth";
@@ -157,6 +159,32 @@ appRouter.post("/me/avatar", requireRole("user"), (req, res, next) => {
 appRouter.get("/home/banner", async (_req, res, next) => {
   try {
     ok(res, await buildBannerBlock());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/home/announcements", async (_req, res, next) => {
+  try {
+    ok(res, await buildAnnouncementBlock());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/announcements", async (_req, res, next) => {
+  try {
+    ok(res, await listPublicAnnouncements());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/announcements/:id", async (req, res, next) => {
+  try {
+    const row = await loadPublicAnnouncement(requirePositiveInt(req.params.id, "公告"));
+    if (!row) throw new HttpError(404, "公告不存在或已下架");
+    ok(res, row);
   } catch (e) {
     next(e);
   }

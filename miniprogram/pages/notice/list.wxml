@@ -1,0 +1,9 @@
+<wxs src="../../utils/display.wxs" module="disp" />
+<view class="notice" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+  <view class="title-row">
+    <view class="title">{{disp.text(item.title)}}</view>
+    <t-tag wx:if="{{item.canJump}}" theme="primary" variant="light" size="small">可跳转</t-tag>
+  </view>
+  <view class="content">{{disp.text(item.content)}}</view>
+</view>
+<t-empty wx:if="{{!list.length}}" icon="sound" description="暂无通知公告" />

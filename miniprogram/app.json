@@ -14,6 +14,8 @@
     "pages/address/edit",
     "pages/mine/index",
     "pages/coupon/list",
+    "pages/notice/list",
+    "pages/notice/detail",
     "pages/points/index",
     "pages/group/list",
     "pages/group/detail",

@@ -1,0 +1,22 @@
+.card {
+  margin: 24rpx;
+  padding: 32rpx 28rpx;
+  background: #fff;
+  border-radius: 16rpx;
+}
+.title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #3f2e22;
+  line-height: 1.4;
+}
+.content {
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: #5c4636;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+t-button {
+  margin-top: 36rpx;
+}

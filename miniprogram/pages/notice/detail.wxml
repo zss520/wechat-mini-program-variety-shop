@@ -1,0 +1,7 @@
+<wxs src="../../utils/display.wxs" module="disp" />
+<view class="card" wx:if="{{item.id}}">
+  <view class="title">{{disp.text(item.title)}}</view>
+  <view class="content">{{disp.text(item.content)}}</view>
+  <t-button wx:if="{{canJump}}" theme="primary" shape="round" block bind:tap="jump">查看详情</t-button>
+</view>
+<t-empty wx:else icon="sound" description="公告不存在或已下架" />

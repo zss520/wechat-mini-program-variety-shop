@@ -1,6 +1,6 @@
 .coupon {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   background: #fff;
   margin: 24rpx 24rpx;
@@ -13,11 +13,22 @@
   flex: 1;
   min-width: 0;
 }
+.coupon t-button {
+  flex-shrink: 0;
+  margin-top: 4rpx;
+}
 .name {
   font-weight: 700;
 }
 .sub {
-  color: #888;
+  color: #8a6a4a;
   font-size: 24rpx;
   margin-top: 8rpx;
+  line-height: 1.45;
+}
+.meta {
+  color: #b89a82;
+  font-size: 22rpx;
+  margin-top: 6rpx;
+  line-height: 1.45;
 }

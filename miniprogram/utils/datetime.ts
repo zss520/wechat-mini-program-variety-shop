@@ -18,3 +18,10 @@ export function formatDateTime(input?: string | number | Date | null, withSecond
   }
   return s.slice(0, 16) || "—";
 }
+
+export function formatDateRange(start?: string | number | Date | null, end?: string | number | Date | null): string {
+  const a = formatDateTime(start);
+  const b = formatDateTime(end);
+  if (a === "—" && b === "—") return "—";
+  return `${a} 至 ${b}`;
+}

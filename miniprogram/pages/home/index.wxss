@@ -1,6 +1,15 @@
 .search-wrap {
   padding: 16rpx 24rpx 8rpx;
 }
+.announce-wrap {
+  margin: 8rpx 24rpx 0;
+  border-radius: 16rpx;
+  overflow: hidden;
+  --td-notice-bar-info-color: #c2410c;
+  --td-notice-bar-info-bg-color: #fff7ed;
+  --td-notice-bar-font-color: #9a3412;
+  --td-notice-bar-suffix-icon-color: #c4a58d;
+}
 .shop-card {
   margin: 8rpx 24rpx 0;
   padding: 20rpx 24rpx;

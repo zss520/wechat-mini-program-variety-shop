@@ -1,0 +1,32 @@
+.notice {
+  background: #fff;
+  margin: 24rpx;
+  padding: 28rpx 24rpx;
+  border-radius: 16rpx;
+  border-left: 8rpx solid #c2410c;
+}
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  color: #3f2e22;
+  font-size: 30rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.content {
+  margin-top: 12rpx;
+  color: #8a6a4a;
+  font-size: 24rpx;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}

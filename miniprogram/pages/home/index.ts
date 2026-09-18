@@ -1,6 +1,7 @@
 import { request } from "../../utils/request";
 import { asArray, asRecord, displayText, toFiniteNumber } from "../../utils/display";
 import { applyShopChrome, contactShop, isPaused, mediaUrl, shopHint, shareShop } from "../../utils/shop";
+import { openAnnouncement } from "../../utils/jump";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
 
@@ -16,6 +17,10 @@ Page({
   data: {
     banners: [] as any[],
     bannerImages: [] as string[],
+    announcements: [] as any[],
+    announcementTexts: "" as string | string[],
+    announcementIndex: 0,
+    announcementVertical: false,
     deals: [] as any[],
     recommend: [] as any[],
     forYou: [] as any[],
@@ -41,6 +46,7 @@ Page({
     const parts = await Promise.allSettled([
       this.loadBootstrap(),
       this.loadBanner(),
+      this.loadAnnouncements(),
       this.loadSeckill(),
       this.loadGroup(),
       this.loadDeal(),
@@ -48,7 +54,7 @@ Page({
       this.loadRecommend(),
     ]);
     const blockFails = parts.slice(1).filter((p) => p.status === "rejected");
-    if (blockFails.length === 6) {
+    if (blockFails.length === 7) {
       const first = blockFails[0] as PromiseRejectedResult;
       const msg = first.reason?.message || "首页加载失败";
       wx.showToast({ title: msg, icon: "none" });
@@ -72,6 +78,17 @@ Page({
     this.setData({
       banners: banner.list,
       bannerImages: banner.list.map((b: any) => mediaUrl(b.image_url)).filter(Boolean),
+    });
+  },
+  async loadAnnouncements() {
+    const block = readBlock(await request("/home/announcements"), "通知公告");
+    const list = block.list;
+    const texts = list.map((a: any) => String(a.title || a.content || "").trim()).filter(Boolean);
+    this.setData({
+      announcements: list,
+      announcementTexts: texts.length <= 1 ? texts[0] || "" : texts,
+      announcementVertical: texts.length > 1,
+      announcementIndex: 0,
     });
   },
   async loadSeckill() {
@@ -161,6 +178,27 @@ Page({
   },
   onShareAppMessage() {
     return shareShop(this.data.settings);
+  },
+  goNotices() {
+    wx.navigateTo({ url: "/pages/notice/list" });
+  },
+  onAnnouncementChange(e: any) {
+    const idx = Number(e.detail?.current ?? 0);
+    this.setData({ announcementIndex: Number.isFinite(idx) ? idx : 0 });
+  },
+  onAnnouncement(e: any) {
+    const trigger = String(e.detail?.trigger || "");
+    if (trigger === "suffix-icon" || trigger === "operation") {
+      this.goNotices();
+      return;
+    }
+    const list = this.data.announcements || [];
+    const item = list[this.data.announcementIndex] || list[0];
+    if (!item) {
+      this.goNotices();
+      return;
+    }
+    openAnnouncement(item);
   },
   onBanner(e: any) {
     const idx = Number(e.detail?.index ?? e.detail?.current ?? 0);

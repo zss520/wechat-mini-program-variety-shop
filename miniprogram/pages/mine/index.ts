@@ -71,6 +71,9 @@ Page({
     if (!(await this.needMember())) return;
     wx.navigateTo({ url: "/pages/points/index" });
   },
+  notices() {
+    wx.navigateTo({ url: "/pages/notice/list" });
+  },
   groups() {
     wx.navigateTo({ url: "/pages/group/list" });
   },

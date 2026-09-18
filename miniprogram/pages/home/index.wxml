@@ -12,6 +12,21 @@
   prefix-icon="error-circle"
 />
 
+<view class="announce-wrap" wx:if="{{announcements.length}}">
+  <t-notice-bar
+    visible
+    theme="info"
+    prefix-icon="sound"
+    suffix-icon="chevron-right"
+    direction="{{announcementVertical ? 'vertical' : 'horizontal'}}"
+    content="{{announcementTexts}}"
+    marquee="{{!announcementVertical}}"
+    interval="{{4000}}"
+    bind:click="onAnnouncement"
+    bind:change="onAnnouncementChange"
+  />
+</view>
+
 <view class="shop-card" wx:if="{{logoUrl || settings.intro}}">
   <image wx:if="{{logoUrl}}" class="shop-logo" src="{{logoUrl}}" mode="aspectFill" />
   <view class="shop-meta">

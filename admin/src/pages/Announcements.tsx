@@ -20,10 +20,10 @@ import ListPagination, { useClientPager } from "../components/ListPagination";
 import { useFeedback } from "../components/FeedbackProvider";
 import { asArray, displayText } from "../utils/display";
 
-type Banner = {
+type Announcement = {
   id: number;
-  image_url: string;
   title: string;
+  content: string;
   link_type: string;
   link_value: string;
   sort: number;
@@ -40,47 +40,45 @@ function parseSort(raw: string) {
   return Number.isInteger(v) ? v : null;
 }
 
-export default function Banners() {
+export default function Announcements() {
   const fb = useFeedback();
-  const [list, setList] = useState<Banner[]>([]);
+  const [list, setList] = useState<Announcement[]>([]);
   const pager = useClientPager(list);
   const [cats, setCats] = useState<Cat[]>([]);
-  const [imageUrl, setImageUrl] = useState("");
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [sort, setSort] = useState("0");
   const [categoryId, setCategoryId] = useState(0);
   const [goodsId, setGoodsId] = useState(0);
-  const [edit, setEdit] = useState<Banner | null>(null);
+  const [edit, setEdit] = useState<Announcement | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
   const [editCat, setEditCat] = useState(0);
   const [editGoods, setEditGoods] = useState(0);
 
   const load = () => {
-    api.get("/banners").then((d) => setList(asArray(d))).catch((e) => fb.error(e));
+    api.get("/announcements").then((d) => setList(asArray(d))).catch((e) => fb.error(e));
     api.get("/categories").then((d) => setCats(asArray<Cat>(d))).catch((e) => fb.error(e));
   };
   useEffect(() => {
     load();
   }, []);
 
-  const upload = async (file: File) => {
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const r = await api.post("/uploads/image", fd);
-      setImageUrl(r.url);
-      await fb.success("图片已上传");
-    } catch (e) {
-      await fb.error(e, "图片上传失败");
-    }
-  };
-
   const add = async () => {
-    if (!imageUrl.trim()) {
-      await fb.alert("请先上传图片或填写图片地址", { title: "请完善信息", severity: "warning" });
+    if (!title.trim()) {
+      await fb.alert("请填写公告标题", { title: "请完善信息", severity: "warning" });
       return;
     }
     if (title.trim().length > 40) {
       await fb.alert("标题最多 40 个字", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (!content.trim()) {
+      await fb.alert("请填写公告内容", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (content.trim().length > 200) {
+      await fb.alert("内容最多 200 个字", { title: "请完善信息", severity: "warning" });
       return;
     }
     const s = parseSort(sort);
@@ -93,60 +91,72 @@ export default function Banners() {
       return;
     }
     try {
-      await api.post("/banners", {
-        imageUrl: imageUrl.trim(),
+      await api.post("/announcements", {
         title: title.trim(),
+        content: content.trim(),
         sort: s,
         linkType: goodsId ? "GOODS" : "NONE",
         linkValue: goodsId ? String(goodsId) : "",
       });
       setTitle("");
-      setImageUrl("");
+      setContent("");
       setSort("0");
       setCategoryId(0);
       setGoodsId(0);
       load();
-      await fb.success("轮播图已新增");
+      await fb.success("公告已发布");
     } catch (e) {
       await fb.error(e);
     }
   };
 
-  const saveSort = async (b: Banner, raw: string) => {
+  const saveSort = async (row: Announcement, raw: string) => {
     const s = parseSort(raw);
     if (s == null) {
       await fb.alert("排序须为整数，数字越大越靠前", { title: "请完善信息", severity: "warning" });
       return;
     }
-    if (s === b.sort) return;
+    if (s === row.sort) return;
     try {
-      await api.put(`/banners/${b.id}`, { sort: s });
+      await api.put(`/announcements/${row.id}`, { sort: s });
       load();
     } catch (e) {
       await fb.error(e);
     }
   };
 
-  const openEdit = (b: Banner) => {
-    setEdit(b);
-    setEditCat(Number(b.category_id) || 0);
-    setEditGoods(b.link_type === "GOODS" ? Number(b.link_value) || 0 : 0);
+  const openEdit = (row: Announcement) => {
+    setEdit(row);
+    setEditTitle(row.title || "");
+    setEditContent(row.content || "");
+    setEditCat(Number(row.category_id) || 0);
+    setEditGoods(row.link_type === "GOODS" ? Number(row.link_value) || 0 : 0);
   };
 
-  const saveJump = async () => {
+  const saveEdit = async () => {
     if (!edit) return;
+    if (!editTitle.trim()) {
+      await fb.alert("请填写公告标题", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (!editContent.trim()) {
+      await fb.alert("请填写公告内容", { title: "请完善信息", severity: "warning" });
+      return;
+    }
     if (editCat && !editGoods) {
       await fb.alert("请选择要跳转的商品，或不选分类表示不跳转", { title: "请完善信息", severity: "warning" });
       return;
     }
     try {
-      await api.put(`/banners/${edit.id}`, {
+      await api.put(`/announcements/${edit.id}`, {
+        title: editTitle.trim(),
+        content: editContent.trim(),
         linkType: editGoods ? "GOODS" : "NONE",
         linkValue: editGoods ? String(editGoods) : "",
       });
       setEdit(null);
       load();
-      await fb.success("跳转已保存");
+      await fb.success("公告已保存");
     } catch (e) {
       await fb.error(e);
     }
@@ -154,7 +164,7 @@ export default function Banners() {
 
   const copyPath = async (path: string) => {
     if (!path) {
-      await fb.alert("请先选择跳转商品", { title: "请注意", severity: "warning" });
+      await fb.alert("当前公告未配置跳转", { title: "请注意", severity: "warning" });
       return;
     }
     try {
@@ -165,45 +175,44 @@ export default function Banners() {
     }
   };
 
-  const remove = async (b: Banner) => {
-    const ok = await fb.confirm(`确定删除轮播「${b.title || "未命名"}」？`, { title: "删除轮播", danger: true, confirmText: "删除" });
+  const remove = async (row: Announcement) => {
+    const ok = await fb.confirm(`确定删除公告「${row.title || "未命名"}」？`, { title: "删除公告", danger: true, confirmText: "删除" });
     if (!ok) return;
     try {
-      await api.delete(`/banners/${b.id}`);
+      await api.delete(`/announcements/${row.id}`);
       load();
-      await fb.success("轮播图已删除");
+      await fb.success("公告已删除");
     } catch (e) {
       await fb.error(e);
     }
   };
 
-  const previewPath = goodsId ? goodsDetailPath(goodsId) : "";
-  const editPath = editGoods ? goodsDetailPath(editGoods) : "";
+  const previewPath = goodsId ? goodsDetailPath(goodsId, "announce") : "";
+  const editPath = editGoods ? goodsDetailPath(editGoods, "announce") : "";
 
   return (
-    <PageContainer title="轮播图" description="图片地址必填。按分类选择商品后生成小程序详情页地址。排序为整数，越大越靠前。最多同时启用 5 张。">
+    <PageContainer title="通知公告" description="可同时发布并启用多条，最多 20 条。标题会在小程序首页滚动展示，点进列表可看全文。跳转与轮播相同：不选分类表示不跳转，选分类后再选商品。">
       <Stack spacing={1.5} sx={{ mb: 2 }}>
         <InlineForm sx={{ mb: 0 }}>
           <TextField
             required
             size="small"
-            label="图片地址"
-            placeholder="上传或粘贴 URL"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            sx={{ flex: 1, minWidth: 220 }}
-          />
-          <Button component="label" variant="outlined">
-            上传
-            <input hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => e.target.files && upload(e.target.files[0])} />
-          </Button>
-          <TextField
-            size="small"
             label="标题"
-            placeholder="选填，最多 40 字"
+            placeholder="最多 40 字"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             inputProps={{ maxLength: 40 }}
+            sx={{ minWidth: 180 }}
+          />
+          <TextField
+            required
+            size="small"
+            label="内容"
+            placeholder="首页滚动展示，最多 200 字"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            inputProps={{ maxLength: 200 }}
+            sx={{ flex: 1, minWidth: 240 }}
           />
           <TextField
             size="small"
@@ -215,11 +224,19 @@ export default function Banners() {
             inputProps={{ step: 1, title: "整数，越大越靠前" }}
           />
           <Button variant="contained" onClick={add}>
-            新增
+            发布
           </Button>
         </InlineForm>
         <InlineForm sx={{ mb: 0 }}>
-          <JumpPicker cats={cats} categoryId={categoryId} goodsId={goodsId} onCategory={setCategoryId} onGoods={setGoodsId} helperText="顾客点击轮播将打开该商品详情" />
+          <JumpPicker
+            cats={cats}
+            categoryId={categoryId}
+            goodsId={goodsId}
+            onCategory={setCategoryId}
+            onGoods={setGoodsId}
+            slot="announce"
+            helperText="顾客点击公告将打开该商品详情"
+          />
           <Button variant="outlined" disabled={!previewPath} onClick={() => copyPath(previewPath)}>
             复制地址
           </Button>
@@ -230,8 +247,8 @@ export default function Banners() {
       >
         <TableHead>
           <TableRow>
-            <TableCell>预览</TableCell>
             <TableCell>标题</TableCell>
+            <TableCell>内容</TableCell>
             <TableCell>跳转</TableCell>
             <TableCell>排序</TableCell>
             <TableCell>启用</TableCell>
@@ -239,18 +256,20 @@ export default function Banners() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {pager.rows.map((b) => (
-            <TableRow key={b.id}>
+          {pager.rows.map((row) => (
+            <TableRow key={row.id}>
+              <TableCell>{displayText(row.title)}</TableCell>
               <TableCell>
-                {b.image_url && <img src={b.image_url} alt="" width={80} style={{ borderRadius: 6 }} />}
+                <Typography variant="body2" sx={{ maxWidth: 360, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {displayText(row.content)}
+                </Typography>
               </TableCell>
-              <TableCell>{displayText(b.title)}</TableCell>
               <TableCell>
-                {b.link_type === "GOODS" && b.mp_path ? (
+                {row.link_type === "GOODS" && row.mp_path ? (
                   <Box>
-                    <Typography variant="body2">{displayText(b.goods_name, "已选商品")}</Typography>
+                    <Typography variant="body2">{displayText(row.goods_name, "已选商品")}</Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ wordBreak: "break-all" }}>
-                      {b.mp_path}
+                      {row.mp_path}
                     </Typography>
                   </Box>
                 ) : (
@@ -261,26 +280,26 @@ export default function Banners() {
               </TableCell>
               <TableCell>
                 <TextField
-                  key={`${b.id}-${b.sort}`}
+                  key={`${row.id}-${row.sort}`}
                   size="small"
                   type="number"
-                  defaultValue={b.sort}
+                  defaultValue={row.sort}
                   sx={{ width: 88 }}
                   inputProps={{ step: 1, title: "整数，越大越靠前，失焦保存" }}
-                  onBlur={(e) => saveSort(b, e.target.value)}
+                  onBlur={(e) => saveSort(row, e.target.value)}
                 />
               </TableCell>
               <TableCell>
-                <Switch checked={!!b.enabled} onChange={(e) => api.put(`/banners/${b.id}`, { enabled: e.target.checked }).then(load).catch((err) => fb.error(err))} />
+                <Switch checked={!!row.enabled} onChange={(e) => api.put(`/announcements/${row.id}`, { enabled: e.target.checked }).then(load).catch((err) => fb.error(err))} />
               </TableCell>
               <TableCell>
-                <Button size="small" onClick={() => openEdit(b)}>
-                  配置跳转
+                <Button size="small" onClick={() => openEdit(row)}>
+                  编辑
                 </Button>
-                <Button size="small" disabled={!b.mp_path} onClick={() => copyPath(b.mp_path || "")}>
+                <Button size="small" disabled={!row.mp_path} onClick={() => copyPath(row.mp_path || "")}>
                   复制地址
                 </Button>
-                <Button color="error" onClick={() => remove(b)}>
+                <Button color="error" onClick={() => remove(row)}>
                   删除
                 </Button>
               </TableCell>
@@ -291,18 +310,45 @@ export default function Banners() {
       </DataTable>
 
       <Dialog open={!!edit} onClose={() => setEdit(null)} fullWidth maxWidth="sm">
-        <DialogTitle>配置跳转</DialogTitle>
+        <DialogTitle>编辑公告</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            按分类选择现有商品，生成小程序详情页地址。
-          </Typography>
-          <Stack spacing={2}>
-            <JumpPicker cats={cats} categoryId={editCat} goodsId={editGoods} onCategory={setEditCat} onGoods={setEditGoods} helperText="顾客点击轮播将打开该商品详情" />
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              required
+              size="small"
+              label="标题"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              inputProps={{ maxLength: 40 }}
+            />
+            <TextField
+              required
+              size="small"
+              label="内容"
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              inputProps={{ maxLength: 200 }}
+              multiline
+              minRows={2}
+            />
+            <JumpPicker
+              cats={cats}
+              categoryId={editCat}
+              goodsId={editGoods}
+              onCategory={setEditCat}
+              onGoods={setEditGoods}
+              slot="announce"
+              helperText="顾客点击公告将打开该商品详情"
+            />
             {editPath ? (
               <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
                 预览：{editPath}
               </Typography>
-            ) : null}
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                当前为不跳转，顾客可在公告列表阅读全文。
+              </Typography>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -310,7 +356,7 @@ export default function Banners() {
           <Button disabled={!editPath} onClick={() => copyPath(editPath)}>
             复制地址
           </Button>
-          <Button variant="contained" onClick={saveJump}>
+          <Button variant="contained" onClick={saveEdit}>
             保存
           </Button>
         </DialogActions>

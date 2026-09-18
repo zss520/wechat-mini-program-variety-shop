@@ -3,6 +3,7 @@ import { publicUrl } from "./config";
 import { fillRecommend, publicGoods } from "./recommend";
 import { listActiveGroupBuys, listActiveSeckills } from "./campaigns";
 import { personalizedGoods } from "./personalize";
+import { listPublicAnnouncements } from "./announcements";
 
 export type HomeBlock<T = unknown> = {
   key: string;
@@ -26,6 +27,10 @@ export async function buildBannerBlock() {
     "",
     rows.map((b: { image_url: string }) => ({ ...b, image_url: publicUrl(b.image_url) }))
   );
+}
+
+export async function buildAnnouncementBlock() {
+  return block("announcement", "通知公告", await listPublicAnnouncements());
 }
 
 export async function buildSeckillBlock() {

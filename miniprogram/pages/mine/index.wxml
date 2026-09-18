@@ -34,6 +34,7 @@
 
   <view class="mine-block">
     <t-cell-group theme="card">
+      <t-cell title="通知公告" left-icon="sound" arrow hover bind:click="notices" />
       <t-cell title="拼团活动" left-icon="usergroup" arrow hover bind:click="groups" />
       <t-cell title="限时秒杀" left-icon="time" arrow hover bind:click="seckill" />
       <t-cell title="收货地址" left-icon="location" arrow hover bind:click="addr" />

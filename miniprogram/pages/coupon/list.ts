@@ -1,6 +1,6 @@
 import { request, ensureMember } from "../../utils/request";
-import { formatDateTime } from "../../utils/datetime";
 import { asArray, displayText } from "../../utils/display";
+import { decorateCouponView } from "../../utils/coupon";
 
 Page({
   data: { tab: "shop", mineTab: "UNUSED", shop: [] as any[], mine: [] as any[], mineFiltered: [] as any[] },
@@ -13,15 +13,14 @@ Page({
   async load() {
     if (!(await ensureMember())) return;
     const shop = asArray(await request("/coupons")).map((x: any) => ({
-      ...x,
+      ...decorateCouponView(x),
       btnText: x.remain > 0 ? "领取" : x.soldOut ? "已领完" : "已领",
     }));
     const mine = asArray(await request("/me/coupons")).map((x: any) => ({
-      ...x,
+      ...decorateCouponView(x),
       displayStatus: x.displayStatus || x.status,
       statusText: x.statusLabel || displayText(x.status),
       sourceText: x.sourceLabel || "",
-      endAtText: formatDateTime(x.end_at),
     }));
     this.setData({ shop, mine, mineFiltered: this.filterMine(mine, this.data.mineTab) });
   },
