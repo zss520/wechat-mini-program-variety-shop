@@ -2,6 +2,7 @@ import { request, ensureMember } from "../../utils/request";
 import { asArray, asRecord } from "../../utils/display";
 import { contactShop, freightNote, guardOpenOrder, isPaused, payTimeoutHint, readSettings } from "../../utils/shop";
 import { couponBlockReason, usableCoupons } from "../../utils/coupon";
+import { formatAddressLine } from "../../utils/addressLocate";
 import { track } from "../../utils/tracker";
 
 const POINTS_STEP = 100;
@@ -60,6 +61,7 @@ Page({
     remark: "",
     addresses: [] as any[],
     addressId: 0 as number,
+    addressText: "",
     settings: {} as any,
     coupons: [] as any[],
     couponOptions: [] as CouponOption[],
@@ -159,10 +161,12 @@ Page({
         items: asArray(preview.items),
         address: asRecord(preview.address),
       };
+      const addressText = formatAddressLine(priced.address);
       const appliedId = Number(preview.userCouponId || 0);
       const couponUi = buildCouponUi(this.data.coupons, priced, appliedId);
       this.setData({
         preview: priced,
+        addressText,
         pointsMax,
         canUsePoints,
         usePoints,

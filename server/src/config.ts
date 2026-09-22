@@ -22,6 +22,7 @@ export const config = {
   wxMchId: process.env.WX_MCHID || "",
   wxPayKey: process.env.WX_PAY_API_V3_KEY || "",
   wxNotifyUrl: process.env.WX_PAY_NOTIFY_URL || "",
+  tencentMapKey: process.env.TENCENT_MAP_KEY || "",
   uploadDir: path.resolve(__dirname, "../uploads"),
   staticDir: path.resolve(__dirname, "../static"),
 };

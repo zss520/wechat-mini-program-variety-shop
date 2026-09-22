@@ -28,6 +28,7 @@ import { activityWindowOk, getGroupBuy, listActiveGroupBuys, listActiveSeckills,
 import { cartUpsell, relatedGoods } from "./personalize";
 import { listNotifyLogs, setSubscribe } from "./notify";
 import { salePriceOf } from "./pricing";
+import { reverseGeocode } from "./geo";
 
 ensureUploadDirs();
 const avatarUpload = multer({
@@ -421,6 +422,20 @@ appRouter.put("/addresses/:id", requireRole("user"), async (req, res, next) => {
         is_default: b.isDefault ? 1 : row.is_default,
       });
     ok(res, await db("addresses").where({ id }).first());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.post("/geo/reverse", requireRole("user"), async (req, res, next) => {
+  try {
+    const body = z
+      .object({
+        latitude: z.number().gte(-90).lte(90),
+        longitude: z.number().gte(-180).lte(180),
+      })
+      .parse(req.body);
+    ok(res, await reverseGeocode(body.latitude, body.longitude));
   } catch (e) {
     next(e);
   }

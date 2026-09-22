@@ -3,7 +3,7 @@
   <t-cell-group theme="card" wx:for="{{list}}" wx:key="id">
     <t-cell
       title="{{disp.join(item.contact_name, item.phone)}}"
-      description="{{disp.text(item.detail)}}"
+      description="{{disp.text(item.addressText, item.detail)}}"
       left-icon="location"
       arrow
       hover

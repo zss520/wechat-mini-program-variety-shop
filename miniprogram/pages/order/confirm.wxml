@@ -19,7 +19,7 @@
   <t-cell
     wx:else
     title="收货地址"
-    description="{{disp.join(preview.address.contact_name, preview.address.detail)}}"
+    description="{{disp.join(preview.address.contact_name, addressText)}}"
     left-icon="location"
     arrow
     hover

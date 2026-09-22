@@ -1,3 +1,12 @@
+.locate {
+  margin: 24rpx 24rpx 0;
+}
+.hint {
+  margin-top: 12rpx;
+  color: #8a6a4a;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
 t-cell-group {
   display: block;
   margin-top: 24rpx;
