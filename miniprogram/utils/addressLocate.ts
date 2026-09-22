@@ -82,8 +82,10 @@ export function draftFromParts(input: {
   const district = clip(input.district, 32);
   let detail = `${clip(input.street, 64)}${clip(input.streetNumber, 32)}`.trim();
   const poi = clip(input.name, 40);
-  if (!detail) return splitCnAddress(String(input.address || input.recommend || ""), poi);
-  if (poi && detail.indexOf(poi) < 0) detail = `${detail} ${poi}`;
+  if (!detail && (input.address || input.recommend)) {
+    return splitCnAddress(String(input.address || input.recommend || ""), poi);
+  }
+  if (poi && detail && detail.indexOf(poi) < 0) detail = `${detail} ${poi}`;
   return {
     province,
     city,

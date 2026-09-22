@@ -78,7 +78,7 @@ Page({
       city: draft.city,
       district: draft.district,
       detail: draft.detail,
-      locateHint: draft.detail ? "已根据当前位置填入，可修改或补充门牌号" : "已定位，请补充详细地址",
+      locateHint: draft.detail ? "已根据当前位置填入，可修改或补充门牌号" : "已定位到所在区域，请补充街道和门牌号",
       locating: false,
     });
   },

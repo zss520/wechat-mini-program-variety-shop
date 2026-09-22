@@ -1,5 +1,5 @@
 import { draftFromParts, formatAddressLine, splitCnAddress } from "../../../miniprogram/utils/addressLocate";
-import { mapTencentGeocoder } from "../geo";
+import { mapBigDataCloud, mapTencentGeocoder } from "../geo";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -45,6 +45,22 @@ function run() {
   });
   assert(mapped && mapped.available && mapped.street === "科苑路" && mapped.recommend === "南山区科苑路15号", "tencent mapper");
   assert(mapTencentGeocoder({ status: 310, message: "key error" }) === null, "failed geocoder");
+
+  const coarse = draftFromParts({
+    province: "北京市",
+    city: "北京市",
+    district: "东城区",
+    street: "",
+    streetNumber: "",
+  });
+  assert(coarse.province === "北京市" && coarse.district === "东城区" && coarse.detail === "", "coarse locate keeps region and leaves street empty");
+
+  const cloud = mapBigDataCloud({
+    principalSubdivision: "北京市",
+    city: "北京市",
+    locality: "東城區",
+  });
+  assert(cloud && cloud.district === "东城区" && cloud.city === "北京市", "traditional district simplified");
 
   console.log("address locate tests passed");
 }
