@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { HttpError } from "./http";
 
 export type ShopSettings = {
   shop_name: string;
@@ -18,6 +19,7 @@ export type ShopSettings = {
   points_enabled: boolean;
   points_earn_per_yuan: number;
   points_redeem_rate: number;
+  amap_monthly_limit: number;
 };
 
 export const SETTINGS_DEFAULTS: ShopSettings = {
@@ -38,6 +40,7 @@ export const SETTINGS_DEFAULTS: ShopSettings = {
   points_enabled: true,
   points_earn_per_yuan: 1,
   points_redeem_rate: 100,
+  amap_monthly_limit: 1200000,
 };
 
 const defaults = SETTINGS_DEFAULTS;
@@ -94,6 +97,12 @@ export async function saveSettings(patch: Partial<ShopSettings>) {
     if (!Object.prototype.hasOwnProperty.call(patch, k)) continue;
     const v = patch[k];
     if (v === undefined) continue;
+    if (k === "amap_monthly_limit") {
+      const n = Number(v);
+      if (!Number.isInteger(n) || n < 0 || n > 10000000) {
+        throw new HttpError(400, "每月在线定位次数须为 0 到 10000000 的整数");
+      }
+    }
     const svalue = toStoreValue(k, v);
     const exists = await db("shop_settings").where({ skey: k }).first();
     if (exists) await db("shop_settings").where({ skey: k }).update({ svalue, updated_at: db.fn.now() });

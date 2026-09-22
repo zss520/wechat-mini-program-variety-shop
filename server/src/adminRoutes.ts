@@ -7,6 +7,7 @@ import { db } from "./db";
 import { ok, HttpError, parsePage, maskPhone, yuanToCent, requirePositiveInt } from "./http";
 import { requireRole, signToken } from "./auth";
 import { getSettings, saveSettings } from "./settings";
+import { settingsForAdmin } from "./amapQuota";
 import { ensureGoodsThumb, ensureUploadDirs, MAX_GOODS_IMAGES, MAX_IMAGE_BYTES, normalizeGoodsImages } from "./image";
 import {
   cancelOrder,
@@ -720,7 +721,7 @@ adminRouter.delete("/announcements/:id", async (req, res, next) => {
 
 adminRouter.get("/settings", async (_req, res, next) => {
   try {
-    ok(res, await getSettings());
+    ok(res, await settingsForAdmin());
   } catch (e) {
     next(e);
   }
@@ -728,7 +729,8 @@ adminRouter.get("/settings", async (_req, res, next) => {
 
 adminRouter.put("/settings", async (req, res, next) => {
   try {
-    ok(res, await saveSettings(req.body || {}));
+    await saveSettings(req.body || {});
+    ok(res, await settingsForAdmin());
   } catch (e) {
     next(e);
   }

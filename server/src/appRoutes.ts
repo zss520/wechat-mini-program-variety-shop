@@ -29,6 +29,7 @@ import { cartUpsell, relatedGoods } from "./personalize";
 import { listNotifyLogs, setSubscribe } from "./notify";
 import { salePriceOf } from "./pricing";
 import { reverseGeocode } from "./geo";
+import { amapLocateStatus } from "./amapQuota";
 
 ensureUploadDirs();
 const avatarUpload = multer({
@@ -422,6 +423,14 @@ appRouter.put("/addresses/:id", requireRole("user"), async (req, res, next) => {
         is_default: b.isDefault ? 1 : row.is_default,
       });
     ok(res, await db("addresses").where({ id }).first());
+  } catch (e) {
+    next(e);
+  }
+});
+
+appRouter.get("/geo/quota", requireRole("user"), async (_req, res, next) => {
+  try {
+    ok(res, await amapLocateStatus());
   } catch (e) {
     next(e);
   }

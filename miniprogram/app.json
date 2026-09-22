@@ -73,7 +73,7 @@
       "desc": "用于根据当前位置填写收货地址，你仍可修改和补充"
     }
   },
-  "requiredPrivateInfos": ["getLocation", "chooseLocation"],
+  "requiredPrivateInfos": ["getLocation"],
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
 }

@@ -29,6 +29,21 @@ async function run() {
     assert(again.pause_order === true, "pause_order saved true");
     assert(again.logo_url === "/static/placeholders/p1.png", "logo_url saved");
     assert(again.shop_name === stamp, "later patch keeps previous shop_name");
+
+    const limited = await saveSettings({ amap_monthly_limit: 88 });
+    assert(limited.amap_monthly_limit === 88, "amap monthly limit saved");
+    const keptLimit = await saveSettings({ shop_name: `${stamp}_b` });
+    assert(keptLimit.shop_name === `${stamp}_b`, "name patch updates shop_name");
+    assert(keptLimit.amap_monthly_limit === 88, "partial save keeps amap monthly limit");
+    let rejected = false;
+    try {
+      await saveSettings({ amap_monthly_limit: 10000001 });
+    } catch {
+      rejected = true;
+    }
+    assert(rejected, "amap limit above 10000000 is rejected");
+    const still = await getSettings();
+    assert(still.amap_monthly_limit === 88, "rejected limit does not overwrite");
   } finally {
     await saveSettings(before);
   }

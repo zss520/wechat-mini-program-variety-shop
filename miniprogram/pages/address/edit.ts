@@ -3,7 +3,6 @@ import {
   draftFromParts,
   ensureUserLocation,
   readLocation,
-  splitCnAddress,
 } from "../../utils/addressLocate";
 
 Page({
@@ -18,6 +17,7 @@ Page({
     detail: "",
     isDefault: true,
     locating: false,
+    locateEnabled: false,
     locateHint: "",
     touched: false,
   },
@@ -41,11 +41,12 @@ Page({
           isDefault: !!a.is_default,
         });
       } else this.setData({ id, isNew: false });
+      await this.refreshLocateGate();
       return;
     }
     wx.setNavigationBarTitle({ title: "新增地址" });
     if (user && user.phone) this.setData({ phone: String(user.phone) });
-    this.fillByLocation();
+    if (await this.refreshLocateGate()) this.fillByLocation(false);
   },
   onInput(e: any) {
     const key = e.currentTarget.dataset.k;
@@ -57,20 +58,24 @@ Page({
     this.setData({ isDefault: !!e.detail.value });
   },
   onLocate() {
-    if (this.data.locating) return;
-    this.setData({ locating: true, locateHint: "请允许定位，并在地图上确认位置" });
-    wx.chooseLocation({
-      success: (picked) => {
-        this.applyDraft(splitCnAddress(picked.address || "", picked.name || ""));
-      },
-      fail: (err) => {
-        const msg = String((err && err.errMsg) || "");
-        this.setData({
-          locating: false,
-          locateHint: /cancel/i.test(msg) ? "未确认位置，可手动填写" : "未授权定位或定位失败，可手动填写",
-        });
-      },
-    });
+    if (!this.data.locateEnabled || this.data.locating) return;
+    this.fillByLocation(true);
+  },
+  async refreshLocateGate() {
+    try {
+      const q = await request("/geo/quota");
+      const online = !!q.online;
+      const hint = online
+        ? this.data.locateHint
+        : q.reason === "quota"
+          ? "本月在线定位次数已用完，请手动填写地址"
+          : "当前无法在线定位，请手动填写地址";
+      this.setData({ locateEnabled: online, locateHint: hint });
+      return online;
+    } catch {
+      this.setData({ locateEnabled: false, locateHint: "当前无法在线定位，请手动填写地址" });
+      return false;
+    }
   },
   applyDraft(draft: { province: string; city: string; district: string; detail: string }) {
     this.setData({
@@ -82,13 +87,13 @@ Page({
       locating: false,
     });
   },
-  async fillByLocation() {
-    if (this.data.locating) return;
+  async fillByLocation(manual: boolean) {
+    if (this.data.locating || !this.data.locateEnabled) return;
     this.setData({ locating: true, locateHint: "正在请求定位授权…" });
     try {
       const auth = await ensureUserLocation();
       if (auth !== "ok") {
-        this.setData({ locating: false, locateHint: "未授权定位，可手动填写，或点上方按钮重新授权" });
+        this.setData({ locating: false, locateHint: "未授权定位，请手动填写地址" });
         return;
       }
       this.setData({ locateHint: "正在根据当前位置生成地址…" });
@@ -97,14 +102,19 @@ Page({
         latitude: loc.latitude,
         longitude: loc.longitude,
       }).catch(() => null);
-      if (!geo || !geo.available) {
+      if (geo && geo.reason === "quota") {
         this.setData({
           locating: false,
-          locateHint: "已授权定位。请点上方按钮，在地图上确认后填入地址，仍可修改",
+          locateEnabled: false,
+          locateHint: "本月在线定位次数已用完，请手动填写地址",
         });
         return;
       }
-      if (this.data.touched) {
+      if (!geo || !geo.available) {
+        this.setData({ locating: false, locateHint: "定位失败，请手动填写地址" });
+        return;
+      }
+      if (!manual && this.data.touched) {
         this.setData({ locating: false, locateHint: "已保留你修改的地址" });
         return;
       }
@@ -113,7 +123,7 @@ Page({
       const msg = String((e && (e.errMsg || e.message)) || "");
       this.setData({
         locating: false,
-        locateHint: /privacy|隐私/.test(msg) ? "请先同意隐私协议后再定位" : "定位失败，请手动填写或点上方按钮重试",
+        locateHint: /privacy|隐私/.test(msg) ? "请先同意隐私协议后再定位" : "定位失败，请手动填写地址",
       });
     }
   },

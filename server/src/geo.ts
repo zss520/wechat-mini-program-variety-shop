@@ -1,6 +1,7 @@
 import axios from "axios";
 import { config } from "./config";
-import { HttpError } from "./http";
+import { getSettings } from "./settings";
+import { reserveAmapCall } from "./amapQuota";
 
 export type GeocodeParts = {
   available: true;
@@ -13,89 +14,57 @@ export type GeocodeParts = {
   address: string;
 };
 
+export type GeocodeMiss = {
+  available: false;
+  reason: "quota" | "unconfigured" | "failed";
+};
+
 function clip(v: unknown, max: number) {
+  if (Array.isArray(v)) return "";
   return String(v || "").trim().slice(0, max);
 }
 
-const PLACE_CHAR: Record<string, string> = {
-  東: "东",
-  區: "区",
-  門: "门",
-  縣: "县",
-  島: "岛",
-  廣: "广",
-  灣: "湾",
-  龍: "龙",
-  雲: "云",
-  後: "后",
-  國: "国",
-  內: "内",
-  臺: "台",
-  萬: "万",
-};
-
-function simplifyPlace(v: unknown) {
-  return clip(v, 32).replace(/[東區門縣島廣灣龍雲後國內臺萬]/g, (ch) => PLACE_CHAR[ch] || ch);
-}
-
-export function mapBigDataCloud(body: any): GeocodeParts | null {
-  if (!body || typeof body !== "object") return null;
-  const province = simplifyPlace(body.principalSubdivision);
-  const city = simplifyPlace(body.city) || province;
-  let district = simplifyPlace(body.locality);
-  if (!province && !city && !district) return null;
-  if (district === city || district === province) district = "";
+export function mapAmapRegeo(body: any): GeocodeParts | null {
+  if (!body || String(body.status) !== "1" || !body.regeocode) return null;
+  const c = body.regeocode.addressComponent || {};
+  const province = clip(c.province, 32);
+  const cityRaw = clip(c.city, 32);
+  const city = cityRaw || province;
+  const district = clip(c.district, 32);
+  const sn = c.streetNumber && typeof c.streetNumber === "object" ? c.streetNumber : {};
+  const street = clip(sn.street, 64) || clip(c.township, 32);
+  const streetNumber = clip(sn.number, 32);
   return {
     available: true,
     province,
     city,
     district,
-    street: "",
-    streetNumber: "",
+    street,
+    streetNumber,
     recommend: "",
-    address: "",
+    address: clip(body.regeocode.formatted_address, 120),
   };
 }
 
-export function mapTencentGeocoder(body: any): GeocodeParts | null {
-  if (!body || Number(body.status) !== 0 || !body.result) return null;
-  const c = body.result.address_component || {};
-  const recommend = body.result.formatted_addresses?.recommend || "";
-  return {
-    available: true,
-    province: clip(c.province, 32),
-    city: clip(c.city, 32),
-    district: clip(c.district, 32),
-    street: clip(c.street, 64),
-    streetNumber: clip(c.street_number, 32),
-    recommend: clip(recommend, 120),
-    address: clip(body.result.address, 120),
-  };
-}
-
-export async function reverseGeocode(latitude: number, longitude: number) {
-  if (config.tencentMapKey) {
-    const { data } = await axios.get("https://apis.map.qq.com/ws/geocoder/v1/", {
+export async function reverseGeocode(latitude: number, longitude: number): Promise<GeocodeParts | GeocodeMiss> {
+  if (!String(config.amapWebKey || "").trim()) return { available: false, reason: "unconfigured" };
+  const settings = await getSettings();
+  const reserved = await reserveAmapCall(settings.amap_monthly_limit);
+  if (reserved === "exhausted") return { available: false, reason: "quota" };
+  try {
+    const { data } = await axios.get("https://restapi.amap.com/v3/geocode/regeo", {
       timeout: 5000,
       params: {
-        location: `${latitude},${longitude}`,
-        key: config.tencentMapKey,
-        get_poi: 0,
+        key: config.amapWebKey,
+        location: `${longitude},${latitude}`,
+        extensions: "base",
+        output: "JSON",
       },
     });
-    const mapped = mapTencentGeocoder(data);
-    if (!mapped) throw new HttpError(502, "定位地址解析失败");
+    const mapped = mapAmapRegeo(data);
+    if (!mapped) return { available: false, reason: "failed" };
     return mapped;
-  }
-  try {
-    const { data } = await axios.get("https://api.bigdatacloud.net/data/reverse-geocode-client", {
-      timeout: 5000,
-      params: { latitude, longitude, localityLanguage: "zh" },
-    });
-    const mapped = mapBigDataCloud(data);
-    if (mapped) return mapped;
   } catch {
-    /* 无街道级结果时，小程序改为地图选点 */
+    return { available: false, reason: "failed" };
   }
-  return { available: false as const };
 }

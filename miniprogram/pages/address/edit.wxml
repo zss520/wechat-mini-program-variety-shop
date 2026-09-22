@@ -1,5 +1,6 @@
-<view class="locate">
+<view class="locate" wx:if="{{locateEnabled || locateHint}}">
   <t-button
+    wx:if="{{locateEnabled}}"
     theme="primary"
     variant="outline"
     size="medium"
@@ -14,9 +15,9 @@
 <t-cell-group theme="card">
   <t-input label="联系人" placeholder="请输入联系人" value="{{contactName}}" data-k="contactName" bind:change="onInput" />
   <t-input label="手机号" type="number" placeholder="请输入手机号" value="{{phone}}" data-k="phone" bind:change="onInput" />
-  <t-input label="省" placeholder="定位后自动填入，可改" value="{{province}}" data-k="province" bind:change="onInput" />
-  <t-input label="市" placeholder="定位后自动填入，可改" value="{{city}}" data-k="city" bind:change="onInput" />
-  <t-input label="区" placeholder="定位后自动填入，可改" value="{{district}}" data-k="district" bind:change="onInput" />
+  <t-input label="省" placeholder="{{locateEnabled ? '定位后自动填入，可改' : '请填写省份'}}" value="{{province}}" data-k="province" bind:change="onInput" />
+  <t-input label="市" placeholder="{{locateEnabled ? '定位后自动填入，可改' : '请填写城市'}}" value="{{city}}" data-k="city" bind:change="onInput" />
+  <t-input label="区" placeholder="{{locateEnabled ? '定位后自动填入，可改' : '请填写区县'}}" value="{{district}}" data-k="district" bind:change="onInput" />
   <t-input label="详细地址" placeholder="街道 / 小区 / 门牌号" value="{{detail}}" data-k="detail" bind:change="onInput" />
   <t-cell title="设为默认地址">
     <t-switch slot="note" value="{{isDefault}}" bind:change="onDefault" />

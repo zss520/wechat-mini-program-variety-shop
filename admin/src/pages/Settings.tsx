@@ -36,6 +36,8 @@ type ShopForm = {
   points_enabled: boolean;
   points_earn_per_yuan: number;
   points_redeem_rate: number;
+  amap_monthly_limit: number;
+  amap_month_used: number;
 };
 
 const EMPTY: ShopForm = {
@@ -56,6 +58,8 @@ const EMPTY: ShopForm = {
   points_enabled: true,
   points_earn_per_yuan: 1,
   points_redeem_rate: 100,
+  amap_monthly_limit: 1200000,
+  amap_month_used: 0,
 };
 
 function asBool(v: unknown): boolean {
@@ -88,6 +92,8 @@ function normalize(raw: unknown): ShopForm {
     points_enabled: src.points_enabled == null ? EMPTY.points_enabled : asBool(src.points_enabled),
     points_earn_per_yuan: asNum(src.points_earn_per_yuan, EMPTY.points_earn_per_yuan),
     points_redeem_rate: asNum(src.points_redeem_rate, EMPTY.points_redeem_rate),
+    amap_monthly_limit: asNum(src.amap_monthly_limit, EMPTY.amap_monthly_limit),
+    amap_month_used: asNum(src.amap_month_used, 0),
   };
 }
 
@@ -110,6 +116,7 @@ function payload(form: ShopForm) {
     points_enabled: form.points_enabled,
     points_earn_per_yuan: form.points_earn_per_yuan,
     points_redeem_rate: form.points_redeem_rate,
+    amap_monthly_limit: form.amap_monthly_limit,
   };
 }
 
@@ -195,6 +202,10 @@ export default function Settings() {
     }
     if (!isValidNonNegInt(form.low_stock_threshold)) {
       await fb.alert("低库存阈值须为大于等于 0 的整数", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (!isValidNonNegInt(form.amap_monthly_limit) || form.amap_monthly_limit > 10000000) {
+      await fb.alert("每月在线定位次数须为 0 到 10000000 的整数", { title: "请完善信息", severity: "warning" });
       return;
     }
     if (form.points_enabled) {
@@ -380,6 +391,18 @@ export default function Settings() {
               <FormControlLabel
                 control={<Switch checked={form.pause_order} onChange={(e) => set("pause_order", e.target.checked)} />}
                 label="暂停接单（顾客可浏览，不可提交订单）"
+              />
+            </Section>
+
+            <Section title="在线定位">
+              <TextField
+                required
+                type="number"
+                label="每月定位次数上限"
+                value={form.amap_monthly_limit}
+                onChange={(e) => set("amap_monthly_limit", Number(e.target.value))}
+                helperText={`高德逆地理调用次数。默认 1200000。本月已调用 ${form.amap_month_used} 次，超出后顾客需手动填写地址。填 0 表示关闭在线定位。`}
+                inputProps={{ min: 0, max: 10000000, step: 1 }}
               />
             </Section>
 
