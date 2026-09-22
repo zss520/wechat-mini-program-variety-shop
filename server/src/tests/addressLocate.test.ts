@@ -1,5 +1,5 @@
-import { draftFromParts, formatAddressLine, splitCnAddress } from "../../../miniprogram/utils/addressLocate";
-import { mapAmapRegeo } from "../geo";
+import { draftFromParts, formatAddressLine, locateQuotaBlocked, splitCnAddress } from "../../../miniprogram/utils/addressLocate";
+import { mapAmapRegeo, mapBigDataCloud } from "../geo";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -71,6 +71,16 @@ function run() {
   assert(muni && muni.city === "北京市" && muni.district === "东城区" && muni.street === "东华门街道", "municipality city array falls back");
   const muniDraft = draftFromParts(muni || {});
   assert(muniDraft.detail === "东华门街道" && formatAddressLine(muniDraft) === "北京市东城区东华门街道", "municipality draft");
+
+  const cloud = mapBigDataCloud({
+    principalSubdivision: "北京市",
+    city: "北京市",
+    locality: "東城區",
+  });
+  assert(cloud && cloud.district === "东城区" && cloud.city === "北京市" && cloud.street === "", "cloud region fallback");
+  assert(locateQuotaBlocked({ reason: "quota" }) === true, "quota blocks locate");
+  assert(locateQuotaBlocked({ reason: "unconfigured" }) === false, "missing key still allows locate");
+  assert(locateQuotaBlocked(null) === false, "quota request failure still allows locate");
 
   console.log("address locate tests passed");
 }

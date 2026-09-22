@@ -1,7 +1,7 @@
 <view class="wrap">
   <view class="hero">
     <view class="title">微信授权登录</view>
-    <view class="desc">填写昵称和手机号即可成为会员并下单。手机号用于订单联系与售后；也可选用微信一键授权手机号。</view>
+    <view class="desc">填写昵称和手机号即可登录并下单。手机号用于订单联系与售后；也可选用微信一键授权手机号。</view>
   </view>
 
   <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">

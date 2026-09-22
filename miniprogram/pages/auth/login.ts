@@ -106,10 +106,10 @@ Page({
           const u = await uploadAvatar(this.data.avatarLocal);
           saveSession(data.token, u);
         } catch {
-          /* 头像失败不阻断成为会员 */
+          /* 头像失败不阻断登录 */
         }
       }
-      wx.showToast({ title: "已开通会员", icon: "success" });
+      wx.showToast({ title: "登录成功", icon: "success" });
       setTimeout(() => afterLoginRedirect(this.data.redirect), 400);
     } catch (e: any) {
       wx.showToast({ title: e.message || "授权失败", icon: "none" });

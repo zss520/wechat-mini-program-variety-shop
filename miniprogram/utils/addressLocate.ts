@@ -67,6 +67,11 @@ export function splitCnAddress(address: string, name?: string): AddressDraft {
   };
 }
 
+/** 只有服务端明确返回本月额度用尽时，才关闭在线定位。 */
+export function locateQuotaBlocked(status: { reason?: string } | null | undefined) {
+  return !!status && status.reason === "quota";
+}
+
 export function draftFromParts(input: {
   province?: string;
   city?: string;

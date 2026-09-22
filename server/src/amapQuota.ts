@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { config } from "./config";
+import { readAmapWebKey } from "./config";
 import { getSettings } from "./settings";
 
 export function shanghaiMonth(now = new Date()) {
@@ -43,10 +43,11 @@ export async function amapLocateStatus() {
   const settings = await getSettings();
   const limit = Math.max(0, Math.floor(Number(settings.amap_monthly_limit) || 0));
   const usage = await readAmapUsage();
-  const configured = Boolean(String(config.amapWebKey || "").trim());
-  const reason = !configured ? "unconfigured" : usage.used >= limit ? "quota" : "ok";
+  const configured = Boolean(readAmapWebKey());
+  const blocked = limit <= 0 || (configured && usage.used >= limit);
+  const reason = blocked ? "quota" : configured ? "ok" : "fallback";
   return {
-    online: reason === "ok",
+    online: !blocked,
     reason,
     limit,
     used: usage.used,

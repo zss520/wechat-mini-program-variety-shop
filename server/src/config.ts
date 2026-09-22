@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 
@@ -27,6 +28,41 @@ export const config = {
   uploadDir: path.resolve(__dirname, "../uploads"),
   staticDir: path.resolve(__dirname, "../static"),
 };
+
+function amapKeyFromEnvFile(file: string) {
+  try {
+    const text = fs.readFileSync(file, "utf8");
+    for (const line of text.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const matched = trimmed.match(/^AMAP_WEB_KEY\s*=\s*(.*)$/);
+      if (!matched) continue;
+      let value = matched[1].trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1).trim();
+      }
+      return value;
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+/** 每次定位时读取，避免进程启动后才写入 .env 时仍被视为未配置。 */
+export function readAmapWebKey() {
+  const fromProcess = String(process.env.AMAP_WEB_KEY || "").trim();
+  if (fromProcess) return fromProcess;
+  const files = [path.resolve(__dirname, "../../.env"), path.resolve(__dirname, "../.env")];
+  for (const file of files) {
+    const value = amapKeyFromEnvFile(file);
+    if (value) return value;
+  }
+  return String(config.amapWebKey || "").trim();
+}
 
 export function publicUrl(p?: string | null) {
   if (!p) return "";

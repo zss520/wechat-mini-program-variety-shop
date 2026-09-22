@@ -2,7 +2,9 @@ import { currentUser, request } from "../../utils/request";
 import {
   draftFromParts,
   ensureUserLocation,
+  locateQuotaBlocked,
   readLocation,
+  splitCnAddress,
 } from "../../utils/addressLocate";
 
 Page({
@@ -17,7 +19,7 @@ Page({
     detail: "",
     isDefault: true,
     locating: false,
-    locateEnabled: false,
+    locateEnabled: true,
     locateHint: "",
     touched: false,
   },
@@ -57,24 +59,42 @@ Page({
   onDefault(e: any) {
     this.setData({ isDefault: !!e.detail.value });
   },
-  onLocate() {
+  async onLocate() {
     if (!this.data.locateEnabled || this.data.locating) return;
-    this.fillByLocation(true);
+    const result = await this.fillByLocation(true);
+    if (result === "map") this.openMapPicker();
+  },
+  openMapPicker() {
+    if (!this.data.locateEnabled) return;
+    this.setData({ locating: true, locateHint: "请在地图上确认位置，确认后仍可修改" });
+    wx.chooseLocation({
+      success: (picked) => {
+        this.applyDraft(splitCnAddress(picked.address || "", picked.name || ""));
+      },
+      fail: (err) => {
+        const msg = String((err && err.errMsg) || "");
+        this.setData({
+          locating: false,
+          locateHint: /cancel/i.test(msg) ? "未确认位置，可手动填写" : "未授权定位或定位失败，可手动填写",
+        });
+      },
+    });
   },
   async refreshLocateGate() {
     try {
       const q = await request("/geo/quota");
-      const online = !!q.online;
-      const hint = online
-        ? this.data.locateHint
-        : q.reason === "quota"
-          ? "本月在线定位次数已用完，请手动填写地址"
-          : "当前无法在线定位，请手动填写地址";
-      this.setData({ locateEnabled: online, locateHint: hint });
-      return online;
+      if (locateQuotaBlocked(q)) {
+        this.setData({
+          locateEnabled: false,
+          locateHint: "本月在线定位次数已用完，请手动填写地址",
+        });
+        return false;
+      }
+      this.setData({ locateEnabled: true });
+      return true;
     } catch {
-      this.setData({ locateEnabled: false, locateHint: "当前无法在线定位，请手动填写地址" });
-      return false;
+      this.setData({ locateEnabled: true });
+      return true;
     }
   },
   applyDraft(draft: { province: string; city: string; district: string; detail: string }) {
@@ -87,14 +107,17 @@ Page({
       locating: false,
     });
   },
-  async fillByLocation(manual: boolean) {
-    if (this.data.locating || !this.data.locateEnabled) return;
+  async fillByLocation(manual: boolean): Promise<"filled" | "map" | "stop"> {
+    if (this.data.locating) return "stop";
     this.setData({ locating: true, locateHint: "正在请求定位授权…" });
     try {
       const auth = await ensureUserLocation();
       if (auth !== "ok") {
-        this.setData({ locating: false, locateHint: "未授权定位，请手动填写地址" });
-        return;
+        this.setData({
+          locating: false,
+          locateHint: "未授权定位。可点击使用当前位置，在地图上确认，或手动填写",
+        });
+        return manual ? "map" : "stop";
       }
       this.setData({ locateHint: "正在根据当前位置生成地址…" });
       const loc = await readLocation();
@@ -102,29 +125,38 @@ Page({
         latitude: loc.latitude,
         longitude: loc.longitude,
       }).catch(() => null);
-      if (geo && geo.reason === "quota") {
+      if (locateQuotaBlocked(geo)) {
         this.setData({
           locating: false,
           locateEnabled: false,
           locateHint: "本月在线定位次数已用完，请手动填写地址",
         });
-        return;
+        return "stop";
       }
       if (!geo || !geo.available) {
-        this.setData({ locating: false, locateHint: "定位失败，请手动填写地址" });
-        return;
+        this.setData({
+          locating: false,
+          locateHint: "请点击使用当前位置，在地图上确认地址，也可直接手动填写",
+        });
+        return manual ? "map" : "stop";
       }
       if (!manual && this.data.touched) {
         this.setData({ locating: false, locateHint: "已保留你修改的地址" });
-        return;
+        return "stop";
       }
-      this.applyDraft(draftFromParts(geo));
+      const draft = draftFromParts(geo);
+      this.applyDraft(draft);
+      if (manual && !draft.detail) return "map";
+      return "filled";
     } catch (e: any) {
       const msg = String((e && (e.errMsg || e.message)) || "");
       this.setData({
         locating: false,
-        locateHint: /privacy|隐私/.test(msg) ? "请先同意隐私协议后再定位" : "定位失败，请手动填写地址",
+        locateHint: /privacy|隐私/.test(msg)
+          ? "请先同意隐私协议后再定位"
+          : "请点击使用当前位置，在地图上确认地址，也可直接手动填写",
       });
+      return manual && !/privacy|隐私/.test(msg) ? "map" : "stop";
     }
   },
   async save() {
