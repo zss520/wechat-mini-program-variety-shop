@@ -33,7 +33,6 @@ Page({
     fulfillText: "",
     activityText: "普通",
     times: [] as { key: string; label: string; time: string }[],
-    timeline: [] as { id: number; title: string; time: string }[],
     payHint: "",
   },
   onLoad(q: any) {
@@ -51,11 +50,6 @@ Page({
       label: displayText(p.label),
       time: formatDateTime(p.at, true),
     }));
-    const timeline = asArray(o.timeline).map((l: any, i: number) => ({
-      id: Number(l.id || i + 1),
-      title: displayText(l.note || MAP[l.to_status]),
-      time: formatDateTime(l.created_at, true),
-    }));
     this.setData({
       o: { ...o, items: asArray(o.items) },
       statusText: MAP[o.status] || displayText(o.status),
@@ -65,7 +59,6 @@ Page({
       fulfillText: displayText(o.fulfill_text),
       activityText: activityText(o.activity_type),
       times,
-      timeline,
     });
     if (o.pickup_code) track("pickup_code_view", { order_no: o.order_no });
   },

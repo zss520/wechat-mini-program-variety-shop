@@ -40,10 +40,6 @@
   <t-cell-group theme="card" title="履约时间" wx:if="{{times.length}}">
     <t-cell wx:for="{{times}}" wx:key="key" title="{{item.label}}" note="{{item.time}}" />
   </t-cell-group>
-
-  <t-cell-group theme="card" title="状态记录" wx:if="{{timeline.length}}">
-    <t-cell wx:for="{{timeline}}" wx:key="id" title="{{item.title}}" note="{{item.time}}" />
-  </t-cell-group>
 </view>
 
 <view class="bar">
