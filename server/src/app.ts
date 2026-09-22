@@ -9,7 +9,9 @@ import { errorHandler } from "./auth";
 import { fail, HttpError } from "./http";
 import { config } from "./config";
 import { db, pingDb } from "./db";
+import { buildLegalDoc, renderLegalHtml } from "./legal";
 import { markPaid } from "./orderService";
+import { getSettings } from "./settings";
 
 export function createApp() {
   const app = express();
@@ -19,10 +21,14 @@ export function createApp() {
   app.use(express.json({ limit: "1mb" }));
   app.use("/uploads", express.static(config.uploadDir));
   app.use("/static", express.static(config.staticDir));
-  app.use("/privacy", (_req, res) => {
-    res.type("html").send(`<!doctype html><meta charset="utf-8"><title>隐私政策</title>
-<h1>社区杂货铺隐私政策</h1>
-<p>我们仅收集提供购物服务所必需的信息（微信标识、手机号、收货地址、订单）。浏览与点击等行为数据用于改进商品展示与经营分析，不含手机号与 openid。</p>`);
+  app.get("/privacy", async (_req, res) => {
+    try {
+      res.type("html").send(renderLegalHtml(buildLegalDoc(await getSettings())));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[privacy]", e);
+      res.type("html").send(renderLegalHtml(buildLegalDoc({ shop_name: "本店" })));
+    }
   });
   app.get("/api/health", async (_req, res) => {
     try {

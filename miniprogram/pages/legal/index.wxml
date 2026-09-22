@@ -1,0 +1,12 @@
+<view class="page" wx:if="{{doc}}">
+  <view class="title">{{doc.title}}</view>
+  <view class="meta">更新日期 {{doc.updatedAt}}</view>
+  <view class="sec" wx:for="{{doc.sections}}" wx:key="heading">
+    <view class="h">{{item.heading}}</view>
+    <view class="p" wx:for="{{item.paragraphs}}" wx:for-item="para" wx:for-index="pi" wx:key="pi">{{para}}</view>
+  </view>
+</view>
+<view class="page" wx:elif="{{!loading}}">
+  <view class="p">{{error || '说明加载失败'}}</view>
+  <t-button theme="primary" shape="round" block bind:tap="load">重试</t-button>
+</view>

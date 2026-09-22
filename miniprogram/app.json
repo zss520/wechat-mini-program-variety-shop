@@ -4,6 +4,7 @@
     "pages/category/index",
     "pages/search/index",
     "pages/auth/login",
+    "pages/legal/index",
     "pages/goods/detail",
     "pages/cart/index",
     "pages/order/confirm",

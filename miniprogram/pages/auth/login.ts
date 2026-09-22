@@ -66,8 +66,7 @@ Page({
     this.setData({ agree: !this.data.agree });
   },
   openPrivacy() {
-    const url = this.data.privacyUrl;
-    if (url) wx.setClipboardData({ data: url, success: () => wx.showToast({ title: "隐私政策链接已复制" }) });
+    wx.navigateTo({ url: "/pages/legal/index" });
   },
   validate(needPhone: boolean): boolean {
     if (!this.data.agree) {

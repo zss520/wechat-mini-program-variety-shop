@@ -1,4 +1,7 @@
 import { API_BASE, FILE_BASE } from "./config";
+import { shouldAttemptSilentLogin } from "./session";
+
+const MANUAL_LOGOUT_KEY = "manual_logout";
 
 const TAB_PATHS = new Set(["pages/home/index", "pages/category/index", "pages/cart/index", "pages/mine/index"]);
 
@@ -24,7 +27,12 @@ export function isMember(): boolean {
   return Boolean(token() && (u.phoneBound || u.member || u.phone));
 }
 
+export function isManualLogout() {
+  return Boolean(wx.getStorageSync(MANUAL_LOGOUT_KEY));
+}
+
 export function saveSession(t: string, user: any) {
+  wx.removeStorageSync(MANUAL_LOGOUT_KEY);
   wx.setStorageSync("token", t);
   wx.setStorageSync("user", user || {});
 }
@@ -32,6 +40,12 @@ export function saveSession(t: string, user: any) {
 export function clearSession() {
   wx.removeStorageSync("token");
   wx.removeStorageSync("user");
+}
+
+/** 主动退出：清掉本机登录态，并阻止随后的静默登录。 */
+export function logoutLocal() {
+  clearSession();
+  wx.setStorageSync(MANUAL_LOGOUT_KEY, 1);
 }
 
 export function request<T = any>(path: string, method: "GET" | "POST" | "PUT" | "DELETE" = "GET", data?: any): Promise<T> {
@@ -108,7 +122,7 @@ export function afterLoginRedirect(redirect?: string) {
 }
 
 export async function tryRestoreMember(): Promise<boolean> {
-  if (isMember()) return true;
+  if (!shouldAttemptSilentLogin(isManualLogout(), isMember())) return isMember();
   try {
     const code = await wxLoginCode();
     const data = await request<{ token?: string; user?: any; needAuthorize?: boolean }>("/auth/wx-login", "POST", {

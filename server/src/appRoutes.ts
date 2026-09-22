@@ -4,6 +4,7 @@ import { db } from "./db";
 import { ok, HttpError, parsePage, requirePositiveInt } from "./http";
 import { optionalUser, requireRole } from "./auth";
 import { getSettings } from "./settings";
+import { buildLegalDoc } from "./legal";
 import { applyGoodsSort, publicGoods } from "./recommend";
 import {
   buildAnnouncementBlock,
@@ -58,6 +59,14 @@ async function requireBoundPhone(req: Request, _res: Response, next: NextFunctio
 }
 
 export const appRouter = Router();
+
+appRouter.get("/legal", async (_req, res, next) => {
+  try {
+    ok(res, buildLegalDoc(await getSettings()));
+  } catch (e) {
+    next(e);
+  }
+});
 
 appRouter.get("/shop/bootstrap", async (_req, res, next) => {
   try {

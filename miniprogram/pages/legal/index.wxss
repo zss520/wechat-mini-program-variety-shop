@@ -1,0 +1,35 @@
+.page {
+  margin: 24rpx;
+  padding: 32rpx 28rpx 48rpx;
+  background: #fff;
+  border-radius: 16rpx;
+}
+.title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #3f2e22;
+  line-height: 1.4;
+}
+.meta {
+  margin-top: 12rpx;
+  color: #8a6a4a;
+  font-size: 24rpx;
+}
+.sec {
+  margin-top: 36rpx;
+}
+.h {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #3f2e22;
+}
+.p {
+  margin-top: 12rpx;
+  font-size: 28rpx;
+  color: #5c4636;
+  line-height: 1.7;
+}
+t-button {
+  display: block;
+  margin-top: 32rpx;
+}

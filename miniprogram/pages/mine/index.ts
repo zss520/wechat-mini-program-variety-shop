@@ -1,4 +1,4 @@
-import { clearSession, currentUser, ensureMember, goLogin, isMember, request, tryRestoreMember } from "../../utils/request";
+import { currentUser, ensureMember, goLogin, isMember, logoutLocal, request, tryRestoreMember } from "../../utils/request";
 import { contactShop, copyWechat, mediaUrl, readSettings } from "../../utils/shop";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
@@ -98,12 +98,27 @@ Page({
     copyWechat(this.data.settings);
   },
   privacy() {
-    const url = this.data.settings.privacyUrl || "http://10.0.8.98:3000/privacy";
-    wx.setClipboardData({ data: url });
+    wx.navigateTo({ url: "/pages/legal/index" });
   },
   logout() {
-    clearSession();
-    this.refresh();
-    wx.showToast({ title: "已退出", icon: "none" });
+    if (!this.data.logged) return;
+    wx.showModal({
+      title: "退出登录",
+      content: "退出后本机不再保持登录，需要重新授权才能下单。订单、地址和优惠券仍保存在店铺，再次登录后可以继续查看。",
+      confirmText: "退出",
+      confirmColor: "#C2410C",
+      cancelText: "取消",
+      success: (r) => {
+        if (!r.confirm) return;
+        logoutLocal();
+        this.setData({
+          logged: false,
+          user: {},
+          phoneText: "授权登录后同步订单与优惠券",
+          subscribed: false,
+        });
+        wx.showToast({ title: "已退出登录", icon: "none" });
+      },
+    });
   },
 });
