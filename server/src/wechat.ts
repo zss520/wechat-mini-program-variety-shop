@@ -85,3 +85,26 @@ export function mockPayParams(orderNo: string) {
     paySign: "MOCK",
   };
 }
+
+export async function sendSubscribeMessage(input: {
+  openid: string;
+  templateId: string;
+  page: string;
+  data: Record<string, { value: string }>;
+  miniprogramState: "developer" | "trial" | "formal";
+}) {
+  const token = await getAccessToken();
+  const { data } = await axios.post(
+    `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${encodeURIComponent(token)}`,
+    {
+      touser: input.openid,
+      template_id: input.templateId,
+      page: input.page,
+      miniprogram_state: input.miniprogramState,
+      lang: "zh_CN",
+      data: input.data,
+    },
+    { timeout: 8000 }
+  );
+  return { errcode: Number(data?.errcode || 0), errmsg: String(data?.errmsg || "ok") };
+}

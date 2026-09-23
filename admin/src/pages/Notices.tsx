@@ -27,7 +27,7 @@ export default function Notices() {
     load(page, pageSize);
   }, [page, pageSize]);
   return (
-    <PageContainer title="订阅通知记录" description="开发环境写入本地记录，不调用微信模板。顾客同意「备货完成」后，店主核销前备货会记一条 SENT。">
+    <PageContainer title="订阅通知记录" description="自提备货完成后，按顾客当次微信授权发送「提货通知」。一次性订阅用掉后需顾客再次打开。未授权或模拟登录记为已跳过，不影响备货。">
       <DataTable
         footer={<ListPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
       >
@@ -48,7 +48,7 @@ export default function Notices() {
               <TableCell>
                 {displayText(n.title)} {displayText(n.body, "")}
               </TableCell>
-              <TableCell>{n.status === "SENT" ? "已记发送" : "未订阅跳过"}</TableCell>
+              <TableCell>{n.status === "SENT" ? "已发送" : n.status === "FAILED" ? "发送失败" : "已跳过"}</TableCell>
               <TableCell>{formatDateTime(n.created_at, true)}</TableCell>
             </TableRow>
           ))}

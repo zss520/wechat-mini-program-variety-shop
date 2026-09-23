@@ -27,7 +27,7 @@ import { config, publicUrl } from "./config";
 import { claimCoupon, decorateUserCoupon, listClaimableCoupons, queryPointsLedger } from "./marketing";
 import { activityWindowOk, getGroupBuy, listActiveGroupBuys, listActiveSeckills, loadGroupGoodsRows, comboLineItems, loadTeam, refreshTeamProgress } from "./campaigns";
 import { cartUpsell, relatedGoods } from "./personalize";
-import { listNotifyLogs, setSubscribe } from "./notify";
+import { listNotifyLogs, readSubscribe, setSubscribe } from "./notify";
 import { salePriceOf } from "./pricing";
 import { reverseGeocode } from "./geo";
 import { amapLocateStatus } from "./amapQuota";
@@ -691,10 +691,21 @@ appRouter.get("/me/points", requireRole("user"), async (req, res, next) => {
   }
 });
 
+appRouter.get("/subscribe", requireRole("user"), async (req, res, next) => {
+  try {
+    const scene = String(req.query.scene || "PACK_READY");
+    ok(res, await readSubscribe(req.auth!.id, scene));
+  } catch (e) {
+    next(e);
+  }
+});
+
 appRouter.post("/subscribe", requireRole("user"), async (req, res, next) => {
   try {
-    const body = z.object({ scene: z.string().min(1), accepted: z.boolean() }).parse(req.body);
-    ok(res, await setSubscribe(req.auth!.id, body.scene, body.accepted));
+    const body = z
+      .object({ scene: z.string().min(1), accepted: z.boolean(), templateId: z.string().max(64).optional() })
+      .parse(req.body);
+    ok(res, await setSubscribe(req.auth!.id, body.scene, body.accepted, body.templateId));
   } catch (e) {
     next(e);
   }

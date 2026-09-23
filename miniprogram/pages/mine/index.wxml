@@ -43,8 +43,8 @@
 
   <view class="mine-block">
     <t-cell-group theme="card">
-      <t-cell title="备货通知" left-icon="notification" hover bind:click="sub">
-        <t-switch slot="note" value="{{subscribed}}" />
+      <t-cell title="备货通知" description="同意后，下次自提备货完成会通知一次" left-icon="notification">
+        <t-switch slot="note" value="{{subscribed}}" bind:change="onSubChange" />
       </t-cell>
       <t-cell title="联系店主" left-icon="service" note="{{settings.phone || ''}}" arrow hover bind:click="call" />
       <t-cell wx:if="{{hasWechat}}" title="微信号" left-icon="chat" note="{{settings.wechat_id}}" arrow hover bind:click="copyWechat" />

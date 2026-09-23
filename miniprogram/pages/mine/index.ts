@@ -1,4 +1,5 @@
 import { currentUser, ensureMember, goLogin, isMember, logoutLocal, request, tryRestoreMember } from "../../utils/request";
+import { PACK_SUBSCRIBE_TMPL } from "../../utils/config";
 import { contactShop, copyWechat, mediaUrl, readSettings } from "../../utils/shop";
 import { syncTabBar } from "../../utils/tabbar";
 import { track } from "../../utils/tracker";
@@ -50,6 +51,9 @@ Page({
           this.setData({ user: next, phoneText: maskPhone(next.phone || "") });
         })
         .catch(() => undefined);
+      request("/subscribe?scene=PACK_READY")
+        .then((s: any) => this.setData({ subscribed: !!s.accepted }))
+        .catch(() => undefined);
     }
   },
   login() {
@@ -80,12 +84,40 @@ Page({
   seckill() {
     wx.navigateTo({ url: "/pages/seckill/list" });
   },
-  async sub() {
-    if (!(await this.needMember())) return;
-    const next = !this.data.subscribed;
-    await request("/subscribe", "POST", { scene: "PACK_READY", accepted: next });
-    this.setData({ subscribed: next });
-    wx.showToast({ title: next ? "已开启备货通知" : "已关闭" });
+  onSubChange(e: any) {
+    const want = !!(e && e.detail && e.detail.value);
+    if (!this.data.logged) {
+      this.setData({ subscribed: false });
+      this.needMember();
+      return;
+    }
+    if (!want) {
+      this.setData({ subscribed: false });
+      request("/subscribe", "POST", { scene: "PACK_READY", accepted: false }).catch(() => undefined);
+      wx.showToast({ title: "已关闭通知", icon: "none" });
+      return;
+    }
+    this.setData({ subscribed: false });
+    wx.requestSubscribeMessage({
+      tmplIds: [PACK_SUBSCRIBE_TMPL],
+      success: (res: any) => {
+        if (!res || res[PACK_SUBSCRIBE_TMPL] !== "accept") {
+          wx.showToast({ title: "未同意通知", icon: "none" });
+          return;
+        }
+        request("/subscribe", "POST", {
+          scene: "PACK_READY",
+          accepted: true,
+          templateId: PACK_SUBSCRIBE_TMPL,
+        })
+          .then(() => {
+            this.setData({ subscribed: true });
+            wx.showToast({ title: "已开启通知", icon: "none" });
+          })
+          .catch((err: any) => wx.showToast({ title: err.message || "开启失败", icon: "none" }));
+      },
+      fail: () => wx.showToast({ title: "未同意通知", icon: "none" }),
+    });
   },
   async addr() {
     if (!(await this.needMember())) return;

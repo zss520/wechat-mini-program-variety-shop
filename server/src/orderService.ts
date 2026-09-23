@@ -580,17 +580,22 @@ export async function closeExpiredOrders() {
 }
 
 export async function packOrder(orderId: number, adminId: number) {
-  return db.transaction(async (trx) => {
+  const fresh = await db.transaction(async (trx) => {
     const order = await trx("orders").where({ id: orderId }).forUpdate().first();
     if (!order) throw new HttpError(404, "订单不存在");
     if (order.status !== ST.PENDING_PACK) throw new HttpError(409, "订单状态不允许备货", 10003);
     const next = order.fulfill_type === "PICKUP" ? ST.WAIT_PICKUP : ST.WAIT_DELIVER;
     await trx("orders").where({ id: orderId }).update({ status: next, packed_at: trx.fn.now() });
     await logStatus(trx, orderId, ST.PENDING_PACK, next, "ADMIN", adminId, "备货完成");
-    const fresh = await trx("orders").where({ id: orderId }).first();
-    await notifyPackReady(trx, fresh);
-    return fresh;
+    return trx("orders").where({ id: orderId }).first();
   });
+  try {
+    await notifyPackReady(fresh);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error("[notifyPackReady]", e);
+  }
+  return fresh;
 }
 
 export async function pickupOrder(orderId: number, code: string, adminId: number) {
