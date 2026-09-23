@@ -434,7 +434,7 @@ export default function Settings() {
                 label="小程序版本"
                 value={form.wx_miniprogram_state}
                 onChange={(e) => set("wx_miniprogram_state", e.target.value)}
-                helperText="须与顾客正在使用的版本一致，否则收不到消息。真机调试选开发版，体验版选体验版，已发布选正式版。"
+                helperText="须与顾客正在打开的版本一致。真机调试和开发者工具预览选开发版；选错时微信仍可能返回成功，但消息发到另一个版本。"
               >
                 <MenuItem value="developer">开发版（真机调试）</MenuItem>
                 <MenuItem value="trial">体验版</MenuItem>

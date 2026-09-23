@@ -6,6 +6,7 @@ import {
   clipThing,
   fallbackMiniprogramState,
   goodsLabel,
+  isRealWxOpenId,
   packTip,
 } from "../subscribeMessage";
 
@@ -42,6 +43,10 @@ function run() {
   assert(PACK_SUBSCRIBE_TEMPLATE_ID === "ns36Dhhg3tY_GKQ_cR3vSn2e290x_25kDs8Pbz4aS7A", "default template id");
   assert(asMiniprogramState("trial") === "trial", "trial state");
   assert(asMiniprogramState("正式版") === fallbackMiniprogramState(), "unknown state falls back");
+  assert(isRealWxOpenId("oABCDEFghijk1234567890abcd") === true, "real openid can receive");
+  assert(isRealWxOpenId("mock_guest") === false, "mock openid is skipped");
+  assert(isRealWxOpenId("browser_persona_1") === false, "browser openid is skipped");
+  assert(isRealWxOpenId("") === false, "empty openid is skipped");
   console.log("subscribe message tests passed");
 }
 

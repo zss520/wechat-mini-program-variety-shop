@@ -589,13 +589,15 @@ export async function packOrder(orderId: number, adminId: number) {
     await logStatus(trx, orderId, ST.PENDING_PACK, next, "ADMIN", adminId, "备货完成");
     return trx("orders").where({ id: orderId }).first();
   });
+  let packNotify: { status: string; body: string } | null = null;
   try {
-    await notifyPackReady(fresh);
+    packNotify = await notifyPackReady(fresh);
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error("[notifyPackReady]", e);
+    packNotify = { status: "FAILED", body: e instanceof Error ? e.message : "发送失败" };
   }
-  return fresh;
+  return { ...fresh, pack_notify: packNotify };
 }
 
 export async function pickupOrder(orderId: number, code: string, adminId: number) {

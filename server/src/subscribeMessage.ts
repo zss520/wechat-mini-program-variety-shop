@@ -15,6 +15,13 @@ export function fallbackMiniprogramState(): MiniprogramState {
   return process.env.NODE_ENV === "production" ? "formal" : "developer";
 }
 
+/** 模拟登录和浏览器验收用户没有微信 openid，不能接收订阅消息。 */
+export function isRealWxOpenId(openid: unknown) {
+  const id = String(openid || "").trim();
+  if (!id || id.startsWith("mock_") || id.startsWith("browser_")) return false;
+  return true;
+}
+
 export function asMiniprogramState(raw: unknown): MiniprogramState {
   const value = String(raw || "").trim();
   if (value === "developer" || value === "trial" || value === "formal") return value;

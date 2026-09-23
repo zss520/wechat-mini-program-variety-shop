@@ -89,9 +89,17 @@ export default function OrderDetail() {
 
   const act = async (path: string, body?: unknown, success = "操作已完成") => {
     try {
-      await api.post(`/orders/${id}${path}`, body || {});
+      const saved = asRecord(await api.post(`/orders/${id}${path}`, body || {}));
       load();
-      await fb.success(success);
+      const note = asRecord(saved.pack_notify);
+      if (path === "/pack" && note.status && note.status !== "SENT") {
+        await fb.alert(`备货已完成。${displayText(note.body, "提货通知未发送")}`, {
+          title: "提货通知未发送",
+          severity: "warning",
+        });
+        return;
+      }
+      await fb.success(path === "/pack" && note.status === "SENT" ? "备货完成，提货通知已发送" : success);
     } catch (e) {
       await fb.error(e);
     }

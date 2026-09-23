@@ -3,7 +3,9 @@ import { db } from "./db";
 import { config } from "./config";
 import { getSettings } from "./settings";
 import { sendSubscribeMessage } from "./wechat";
-import { asMiniprogramState, buildPackSubscribeData } from "./subscribeMessage";
+import { asMiniprogramState, buildPackSubscribeData, isRealWxOpenId } from "./subscribeMessage";
+
+export type NotifyResult = { status: "SENT" | "FAILED" | "SKIPPED"; body: string };
 
 const SCENE = "PACK_READY";
 
@@ -37,9 +39,15 @@ function asSnap(raw: unknown) {
   }
 }
 
+function stateLabel(state: string) {
+  if (state === "trial") return "体验版";
+  if (state === "formal") return "正式版";
+  return "开发版";
+}
+
 async function writeLog(
   conn: Knex | Knex.Transaction,
-  row: { user_id: number; order_id: number; title: string; body: string; status: "SENT" | "FAILED" | "SKIPPED" }
+  row: { user_id: number; order_id: number; title: string; body: string; status: NotifyResult["status"] }
 ) {
   await conn("notify_logs").insert({
     user_id: row.user_id,
@@ -60,6 +68,15 @@ export async function listNotifyLogs(page: number, pageSize: number, userId?: nu
   const list = await q.orderBy("id", "desc").offset((page - 1) * pageSize).limit(pageSize);
   return { list, page, pageSize, total: Number(total?.c || 0) };
 }
+async function finishNotify(
+  order: { id: number; user_id: number },
+  title: string,
+  result: NotifyResult
+): Promise<NotifyResult> {
+  await writeLog(db, { user_id: order.user_id, order_id: order.id, title, body: result.body, status: result.status });
+  return result;
+}
+
 export async function notifyPackReady(order: {
   id: number;
   user_id: number;
@@ -67,49 +84,27 @@ export async function notifyPackReady(order: {
   pickup_code?: string | null;
   fulfill_type: string;
   address_snapshot?: unknown;
-}) {
-  if (order.fulfill_type !== "PICKUP") return;
+}): Promise<NotifyResult | null> {
+  if (order.fulfill_type !== "PICKUP") return null;
   const title = "提货通知";
   const sub = await db("user_subscribes").where({ user_id: order.user_id, scene: SCENE, accepted: 1 }).first();
-  if (!sub) {
-    await writeLog(db, { user_id: order.user_id, order_id: order.id, title, body: "顾客未授权本次通知", status: "SKIPPED" });
-    return;
-  }
+  if (!sub) return finishNotify(order, title, { status: "SKIPPED", body: "顾客未授权本次通知" });
   const settings = await getSettings();
   const templateId = String(settings.wx_subscribe_pack_tmpl || "").trim();
-  if (!templateId) {
-    await writeLog(db, {
-      user_id: order.user_id,
-      order_id: order.id,
-      title,
-      body: "未配置提货通知模板，未调用微信",
-      status: "SKIPPED",
-    });
-    return;
-  }
+  if (!templateId) return finishNotify(order, title, { status: "SKIPPED", body: "未配置提货通知模板，未调用微信" });
   const authorizedTemplate = String(sub.template_id || "").trim();
   if (authorizedTemplate && authorizedTemplate !== templateId) {
-    await writeLog(db, {
-      user_id: order.user_id,
-      order_id: order.id,
-      title,
-      body: "提货模板已更换，需顾客重新同意",
-      status: "SKIPPED",
-    });
     await db("user_subscribes").where({ id: sub.id }).update({ accepted: 0 });
-    return;
+    return finishNotify(order, title, { status: "SKIPPED", body: "提货模板已更换，需顾客重新同意" });
   }
-  if (config.mockWx || !config.wxAppId || !config.wxSecret) {
-    await writeLog(db, {
-      user_id: order.user_id,
-      order_id: order.id,
-      title,
-      body: "未配置微信订阅或当前为模拟登录，未调用微信",
-      status: "SKIPPED",
-    });
-    return;
+  if (!config.wxAppId || !config.wxSecret) {
+    return finishNotify(order, title, { status: "SKIPPED", body: "未配置微信 AppId 或 AppSecret，未调用微信" });
   }
   const user = await db("users").where({ id: order.user_id }).first();
+  const openid = String(user?.openid || "");
+  if (!isRealWxOpenId(openid)) {
+    return finishNotify(order, title, { status: "SKIPPED", body: "当前是模拟登录，没有微信 openid，未调用微信" });
+  }
   const items = await db("order_items").where({ order_id: order.id }).select("name_snapshot");
   const snap = asSnap(order.address_snapshot);
   const data = buildPackSubscribeData({
@@ -119,33 +114,27 @@ export async function notifyPackReady(order: {
     orderNo: order.order_no,
     hours: snap.hours || settings.business_hours,
   });
-  if (!data || !user?.openid) {
-    await writeLog(db, { user_id: order.user_id, order_id: order.id, title, body: "缺少提货码、订单号或 openid", status: "SKIPPED" });
-    return;
-  }
+  if (!data) return finishNotify(order, title, { status: "SKIPPED", body: "缺少提货码或订单号，未调用微信" });
+  const miniprogramState = asMiniprogramState(settings.wx_miniprogram_state);
   try {
     const result = await sendSubscribeMessage({
-      openid: String(user.openid),
+      openid,
       templateId,
       page: `pages/order/detail?id=${order.id}`,
       data,
-      miniprogramState: asMiniprogramState(settings.wx_miniprogram_state),
+      miniprogramState,
     });
     if (result.errcode === 0) {
-      await writeLog(db, { user_id: order.user_id, order_id: order.id, title, body: `提货码 ${data.character_string12.value}`, status: "SENT" });
       await db("user_subscribes").where({ id: sub.id }).update({ accepted: 0 });
-      return;
+      return finishNotify(order, title, {
+        status: "SENT",
+        body: `提货码 ${data.character_string12.value}，发往${stateLabel(miniprogramState)}`,
+      });
     }
-    await writeLog(db, {
-      user_id: order.user_id,
-      order_id: order.id,
-      title,
-      body: `微信返回 ${result.errcode} ${result.errmsg}`,
-      status: "FAILED",
-    });
     if (result.errcode === 43101) await db("user_subscribes").where({ id: sub.id }).update({ accepted: 0 });
+    return finishNotify(order, title, { status: "FAILED", body: `微信返回 ${result.errcode} ${result.errmsg}` });
   } catch (e) {
     const message = e instanceof Error ? e.message : "发送失败";
-    await writeLog(db, { user_id: order.user_id, order_id: order.id, title, body: message, status: "FAILED" });
+    return finishNotify(order, title, { status: "FAILED", body: message });
   }
 }

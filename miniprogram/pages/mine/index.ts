@@ -92,21 +92,18 @@ Page({
   seckill() {
     wx.navigateTo({ url: "/pages/seckill/list" });
   },
-  onSubChange(e: any) {
-    const want = !!(e && e.detail && e.detail.value);
+  onSubscribeTap() {
     if (!this.data.logged) {
-      this.setData({ subscribed: false });
       this.needMember();
       return;
     }
-    if (!want) {
+    if (this.data.subscribed) {
       this.setData({ subscribed: false });
       request("/subscribe", "POST", { scene: "PACK_READY", accepted: false }).catch(() => undefined);
       wx.showToast({ title: "已关闭通知", icon: "none" });
       return;
     }
     const tmpl = String(this.data.packTmpl || (readSettings() || {}).wx_subscribe_pack_tmpl || PACK_SUBSCRIBE_TMPL).trim();
-    this.setData({ subscribed: false });
     if (!tmpl) {
       wx.showToast({ title: "未配置模板", icon: "none" });
       return;
@@ -114,7 +111,8 @@ Page({
     wx.requestSubscribeMessage({
       tmplIds: [tmpl],
       success: (res: any) => {
-        if (!res || res[tmpl] !== "accept") {
+        const state = res && res[tmpl];
+        if (state !== "accept" && state !== "acceptWithAudio" && state !== "acceptWithAlert") {
           wx.showToast({ title: "未同意通知", icon: "none" });
           return;
         }
@@ -129,7 +127,10 @@ Page({
           })
           .catch((err: any) => wx.showToast({ title: err.message || "开启失败", icon: "none" }));
       },
-      fail: () => wx.showToast({ title: "未同意通知", icon: "none" }),
+      fail: (err: any) => {
+        console.error("requestSubscribeMessage", err);
+        wx.showToast({ title: "未同意通知", icon: "none" });
+      },
     });
   },
   async addr() {

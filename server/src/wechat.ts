@@ -30,8 +30,8 @@ export async function code2session(
   return { openid: data.openid, unionid: data.unionid };
 }
 
-export async function getAccessToken(): Promise<string> {
-  if (config.mockWx) return "mock_access_token";
+export async function getAccessToken(opts?: { real?: boolean }): Promise<string> {
+  if (config.mockWx && !opts?.real) return "mock_access_token";
   if (!config.wxAppId || !config.wxSecret) throw new HttpError(500, "未配置微信 AppId / Secret");
   if (accessTokenCache.token && Date.now() < accessTokenCache.expireAt) return accessTokenCache.token;
   const { data } = await axios.get("https://api.weixin.qq.com/cgi-bin/token", {
@@ -93,7 +93,7 @@ export async function sendSubscribeMessage(input: {
   data: Record<string, { value: string }>;
   miniprogramState: "developer" | "trial" | "formal";
 }) {
-  const token = await getAccessToken();
+  const token = await getAccessToken({ real: true });
   const { data } = await axios.post(
     `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${encodeURIComponent(token)}`,
     {
