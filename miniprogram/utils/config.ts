@@ -1,7 +1,7 @@
 /** 真机 / 开发者工具访问本机服务用局域网 IP；须与电脑当前 IP 一致 */
 export const API_BASE = "http://10.0.8.98:3000/api/app";
 export const FILE_BASE = "http://10.0.8.98:3000";
-/** 提货通知，公众平台模板编号 25930 */
+/** 管理端尚未下发模板 ID 时的兜底。正式值以店铺设置里的提货通知模板为准。 */
 export const PACK_SUBSCRIBE_TMPL = "ns36Dhhg3tY_GKQ_cR3vSn2e290x_25kDs8Pbz4aS7A";
 
 function isLoopbackHost(host: string) {

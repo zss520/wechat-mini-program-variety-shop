@@ -5,6 +5,7 @@ import {
   CircularProgress,
   Divider,
   FormControlLabel,
+  MenuItem,
   Stack,
   Switch,
   TextField,
@@ -38,6 +39,8 @@ type ShopForm = {
   points_redeem_rate: number;
   amap_monthly_limit: number;
   amap_month_used: number;
+  wx_subscribe_pack_tmpl: string;
+  wx_miniprogram_state: "developer" | "trial" | "formal";
 };
 
 const EMPTY: ShopForm = {
@@ -60,7 +63,15 @@ const EMPTY: ShopForm = {
   points_redeem_rate: 100,
   amap_monthly_limit: 1200000,
   amap_month_used: 0,
+  wx_subscribe_pack_tmpl: "ns36Dhhg3tY_GKQ_cR3vSn2e290x_25kDs8Pbz4aS7A",
+  wx_miniprogram_state: "developer",
 };
+
+function asState(v: unknown): ShopForm["wx_miniprogram_state"] {
+  const s = String(v || "");
+  if (s === "trial" || s === "formal") return s;
+  return "developer";
+}
 
 function asBool(v: unknown): boolean {
   return v === true || v === 1 || v === "1" || v === "true";
@@ -94,6 +105,8 @@ function normalize(raw: unknown): ShopForm {
     points_redeem_rate: asNum(src.points_redeem_rate, EMPTY.points_redeem_rate),
     amap_monthly_limit: asNum(src.amap_monthly_limit, EMPTY.amap_monthly_limit),
     amap_month_used: asNum(src.amap_month_used, 0),
+    wx_subscribe_pack_tmpl: String(src.wx_subscribe_pack_tmpl ?? EMPTY.wx_subscribe_pack_tmpl).trim(),
+    wx_miniprogram_state: asState(src.wx_miniprogram_state),
   };
 }
 
@@ -117,6 +130,8 @@ function payload(form: ShopForm) {
     points_earn_per_yuan: form.points_earn_per_yuan,
     points_redeem_rate: form.points_redeem_rate,
     amap_monthly_limit: form.amap_monthly_limit,
+    wx_subscribe_pack_tmpl: String(form.wx_subscribe_pack_tmpl || "").trim(),
+    wx_miniprogram_state: form.wx_miniprogram_state,
   };
 }
 
@@ -206,6 +221,14 @@ export default function Settings() {
     }
     if (!isValidNonNegInt(form.amap_monthly_limit) || form.amap_monthly_limit > 10000000) {
       await fb.alert("每月在线定位次数须为 0 到 10000000 的整数", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (!/^[A-Za-z0-9_-]{10,64}$/.test(String(form.wx_subscribe_pack_tmpl || "").trim())) {
+      await fb.alert("提货通知模板 ID 须为 10 到 64 位字母、数字、下划线或中划线", { title: "请完善信息", severity: "warning" });
+      return;
+    }
+    if (!["developer", "trial", "formal"].includes(form.wx_miniprogram_state)) {
+      await fb.alert("小程序版本只能是开发版、体验版或正式版", { title: "请完善信息", severity: "warning" });
       return;
     }
     if (form.points_enabled) {
@@ -392,6 +415,31 @@ export default function Settings() {
                 control={<Switch checked={form.pause_order} onChange={(e) => set("pause_order", e.target.checked)} />}
                 label="暂停接单（顾客可浏览，不可提交订单）"
               />
+            </Section>
+
+            <Section title="提货通知">
+              <TextField
+                required
+                fullWidth
+                label="模板 ID"
+                value={form.wx_subscribe_pack_tmpl}
+                onChange={(e) => set("wx_subscribe_pack_tmpl", e.target.value)}
+                helperText="公众平台「提货通知」模板 ID，当前模板编号 25930。更换后，顾客需重新打开备货通知并同意一次。"
+                inputProps={{ maxLength: 64, spellCheck: false }}
+              />
+              <TextField
+                select
+                required
+                fullWidth
+                label="小程序版本"
+                value={form.wx_miniprogram_state}
+                onChange={(e) => set("wx_miniprogram_state", e.target.value)}
+                helperText="须与顾客正在使用的版本一致，否则收不到消息。真机调试选开发版，体验版选体验版，已发布选正式版。"
+              >
+                <MenuItem value="developer">开发版（真机调试）</MenuItem>
+                <MenuItem value="trial">体验版</MenuItem>
+                <MenuItem value="formal">正式版</MenuItem>
+              </TextField>
             </Section>
 
             <Section title="在线定位">

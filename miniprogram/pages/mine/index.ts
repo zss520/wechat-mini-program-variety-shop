@@ -14,6 +14,7 @@ Page({
     user: {} as any,
     settings: {} as any,
     subscribed: false,
+    packTmpl: "",
     logged: false,
     phoneText: "",
     logoUrl: "",
@@ -27,6 +28,8 @@ Page({
     this.refresh();
   },
   async refresh() {
+    const cachedTmpl = String((readSettings() || {}).wx_subscribe_pack_tmpl || "").trim();
+    if (cachedTmpl) this.setData({ packTmpl: cachedTmpl });
     if (!isMember()) await tryRestoreMember();
     const user = { ...currentUser() };
     if (user.avatarUrl) user.avatarUrl = mediaUrl(user.avatarUrl) || user.avatarUrl;
@@ -52,7 +55,12 @@ Page({
         })
         .catch(() => undefined);
       request("/subscribe?scene=PACK_READY")
-        .then((s: any) => this.setData({ subscribed: !!s.accepted }))
+        .then((s: any) => {
+          const id = String((s && s.templateId) || "").trim();
+          const patch: Record<string, unknown> = { subscribed: !!(s && s.accepted) };
+          if (id) patch.packTmpl = id;
+          this.setData(patch);
+        })
         .catch(() => undefined);
     }
   },
@@ -97,18 +105,23 @@ Page({
       wx.showToast({ title: "已关闭通知", icon: "none" });
       return;
     }
+    const tmpl = String(this.data.packTmpl || (readSettings() || {}).wx_subscribe_pack_tmpl || PACK_SUBSCRIBE_TMPL).trim();
     this.setData({ subscribed: false });
+    if (!tmpl) {
+      wx.showToast({ title: "未配置模板", icon: "none" });
+      return;
+    }
     wx.requestSubscribeMessage({
-      tmplIds: [PACK_SUBSCRIBE_TMPL],
+      tmplIds: [tmpl],
       success: (res: any) => {
-        if (!res || res[PACK_SUBSCRIBE_TMPL] !== "accept") {
+        if (!res || res[tmpl] !== "accept") {
           wx.showToast({ title: "未同意通知", icon: "none" });
           return;
         }
         request("/subscribe", "POST", {
           scene: "PACK_READY",
           accepted: true,
-          templateId: PACK_SUBSCRIBE_TMPL,
+          templateId: tmpl,
         })
           .then(() => {
             this.setData({ subscribed: true });

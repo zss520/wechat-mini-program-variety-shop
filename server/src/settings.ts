@@ -1,5 +1,12 @@
 import { db } from "./db";
 import { HttpError } from "./http";
+import {
+  PACK_SUBSCRIBE_TEMPLATE_ID,
+  asMiniprogramState,
+  fallbackMiniprogramState,
+  fallbackSubscribeTemplateId,
+  type MiniprogramState,
+} from "./subscribeMessage";
 
 export type ShopSettings = {
   shop_name: string;
@@ -20,6 +27,8 @@ export type ShopSettings = {
   points_earn_per_yuan: number;
   points_redeem_rate: number;
   amap_monthly_limit: number;
+  wx_subscribe_pack_tmpl: string;
+  wx_miniprogram_state: MiniprogramState;
 };
 
 export const SETTINGS_DEFAULTS: ShopSettings = {
@@ -41,6 +50,8 @@ export const SETTINGS_DEFAULTS: ShopSettings = {
   points_earn_per_yuan: 1,
   points_redeem_rate: 100,
   amap_monthly_limit: 1200000,
+  wx_subscribe_pack_tmpl: PACK_SUBSCRIBE_TEMPLATE_ID,
+  wx_miniprogram_state: "developer",
 };
 
 const defaults = SETTINGS_DEFAULTS;
@@ -87,11 +98,16 @@ export async function getSettings(): Promise<ShopSettings> {
   (Object.keys(defaults) as (keyof ShopSettings)[]).forEach((k) => {
     if (map[k] !== undefined) (out as unknown as Record<string, unknown>)[k] = parseValue(k, map[k]);
   });
+  if (map.wx_subscribe_pack_tmpl === undefined) out.wx_subscribe_pack_tmpl = fallbackSubscribeTemplateId();
+  else out.wx_subscribe_pack_tmpl = asText(out.wx_subscribe_pack_tmpl).trim();
+  if (map.wx_miniprogram_state === undefined) out.wx_miniprogram_state = fallbackMiniprogramState();
+  else out.wx_miniprogram_state = asMiniprogramState(out.wx_miniprogram_state);
   return out;
 }
 
 export async function saveSettings(patch: Partial<ShopSettings>) {
   const keys = Object.keys(patch) as (keyof ShopSettings)[];
+  const normalized: Partial<Record<keyof ShopSettings, unknown>> = {};
   for (const k of keys) {
     if (!(k in defaults)) continue;
     if (!Object.prototype.hasOwnProperty.call(patch, k)) continue;
@@ -103,7 +119,26 @@ export async function saveSettings(patch: Partial<ShopSettings>) {
         throw new HttpError(400, "每月在线定位次数须为 0 到 10000000 的整数");
       }
     }
-    const svalue = toStoreValue(k, v);
+    if (k === "wx_subscribe_pack_tmpl") {
+      const id = asText(v).trim();
+      if (!/^[A-Za-z0-9_-]{10,64}$/.test(id)) {
+        throw new HttpError(400, "提货通知模板 ID 须为 10 到 64 位字母、数字、下划线或中划线");
+      }
+      normalized[k] = id;
+      continue;
+    }
+    if (k === "wx_miniprogram_state") {
+      const state = asText(v).trim();
+      if (state !== "developer" && state !== "trial" && state !== "formal") {
+        throw new HttpError(400, "小程序版本只能是开发版、体验版或正式版");
+      }
+      normalized[k] = state;
+      continue;
+    }
+    normalized[k] = v;
+  }
+  for (const k of Object.keys(normalized) as (keyof ShopSettings)[]) {
+    const svalue = toStoreValue(k, normalized[k]);
     const exists = await db("shop_settings").where({ skey: k }).first();
     if (exists) await db("shop_settings").where({ skey: k }).update({ svalue, updated_at: db.fn.now() });
     else await db("shop_settings").insert({ skey: k, svalue });

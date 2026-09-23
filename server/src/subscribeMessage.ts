@@ -1,5 +1,25 @@
-/** 公众平台模板编号 25930「提货通知」。关键词顺序即消息卡片顺序。 */
+/** 公众平台模板编号 25930「提货通知」。关键词顺序即消息卡片顺序。管理端未保存时的默认值。 */
 export const PACK_SUBSCRIBE_TEMPLATE_ID = "ns36Dhhg3tY_GKQ_cR3vSn2e290x_25kDs8Pbz4aS7A";
+
+export type MiniprogramState = "developer" | "trial" | "formal";
+
+/** 数据库还没有这两项时，才读环境变量。管理端保存后以店铺设置为准。 */
+export function fallbackSubscribeTemplateId() {
+  const fromEnv = String(process.env.WX_SUBSCRIBE_PACK_TMPL || "").trim();
+  return fromEnv || PACK_SUBSCRIBE_TEMPLATE_ID;
+}
+
+export function fallbackMiniprogramState(): MiniprogramState {
+  const fromEnv = String(process.env.WX_MINIPROGRAM_STATE || "").trim();
+  if (fromEnv === "developer" || fromEnv === "trial" || fromEnv === "formal") return fromEnv;
+  return process.env.NODE_ENV === "production" ? "formal" : "developer";
+}
+
+export function asMiniprogramState(raw: unknown): MiniprogramState {
+  const value = String(raw || "").trim();
+  if (value === "developer" || value === "trial" || value === "formal") return value;
+  return fallbackMiniprogramState();
+}
 
 const THING_MAX = 20;
 const CODE_MAX = 32;

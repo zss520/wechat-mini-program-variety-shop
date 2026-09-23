@@ -27,7 +27,7 @@ export default function Notices() {
     load(page, pageSize);
   }, [page, pageSize]);
   return (
-    <PageContainer title="订阅通知记录" description="自提备货完成后，按顾客当次微信授权发送「提货通知」。一次性订阅用掉后需顾客再次打开。未授权或模拟登录记为已跳过，不影响备货。">
+    <PageContainer title="订阅通知记录" description="模板 ID 和小程序版本在「店铺设置」中修改。自提备货完成后，按顾客当次同意的模板发送一次。未授权、模板不匹配或模拟登录记为已跳过，不影响备货。">
       <DataTable
         footer={<ListPagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={(size) => { setPageSize(size); setPage(1); }} />}
       >

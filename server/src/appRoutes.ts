@@ -71,9 +71,11 @@ appRouter.get("/legal", async (_req, res, next) => {
 appRouter.get("/shop/bootstrap", async (_req, res, next) => {
   try {
     const settings = await getSettings();
+    const publicSettings: Record<string, unknown> = { ...settings };
+    delete publicSettings.wx_miniprogram_state;
     const categories = await db("categories").where({ enabled: 1 }).whereNull("deleted_at").orderBy("sort", "desc");
     ok(res, {
-      settings,
+      settings: publicSettings,
       categories,
       mockWx: config.mockWx,
       mockPay: config.mockPay,

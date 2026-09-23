@@ -1,4 +1,13 @@
-import { buildPackSubscribeData, clipCode, clipThing, goodsLabel, packTip } from "../subscribeMessage";
+import {
+  PACK_SUBSCRIBE_TEMPLATE_ID,
+  asMiniprogramState,
+  buildPackSubscribeData,
+  clipCode,
+  clipThing,
+  fallbackMiniprogramState,
+  goodsLabel,
+  packTip,
+} from "../subscribeMessage";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -30,6 +39,9 @@ function run() {
   assert(data && data.character_string11.value === "E12121212", "order no field");
   assert(data && data.thing8.value === "请于08:00-21:00到店取货", "tip field");
   assert(buildPackSubscribeData({ goodsNames: ["鸡蛋"], pickupCode: "", place: "店", orderNo: "1" }) === null, "missing code skips");
+  assert(PACK_SUBSCRIBE_TEMPLATE_ID === "ns36Dhhg3tY_GKQ_cR3vSn2e290x_25kDs8Pbz4aS7A", "default template id");
+  assert(asMiniprogramState("trial") === "trial", "trial state");
+  assert(asMiniprogramState("正式版") === fallbackMiniprogramState(), "unknown state falls back");
   console.log("subscribe message tests passed");
 }
 

@@ -23,12 +23,6 @@ export const config = {
   wxMchId: process.env.WX_MCHID || "",
   wxPayKey: process.env.WX_PAY_API_V3_KEY || "",
   wxNotifyUrl: process.env.WX_PAY_NOTIFY_URL || "",
-  wxSubscribePackTemplateId: process.env.WX_SUBSCRIBE_PACK_TMPL || "ns36Dhhg3tY_GKQ_cR3vSn2e290x_25kDs8Pbz4aS7A",
-  wxMiniprogramState: (["developer", "trial", "formal"].includes(String(process.env.WX_MINIPROGRAM_STATE || ""))
-    ? process.env.WX_MINIPROGRAM_STATE
-    : process.env.NODE_ENV === "production"
-      ? "formal"
-      : "developer") as "developer" | "trial" | "formal",
   tencentMapKey: process.env.TENCENT_MAP_KEY || "",
   amapWebKey: process.env.AMAP_WEB_KEY || "",
   uploadDir: path.resolve(__dirname, "../uploads"),

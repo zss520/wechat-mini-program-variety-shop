@@ -3,7 +3,7 @@ import { db } from "./db";
 import { config } from "./config";
 import { getSettings } from "./settings";
 import { sendSubscribeMessage } from "./wechat";
-import { buildPackSubscribeData } from "./subscribeMessage";
+import { asMiniprogramState, buildPackSubscribeData } from "./subscribeMessage";
 
 const SCENE = "PACK_READY";
 
@@ -19,10 +19,11 @@ export async function setSubscribe(userId: number, scene: string, accepted: bool
 
 export async function readSubscribe(userId: number, scene = SCENE) {
   const row = await db("user_subscribes").where({ user_id: userId, scene }).first();
+  const settings = await getSettings();
   return {
     scene,
     accepted: Boolean(row?.accepted),
-    templateId: config.wxSubscribePackTemplateId,
+    templateId: String(settings.wx_subscribe_pack_tmpl || "").trim(),
   };
 }
 
@@ -74,8 +75,31 @@ export async function notifyPackReady(order: {
     await writeLog(db, { user_id: order.user_id, order_id: order.id, title, body: "顾客未授权本次通知", status: "SKIPPED" });
     return;
   }
-  const templateId = String(config.wxSubscribePackTemplateId || "").trim();
-  if (!templateId || config.mockWx || !config.wxAppId || !config.wxSecret) {
+  const settings = await getSettings();
+  const templateId = String(settings.wx_subscribe_pack_tmpl || "").trim();
+  if (!templateId) {
+    await writeLog(db, {
+      user_id: order.user_id,
+      order_id: order.id,
+      title,
+      body: "未配置提货通知模板，未调用微信",
+      status: "SKIPPED",
+    });
+    return;
+  }
+  const authorizedTemplate = String(sub.template_id || "").trim();
+  if (authorizedTemplate && authorizedTemplate !== templateId) {
+    await writeLog(db, {
+      user_id: order.user_id,
+      order_id: order.id,
+      title,
+      body: "提货模板已更换，需顾客重新同意",
+      status: "SKIPPED",
+    });
+    await db("user_subscribes").where({ id: sub.id }).update({ accepted: 0 });
+    return;
+  }
+  if (config.mockWx || !config.wxAppId || !config.wxSecret) {
     await writeLog(db, {
       user_id: order.user_id,
       order_id: order.id,
@@ -87,7 +111,6 @@ export async function notifyPackReady(order: {
   }
   const user = await db("users").where({ id: order.user_id }).first();
   const items = await db("order_items").where({ order_id: order.id }).select("name_snapshot");
-  const settings = await getSettings();
   const snap = asSnap(order.address_snapshot);
   const data = buildPackSubscribeData({
     goodsNames: items.map((item: { name_snapshot?: string }) => String(item.name_snapshot || "")),
@@ -106,7 +129,7 @@ export async function notifyPackReady(order: {
       templateId,
       page: `pages/order/detail?id=${order.id}`,
       data,
-      miniprogramState: config.wxMiniprogramState,
+      miniprogramState: asMiniprogramState(settings.wx_miniprogram_state),
     });
     if (result.errcode === 0) {
       await writeLog(db, { user_id: order.user_id, order_id: order.id, title, body: `提货码 ${data.character_string12.value}`, status: "SENT" });
