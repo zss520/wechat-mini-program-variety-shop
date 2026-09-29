@@ -18,6 +18,7 @@ import Coupons from "./pages/Coupons";
 import Campaigns from "./pages/Campaigns";
 import Notices from "./pages/Notices";
 import Announcements from "./pages/Announcements";
+import MediaLibrary from "./pages/MediaLibrary";
 
 function Guard() {
   if (!getToken()) return <Navigate to="/login" replace />;
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/orders" element={<Orders />} />
         <Route path="/orders/:id" element={<OrderDetail />} />
         <Route path="/contents/banners" element={<Banners />} />
+        <Route path="/contents/media" element={<MediaLibrary />} />
         <Route path="/contents/announcements" element={<Announcements />} />
         <Route path="/contents/recommends" element={<Recommends />} />
         <Route path="/shop/settings" element={<Settings />} />

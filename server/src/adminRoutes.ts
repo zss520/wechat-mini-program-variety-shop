@@ -38,6 +38,7 @@ import { listNotifyLogs } from "./notify";
 import { applyAdminGoodsFilters } from "./adminGoodsQuery";
 import { toSqlDateTime } from "./pricing";
 import { MAX_ENABLED_ANNOUNCEMENTS, announcementMpPath } from "./announcements";
+import { deleteMedia, listMedia } from "./mediaLibrary";
 
 ensureUploadDirs();
 const upload = multer({
@@ -349,6 +350,34 @@ adminRouter.get("/goods/:id", async (req, res, next) => {
       g.images = [];
     }
     ok(res, g);
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.get("/media", async (req, res, next) => {
+  try {
+    const { page, pageSize } = parsePage(req.query as Record<string, unknown>);
+    ok(
+      res,
+      await listMedia({
+        page,
+        pageSize,
+        usage: String(req.query.usage || ""),
+        keyword: String(req.query.keyword || ""),
+      })
+    );
+  } catch (e) {
+    next(e);
+  }
+});
+
+adminRouter.delete("/media", async (req, res, next) => {
+  try {
+    const key = String((req.body && (req.body as { key?: unknown }).key) || "").trim();
+    if (!key) throw new HttpError(400, "请指定要删除的图片");
+    await deleteMedia(key);
+    ok(res, true);
   } catch (e) {
     next(e);
   }

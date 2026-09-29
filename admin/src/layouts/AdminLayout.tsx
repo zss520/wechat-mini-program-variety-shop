@@ -24,6 +24,7 @@ import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import CategoryOutlined from "@mui/icons-material/CategoryOutlined";
 import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
 import ViewCarouselOutlined from "@mui/icons-material/ViewCarouselOutlined";
+import PhotoLibraryOutlined from "@mui/icons-material/PhotoLibraryOutlined";
 import CampaignOutlined from "@mui/icons-material/CampaignOutlined";
 import StarBorderOutlined from "@mui/icons-material/StarBorderOutlined";
 import BarChartOutlined from "@mui/icons-material/BarChartOutlined";
@@ -65,6 +66,7 @@ const groups: Group[] = [
     title: "运营",
     items: [
       { to: "/contents/banners", label: "轮播", icon: ViewCarouselOutlined },
+      { to: "/contents/media", label: "图库", icon: PhotoLibraryOutlined },
       { to: "/contents/announcements", label: "通知公告", icon: CampaignOutlined },
       { to: "/contents/recommends", label: "推荐位", icon: StarBorderOutlined },
       { to: "/reports", label: "数据分析", icon: BarChartOutlined },
