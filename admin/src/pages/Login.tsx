@@ -31,15 +31,15 @@ type Remembered = { username?: string; password?: string; remember?: boolean };
 function readRemembered(): Remembered {
   try {
     const raw = localStorage.getItem(REMEMBER_KEY);
-    if (!raw) return { username: "admin", password: "admin123", remember: true };
+    if (!raw) return { username: "", password: "", remember: false };
     const parsed = JSON.parse(raw) as Remembered;
     return {
-      username: String(parsed.username || "admin"),
+      username: String(parsed.username || ""),
       password: parsed.remember ? String(parsed.password || "") : "",
-      remember: parsed.remember !== false,
+      remember: Boolean(parsed.remember),
     };
   } catch {
-    return { username: "admin", password: "admin123", remember: true };
+    return { username: "", password: "", remember: false };
   }
 }
 
@@ -261,7 +261,7 @@ export default function Login() {
             <TextField
               fullWidth
               hiddenLabel
-              placeholder="账号：admin"
+              placeholder="账号"
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
