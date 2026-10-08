@@ -1,0 +1,9 @@
+**/.git
+**/node_modules
+**/dist
+**/.env
+server/uploads
+admin/dist
+miniprogram/node_modules
+docs
+*.md
