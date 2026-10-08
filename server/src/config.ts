@@ -64,8 +64,22 @@ export function readAmapWebKey() {
   return String(config.amapWebKey || "").trim();
 }
 
+function rewriteLegacyPublicUrl(abs: string) {
+  try {
+    const u = new URL(abs);
+    const host = u.hostname.toLowerCase();
+    if (host === "127.0.0.1" || host === "localhost" || host === "114.55.125.157") {
+      return `${config.publicUrl}${u.pathname}${u.search}`;
+    }
+  } catch {
+    return abs;
+  }
+  return abs;
+}
+
 export function publicUrl(p?: string | null) {
   if (!p) return "";
-  if (/^https?:\/\//i.test(p)) return p;
-  return `${config.publicUrl}${p.startsWith("/") ? p : "/" + p}`;
+  const s = String(p).trim();
+  if (/^https?:\/\//i.test(s)) return rewriteLegacyPublicUrl(s);
+  return `${config.publicUrl}${s.startsWith("/") ? s : "/" + s}`;
 }

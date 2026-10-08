@@ -40,6 +40,11 @@ services:
       dockerfile: deploy/Dockerfile.web
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/letsencrypt:ro
+      - ./certbot-www:/var/www/certbot:ro
     depends_on:
       - api
     restart: unless-stopped
